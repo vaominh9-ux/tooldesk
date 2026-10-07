@@ -33,7 +33,7 @@ const createCustomerSchema = z.object({
   phone: z.string().trim().max(25).default(''),
   email: z.union([z.literal(''), z.string().trim().email()]).default(''),
   source: z.string().trim().max(100).default('AI Agent'),
-  notes: z.string().trim().max(1000).default('')
+  notes: z.string().trim().max(50000).default('')
 }).refine(data => data.phone || data.email, {
   message: 'Cần cung cấp ít nhất số điện thoại hoặc email để liên hệ.'
 });

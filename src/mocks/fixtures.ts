@@ -96,7 +96,7 @@ export interface Campaign {
 
 export interface ActivityLog {
   id: string;
-  type: 'payment' | 'renewal' | 'reminder' | 'created';
+  type: 'payment' | 'renewal' | 'reminder' | 'created' | 'updated' | 'refund' | 'cost_recovery';
   title: string;
   description: string;
   at: string;

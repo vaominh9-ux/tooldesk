@@ -42,7 +42,7 @@ interface TooldeskContextType {
   recordPayment: (orderId: string) => Promise<void>;
   processRefund: (input: RefundInput) => Promise<void>;
   addCustomer: (input: CustomerInput) => Promise<Customer>;
-  updateCustomer: (id: string, updates: Partial<Customer>) => Promise<void>;
+  updateCustomer: (id: string, updates: Partial<Customer>, close?: boolean) => Promise<void>;
   addProduct: (input: ProductInput) => Promise<void>;
   updateProduct: (productId: string, updates: UpdateProductInput) => Promise<void>;
   deleteProduct: (productId: string) => Promise<void>;
@@ -211,7 +211,7 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
     recordPayment: async orderId => { await run({ type: 'record_payment', input: { orderId } }, 'Đã ghi nhận thanh toán'); },
     processRefund: async ({ actor: _actor, ...input }) => { await run({ type: 'record_refund', input: { ...input, operationId: input.operationId || crypto.randomUUID() } }, 'Đã ghi nhận hoàn/thu hồi vốn'); },
     addCustomer: async input => { const result = await run({ type: 'add_customer', input }, 'Đã thêm khách'); const customer = result.data.customers.find(item => item.id === result.resultId); if (!customer) throw new Error('Thiếu khách trong phản hồi.'); return customer; },
-    updateCustomer: async (id, updates) => { await run({ type: 'update_customer', input: { id, updates } }, 'Đã cập nhật khách'); },
+    updateCustomer: async (id, updates, close = true) => { await run({ type: 'update_customer', input: { id, updates } }, 'Đã cập nhật khách', close); },
     addProduct: async input => { await run({ type: 'add_product', input }, 'Đã thêm sản phẩm'); },
     updateProduct: async (productId, updates) => { await run({ type: 'update_product', input: { productId, ...updates } }, 'Đã cập nhật sản phẩm'); },
     deleteProduct: async productId => { await run({ type: 'delete_product', input: { productId } }, 'Đã xóa sản phẩm'); },

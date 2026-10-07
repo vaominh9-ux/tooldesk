@@ -7,6 +7,7 @@ import { formatMoney, orderFinancials } from '@/domain/money';
 import { getCustomerStats, paginate, formatOrderCode } from '@/domain/orders';
 import { formatDateLabel, remainingLabel } from '@/domain/dates';
 import { subStatus } from '@/domain/subscriptions';
+import { CustomerNotes } from '@/components/shared/customer-notes';
 import Link from 'next/link';
 
 export default function CustomersPage() {
@@ -325,11 +326,8 @@ export default function CustomersPage() {
                   Cập nhật: {formatDateLabel(c.consentUpdatedAt, true)}
                 </p>
               </div>
-              <div>
-                <small style={{ color: '#778197', display: 'block', marginBottom: '4px' }}>Ghi chú chăm sóc</small>
-                <p style={{ padding: '10px 12px', background: '#f8f9fc', border: '1px solid var(--line)', borderRadius: '8px', color: '#525f78', margin: 0 }}>
-                  {c.notes || 'Chưa có ghi chú.'}
-                </p>
+              <div style={{ marginTop: '8px' }}>
+                <CustomerNotes customer={c} title="Lịch sử ghi chú" />
               </div>
             </div>
           </aside>

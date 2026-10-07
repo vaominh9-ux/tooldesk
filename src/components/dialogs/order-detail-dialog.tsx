@@ -30,6 +30,9 @@ export function OrderDetailDialog({
   const [editNote, setEditNote] = useState(order?.note || '');
   const [saving, setSaving] = useState(false);
   const [editError, setEditError] = useState('');
+  const [isEditingNote, setIsEditingNote] = useState(false);
+  const [orderNoteVal, setOrderNoteVal] = useState(order?.note || '');
+  const [isSavingNote, setIsSavingNote] = useState(false);
 
   useEffect(() => {
     if (order) {
@@ -545,15 +548,83 @@ export function OrderDetailDialog({
               Không sửa hoặc xóa giá trị giao dịch gốc. Hoàn tiền được ghi thành phiếu riêng; ghi nhận ở đây không tự chuyển tiền.
             </p>
 
-            {/* Note */}
-            {order.note && (
-              <div style={{ marginTop: '16px' }}>
-                <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>Ghi chú</div>
-                <p style={{ padding: '10px 12px', background: '#f8f9fc', border: '1px solid var(--line)', borderRadius: '8px', fontSize: '12.5px', color: '#525f78' }}>
-                  {order.note}
-                </p>
+            {/* Note & History */}
+            <div style={{
+              marginTop: '16px',
+              padding: '12px 14px',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '9px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <strong style={{ fontSize: '13px', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <AppIcon name="clock" size={15} />
+                  <span>Ghi chú đơn hàng</span>
+                </strong>
+                {!isEditingNote && (
+                  <button
+                    type="button"
+                    className="text-button"
+                    style={{ fontSize: '12px', fontWeight: 600, color: '#4f46e5' }}
+                    onClick={() => { setIsEditingNote(true); setOrderNoteVal(order.note || ''); }}
+                  >
+                    {order.note ? 'Sửa' : '+ Thêm ghi chú'}
+                  </button>
+                )}
               </div>
-            )}
+
+              {!isEditingNote ? (
+                order.note ? (
+                  <p style={{ margin: 0, fontSize: '12.5px', color: '#475569', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                    {order.note}
+                  </p>
+                ) : (
+                  <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8', fontStyle: 'italic' }}>
+                    Chưa có ghi chú cho đơn hàng này.
+                  </p>
+                )
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px' }}>
+                  <textarea
+                    className="input"
+                    rows={2}
+                    value={orderNoteVal}
+                    onChange={e => setOrderNoteVal(e.target.value)}
+                    placeholder="Nhập ghi chú cho đơn này..."
+                    style={{ fontSize: '12.5px', padding: '6px 8px', borderRadius: '6px' }}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                    <button
+                      type="button"
+                      className="button small"
+                      onClick={() => setIsEditingNote(false)}
+                      disabled={isSavingNote}
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="button"
+                      className="button small primary"
+                      disabled={isSavingNote}
+                      onClick={async () => {
+                        setIsSavingNote(true);
+                        try {
+                          await updateOrder({ orderId: order.id, note: orderNoteVal.trim() });
+                          setIsEditingNote(false);
+                          addToast('Đã lưu ghi chú đơn', undefined, 'success');
+                        } catch (err) {
+                          addToast('Lỗi lưu ghi chú', err instanceof Error ? err.message : 'Không thể lưu', 'error');
+                        } finally {
+                          setIsSavingNote(false);
+                        }
+                      }}
+                    >
+                      {isSavingNote ? 'Đang lưu...' : 'Lưu ghi chú'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Footer */}

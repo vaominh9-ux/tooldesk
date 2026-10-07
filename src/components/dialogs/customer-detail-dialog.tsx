@@ -9,6 +9,7 @@ import { getCustomerStats, formatOrderCode, formatCustomerCode } from '@/domain/
 import { formatMoney } from '@/domain/money';
 import { formatDateLabel, remainingLabel } from '@/domain/dates';
 import { subStatus } from '@/domain/subscriptions';
+import { CustomerNotes } from '../shared/customer-notes';
 
 export function CustomerDetailDialog({
   customerId,
@@ -106,7 +107,7 @@ export function CustomerDetailDialog({
             </div>
 
             {/* Contact details */}
-            <div style={{ padding: '12px 14px', background: '#fcfcfe', border: '1px solid var(--line)', borderRadius: '9px', fontSize: '12.5px', marginBottom: '20px' }}>
+            <div style={{ padding: '12px 14px', background: '#fcfcfe', border: '1px solid var(--line)', borderRadius: '9px', fontSize: '12.5px', marginBottom: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
                 <span style={{ color: '#778197' }}>Số điện thoại:</span>
                 <strong style={{ color: '#202a43' }}>{customer.phone || 'Chưa có'}</strong>
@@ -121,13 +122,10 @@ export function CustomerDetailDialog({
                   {customer.emailConsent === 'opted_in' ? 'Đã đồng ý nhận' : customer.emailConsent === 'opted_out' ? 'Từ chối' : 'Chưa xác nhận'}
                 </span>
               </div>
-              {customer.notes && (
-                <div style={{ borderTop: '1px solid var(--line)', paddingTop: '6px', marginTop: '6px', color: '#525f78' }}>
-                  <span style={{ color: '#778197', display: 'block', marginBottom: '2px' }}>Ghi chú:</span>
-                  {customer.notes}
-                </div>
-              )}
             </div>
+
+            {/* Note History */}
+            <CustomerNotes customer={customer} title="Lịch sử ghi chú chăm sóc" />
 
             {/* Active Subscriptions */}
             <div style={{ marginBottom: '22px' }}>

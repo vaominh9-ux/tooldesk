@@ -204,7 +204,7 @@ export function CustomerDialog({
               <span>Ghi chú chăm sóc</span>
               <textarea
                 name="notes"
-                maxLength={1000}
+                maxLength={50000}
                 placeholder="Điều cần lưu ý khi chăm sóc khách..."
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
