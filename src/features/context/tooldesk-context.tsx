@@ -141,7 +141,7 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
       }
     }
   }, [dataSource]);
-  // REALTIME BACKGROUND SYNC (2.5 seconds + on window focus/tab change)
+  // REALTIME BACKGROUND SYNC (6 seconds + instant on window focus/tab change)
   useEffect(() => {
     if (dataSource !== 'supabase') return;
     void load();
@@ -150,7 +150,7 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
       if (typeof document !== 'undefined' && !document.hidden && !busy.current) {
         void load(true);
       }
-    }, 2500);
+    }, 6000);
 
     const handleFocus = () => {
       if (typeof document !== 'undefined' && !document.hidden && !busy.current) {

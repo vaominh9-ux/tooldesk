@@ -2,6 +2,14 @@ import 'server-only';
 import { cookies } from 'next/headers';
 import { getDbPool } from './db';
 
+interface CachedUser {
+  id: string;
+  email: string;
+  role: 'admin' | 'staff' | 'viewer';
+  expiresAt: number;
+}
+const userCache = new Map<string, CachedUser>();
+
 export class AccessError extends Error { constructor(public status: number, message: string) { super(message); } }
 export async function requireUser(): Promise<{ id: string; email: string; role: 'admin' | 'staff' | 'viewer' }> {
   const cookieStore = cookies();
@@ -12,6 +20,15 @@ export async function requireUser(): Promise<{ id: string; email: string; role: 
   if (!token && !refreshToken) throw new AccessError(401, 'Vui lòng đăng nhập.');
 
   let currentToken = token;
+
+  // Fast In-Memory Cache Check (<1ms)
+  if (currentToken) {
+    const cached = userCache.get(currentToken);
+    if (cached && cached.expiresAt > Date.now()) {
+      return { id: cached.id, email: cached.email, role: cached.role };
+    }
+  }
+
   let userResponse: Response | null = null;
 
   if (currentToken) {
@@ -57,7 +74,24 @@ export async function requireUser(): Promise<{ id: string; email: string; role: 
   if (!user || typeof user !== 'object' || !('id' in user) || typeof user.id !== 'string' || !('email' in user) || typeof user.email !== 'string') throw new AccessError(401, 'Phiên không hợp lệ.');
   const member = await getDbPool().query<{ role: 'admin' | 'staff' | 'viewer' }>('SELECT role FROM app_users WHERE user_id=$1 AND active=true', [user.id]);
   if (!member.rows[0]) throw new AccessError(403, 'Tài khoản chưa được cấp quyền Tooldesk.');
-  return { id: user.id, email: user.email, role: member.rows[0].role };
+
+  const role = member.rows[0].role;
+  if (currentToken) {
+    userCache.set(currentToken, {
+      id: user.id,
+      email: user.email,
+      role,
+      expiresAt: Date.now() + 60_000 // Cache for 60 seconds
+    });
+    if (userCache.size > 200) {
+      const now = Date.now();
+      for (const [k, v] of userCache.entries()) {
+        if (v.expiresAt <= now) userCache.delete(k);
+      }
+    }
+  }
+
+  return { id: user.id, email: user.email, role };
 }
 export function requireSameOrigin(request: Request): void {
   const origin = request.headers.get('origin');

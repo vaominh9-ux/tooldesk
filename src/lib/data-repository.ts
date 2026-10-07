@@ -22,24 +22,93 @@ function money(value: unknown): number {
 async function rows(db: Db, query: string): Promise<Row[]> { return (await db.query<Row>(query)).rows.map(mapRow); }
 
 export async function loadData(db: Db = getDbPool()): Promise<AppData> {
-  const [settings, products, plans, customers, subscriptions, orders, refunds, campaigns, activity] = await Promise.all([
-    rows(db, 'SELECT * FROM settings WHERE id=\'default\''), rows(db, 'SELECT * FROM products ORDER BY name'), rows(db, 'SELECT * FROM product_plans ORDER BY price'),
-    rows(db, 'SELECT *, joined_at::text AS joined_at, consent_updated_at::text AS consent_updated_at FROM customers ORDER BY name'),
-    rows(db, 'SELECT s.*, s.starts_at::text AS starts_at, s.expires_at::text AS expires_at, s.reminded_at::text AS reminded_at FROM subscriptions s ORDER BY s.expires_at'),
-    rows(db, 'SELECT o.*, o.date::text AS date, o.starts_at::text AS starts_at, o.expires_at::text AS expires_at, o.paid_at::text AS paid_at FROM orders o ORDER BY o.date DESC,o.id DESC'),
-    rows(db, 'SELECT *, date::text AS date FROM refunds ORDER BY created_at DESC'), rows(db, 'SELECT * FROM campaigns ORDER BY created_at DESC'), rows(db, 'SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT 100')
-  ]);
-  if (!settings[0]) throw new Error('Thiếu cài đặt hệ thống. Chưa áp dụng schema?');
-  const s = settings[0];
+  const res = await db.query<{ full_data: Record<string, unknown> }>(`
+    SELECT json_build_object(
+      'settings', (SELECT row_to_json(s) FROM (SELECT * FROM settings WHERE id='default') s),
+      'products', COALESCE((SELECT json_agg(p) FROM (SELECT * FROM products ORDER BY name) p), '[]'::json),
+      'plans', COALESCE((SELECT json_agg(pl) FROM (SELECT * FROM product_plans ORDER BY price) pl), '[]'::json),
+      'customers', COALESCE((SELECT json_agg(c) FROM (SELECT *, joined_at::text AS joined_at, consent_updated_at::text AS consent_updated_at FROM customers ORDER BY name) c), '[]'::json),
+      'subscriptions', COALESCE((SELECT json_agg(sub) FROM (SELECT s.*, s.starts_at::text AS starts_at, s.expires_at::text AS expires_at, s.reminded_at::text AS reminded_at FROM subscriptions s ORDER BY s.expires_at) sub), '[]'::json),
+      'orders', COALESCE((SELECT json_agg(ord) FROM (SELECT o.*, o.date::text AS date, o.starts_at::text AS starts_at, o.expires_at::text AS expires_at, o.paid_at::text AS paid_at FROM orders o ORDER BY o.date DESC, o.id DESC) ord), '[]'::json),
+      'refunds', COALESCE((SELECT json_agg(r) FROM (SELECT *, date::text AS date FROM refunds ORDER BY created_at DESC) r), '[]'::json),
+      'campaigns', COALESCE((SELECT json_agg(cmp) FROM (SELECT * FROM campaigns ORDER BY created_at DESC) cmp), '[]'::json),
+      'activity', COALESCE((SELECT json_agg(act) FROM (SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT 100) act), '[]'::json)
+    ) AS full_data;
+  `);
+
+  const raw = res.rows[0]?.full_data;
+  if (!raw || !raw.settings) throw new Error('Thiếu cài đặt hệ thống. Chưa áp dụng schema?');
+
+  const s = mapRow(raw.settings as Row);
+  const products = (Array.isArray(raw.products) ? raw.products : []).map(r => mapRow(r as Row));
+  const plans = (Array.isArray(raw.plans) ? raw.plans : []).map(r => mapRow(r as Row));
+  const customers = (Array.isArray(raw.customers) ? raw.customers : []).map(r => mapRow(r as Row));
+  const subscriptions = (Array.isArray(raw.subscriptions) ? raw.subscriptions : []).map(r => mapRow(r as Row));
+  const orders = (Array.isArray(raw.orders) ? raw.orders : []).map(r => mapRow(r as Row));
+  const refunds = (Array.isArray(raw.refunds) ? raw.refunds : []).map(r => mapRow(r as Row));
+  const campaigns = (Array.isArray(raw.campaigns) ? raw.campaigns : []).map(r => mapRow(r as Row));
+  const activity = (Array.isArray(raw.activity) ? raw.activity : []).map(r => mapRow(r as Row));
+
   return dataSchema.parse({
-    schemaVersion: 3, settings: { ...s, reminderDays: Number(s.reminderDays) },
-    products: products.map(product => ({ ...product, description: product.description || '', color: product.color || 'mint', symbol: product.symbol || '◈', plans: plans.filter(plan => plan.productId === product.id).map(plan => ({ ...plan, price: money(plan.price), cost: money(plan.cost) })) })),
-    customers: customers.map(customer => ({ ...customer, email: customer.email || '', phone: customer.phone || '', source: customer.source || '', notes: customer.notes || '', consentSource: customer.consentSource || '', emailConsent: customer.emailConsent || 'unknown', color: customer.color || 'sky' })),
-    subscriptions: subscriptions.map(sub => ({ ...sub, lastOrderId: sub.lastOrderId || undefined, price: money(sub.price), cost: money(sub.cost), note: sub.note || '' })),
-    orders: orders.map(order => ({ ...order, subscriptionId: order.subscriptionId || undefined, previousSubscription: order.previousSubscription || undefined, price: money(order.price), cost: money(order.cost), note: order.note || '' })),
-    refunds: refunds.map(refund => ({ ...refund, operationId: refund.operationId || '', amount: money(refund.amount), costRecovered: money(refund.costRecovered), reason: refund.reason || '', method: refund.method || 'other', reference: refund.reference || '', actor: refund.actor || '', serviceAction: refund.serviceAction || 'keep' })),
-    campaigns: campaigns.map(campaign => ({ ...campaign, name: campaign.title, body: campaign.content || '', subject: campaign.subject || '', date: String(campaign.createdAt).slice(0, 10) })),
-    activity: activity.map(entry => ({ ...entry, at: entry.createdAt, description: entry.description || '' }))
+    schemaVersion: 3,
+    settings: { ...s, reminderDays: Number(s.reminderDays) },
+    products: products.map(product => ({
+      ...product,
+      description: product.description || '',
+      color: product.color || 'mint',
+      symbol: product.symbol || '◈',
+      plans: plans
+        .filter(plan => plan.productId === product.id)
+        .map(plan => ({ ...plan, price: money(plan.price), cost: money(plan.cost) }))
+    })),
+    customers: customers.map(customer => ({
+      ...customer,
+      email: customer.email || '',
+      phone: customer.phone || '',
+      source: customer.source || '',
+      notes: customer.notes || '',
+      consentSource: customer.consentSource || '',
+      emailConsent: customer.emailConsent || 'unknown',
+      color: customer.color || 'sky'
+    })),
+    subscriptions: subscriptions.map(sub => ({
+      ...sub,
+      lastOrderId: sub.lastOrderId || undefined,
+      price: money(sub.price),
+      cost: money(sub.cost),
+      note: sub.note || ''
+    })),
+    orders: orders.map(order => ({
+      ...order,
+      subscriptionId: order.subscriptionId || undefined,
+      previousSubscription: order.previousSubscription || undefined,
+      price: money(order.price),
+      cost: money(order.cost),
+      note: order.note || ''
+    })),
+    refunds: refunds.map(refund => ({
+      ...refund,
+      operationId: refund.operationId || '',
+      amount: money(refund.amount),
+      costRecovered: money(refund.costRecovered),
+      reason: refund.reason || '',
+      method: refund.method || 'other',
+      reference: refund.reference || '',
+      actor: refund.actor || '',
+      serviceAction: refund.serviceAction || 'keep'
+    })),
+    campaigns: campaigns.map(campaign => ({
+      ...campaign,
+      name: campaign.title,
+      body: campaign.content || '',
+      subject: campaign.subject || '',
+      date: String(campaign.createdAt).slice(0, 10)
+    })),
+    activity: activity.map(entry => ({
+      ...entry,
+      at: entry.createdAt,
+      description: entry.description || ''
+    }))
   });
 }
 
