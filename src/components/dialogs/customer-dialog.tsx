@@ -24,47 +24,64 @@ export function CustomerDialog({
   const [consentSource, setConsentSource] = useState(existing?.consentSource || '');
   const [notes, setNotes] = useState(existing?.notes || '');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const contentRef = React.useRef<HTMLDivElement>(null);
+
+  const handleEmailConsentChange = (val: 'unknown' | 'opted_in' | 'opted_out') => {
+    setEmailConsent(val);
+    if (val === 'opted_in' && !consentSource.trim()) {
+      setConsentSource(source ? `Xác nhận qua ${source}` : 'Xác nhận qua tin nhắn');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       setError('Vui lòng nhập tên khách hàng.');
+      contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     if (!email.trim() && !phone.trim()) {
       setError('Cần ít nhất email hoặc số điện thoại.');
+      contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    if (emailConsent === 'opted_in' && !consentSource.trim()) {
-      setError('Vui lòng nhập nguồn xác nhận sự đồng ý khi chọn "Đã đồng ý nhận".');
-      return;
+    let finalConsentSource = consentSource.trim();
+    if (emailConsent === 'opted_in' && !finalConsentSource) {
+      finalConsentSource = source ? `Xác nhận qua ${source}` : 'Xác nhận qua tin nhắn';
+      setConsentSource(finalConsentSource);
     }
     setError('');
+    setIsSubmitting(true);
 
     try {
-    if (existing) {
-      await updateCustomer(existing.id, {
-        name: name.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
-        source,
-        notes: notes.trim(),
-        emailConsent,
-        consentSource: consentSource.trim()
-      });
-    } else {
-      await addCustomer({
-        name: name.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
-        source,
-        notes: notes.trim(),
-        emailConsent,
-        consentSource: consentSource.trim()
-      });
+      if (existing) {
+        await updateCustomer(existing.id, {
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          source,
+          notes: notes.trim(),
+          emailConsent,
+          consentSource: finalConsentSource
+        });
+      } else {
+        await addCustomer({
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          source,
+          notes: notes.trim(),
+          emailConsent,
+          consentSource: finalConsentSource
+        });
+      }
+      onClose();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Không thể lưu khách hàng.');
+    } finally {
+      setIsSubmitting(false);
     }
-    onClose();
-    } catch (error) { setError(error instanceof Error ? error.message : 'Không thể lưu khách hàng.'); }
   };
 
   return (
@@ -96,7 +113,7 @@ export function CustomerDialog({
           </header>
 
           {/* Content */}
-          <div className="dialog-content">
+          <div className="dialog-content" ref={contentRef}>
             {error && <div className="dialog-error" role="alert">{error}</div>}
 
             <label className="field">
@@ -159,7 +176,7 @@ export function CustomerDialog({
               <select
                 name="emailConsent"
                 value={emailConsent}
-                onChange={e => setEmailConsent(e.target.value as any)}
+                onChange={e => handleEmailConsentChange(e.target.value as any)}
               >
                 <option value="unknown">Chưa xác nhận</option>
                 <option value="opted_in">Đã đồng ý nhận</option>
@@ -193,14 +210,30 @@ export function CustomerDialog({
           </div>
 
           {/* Footer */}
-          <footer className="dialog-footer">
-            <button type="button" className="button" onClick={onClose}>
-              Hủy
-            </button>
-            <button type="submit" className="button primary">
-              <AppIcon name="check" size={15} />
-              <span>Lưu khách hàng</span>
-            </button>
+          <footer className="dialog-footer" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '10px' }}>
+            {error && (
+              <div
+                className="dialog-error"
+                role="alert"
+                style={{
+                  margin: 0,
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  fontSize: '13px'
+                }}
+              >
+                {error}
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', width: '100%' }}>
+              <button type="button" className="button" onClick={onClose} disabled={isSubmitting}>
+                Hủy
+              </button>
+              <button type="submit" className="button primary" disabled={isSubmitting}>
+                <AppIcon name="check" size={15} />
+                <span>{isSubmitting ? 'Đang lưu…' : 'Lưu khách hàng'}</span>
+              </button>
+            </div>
           </footer>
         </form>
       </dialog>

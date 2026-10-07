@@ -158,7 +158,9 @@ export function createInitialData(): TooldeskData {
       description: 'Viết, phân tích và làm việc với tài liệu.',
       plans: [
         { id: 'pl-claude-1', name: 'Gói 1 tháng', duration: 1, unit: 'months', price: 490000, cost: 350000 },
-        { id: 'pl-claude-3', name: 'Gói 3 tháng', duration: 3, unit: 'months', price: 1390000, cost: 990000 }
+        { id: 'pl-claude-3', name: 'Gói 3 tháng', duration: 3, unit: 'months', price: 1390000, cost: 990000 },
+        { id: 'pl-claude-6', name: 'Gói 6 tháng', duration: 6, unit: 'months', price: 2690000, cost: 1890000 },
+        { id: 'pl-claude-12', name: 'Gói 1 năm', duration: 12, unit: 'months', price: 4990000, cost: 3500000 }
       ]
     },
     {
@@ -170,7 +172,9 @@ export function createInitialData(): TooldeskData {
       description: 'Không gian làm việc cùng AI.',
       plans: [
         { id: 'pl-gem-1', name: 'Gói 1 tháng', duration: 1, unit: 'months', price: 390000, cost: 250000 },
-        { id: 'pl-gem-3', name: 'Gói 3 tháng', duration: 3, unit: 'months', price: 1090000, cost: 720000 }
+        { id: 'pl-gem-3', name: 'Gói 3 tháng', duration: 3, unit: 'months', price: 1090000, cost: 720000 },
+        { id: 'pl-gem-6', name: 'Gói 6 tháng', duration: 6, unit: 'months', price: 2090000, cost: 1390000 },
+        { id: 'pl-gem-12', name: 'Gói 1 năm', duration: 12, unit: 'months', price: 3890000, cost: 2600000 }
       ]
     },
     {
@@ -182,7 +186,9 @@ export function createInitialData(): TooldeskData {
       description: 'Tìm kiếm và tổng hợp thông tin.',
       plans: [
         { id: 'pl-per-1', name: 'Gói 1 tháng', duration: 1, unit: 'months', price: 350000, cost: 220000 },
-        { id: 'pl-per-3', name: 'Gói 3 tháng', duration: 3, unit: 'months', price: 990000, cost: 600000 }
+        { id: 'pl-per-3', name: 'Gói 3 tháng', duration: 3, unit: 'months', price: 990000, cost: 600000 },
+        { id: 'pl-per-6', name: 'Gói 6 tháng', duration: 6, unit: 'months', price: 1890000, cost: 1150000 },
+        { id: 'pl-per-12', name: 'Gói 1 năm', duration: 12, unit: 'months', price: 3490000, cost: 2100000 }
       ]
     },
     {
