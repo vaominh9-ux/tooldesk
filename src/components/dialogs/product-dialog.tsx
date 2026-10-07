@@ -3,6 +3,16 @@
 import React, { useState } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
+import { formatMoney } from '@/domain/money';
+
+interface PlanDraft {
+  id: string;
+  name: string;
+  duration: number;
+  unit: 'months' | 'days';
+  price: number;
+  cost: number;
+}
 
 export function ProductDialog({
   onClose
@@ -14,34 +24,111 @@ export function ProductDialog({
   const [name, setName] = useState('');
   const [category, setCategory] = useState('Trợ lý AI');
   const [description, setDescription] = useState('');
-  const [planName, setPlanName] = useState('Gói 1 tháng');
-  const [duration, setDuration] = useState(1);
-  const [unit, setUnit] = useState<'months' | 'days'>('months');
-  const [price, setPrice] = useState(350000);
-  const [cost, setCost] = useState(250000);
+
+  const [plans, setPlans] = useState<PlanDraft[]>([
+    {
+      id: '1',
+      name: 'Gói 1 tháng',
+      duration: 1,
+      unit: 'months',
+      price: 350000,
+      cost: 250000
+    }
+  ]);
 
   const [error, setError] = useState('');
+
+  const handleAddPlan = (presetMonths?: number) => {
+    const nextDuration = presetMonths || (plans.length === 1 ? 3 : plans.length === 2 ? 6 : 12);
+    const nextName = nextDuration >= 12 && nextDuration % 12 === 0
+      ? `Gói ${nextDuration / 12} năm`
+      : `Gói ${nextDuration} tháng`;
+
+    const basePrice = plans[0]?.price || 350000;
+    const baseCost = plans[0]?.cost || 250000;
+    const baseDuration = plans[0]?.duration || 1;
+    const ratio = nextDuration / baseDuration;
+
+    // Slight discount for longer plans
+    const discount = nextDuration >= 12 ? 0.8 : nextDuration >= 6 ? 0.85 : nextDuration >= 3 ? 0.9 : 1;
+    const nextPrice = Math.max(10000, Math.round((basePrice * ratio * discount) / 10000) * 10000);
+    const nextCost = Math.max(10000, Math.round((baseCost * ratio * 0.95) / 10000) * 10000);
+
+    setPlans(prev => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        name: nextName,
+        duration: nextDuration,
+        unit: 'months',
+        price: nextPrice,
+        cost: nextCost
+      }
+    ]);
+  };
+
+  const handleRemovePlan = (id: string) => {
+    if (plans.length <= 1) return;
+    setPlans(prev => prev.filter(p => p.id !== id));
+  };
+
+  const handleUpdatePlan = (id: string, field: keyof PlanDraft, value: string | number) => {
+    setPlans(prev => prev.map(p => {
+      if (p.id !== id) return p;
+      const updated = { ...p, [field]: value };
+      if (field === 'duration' && typeof value === 'number') {
+        const u = updated.unit === 'months' ? 'tháng' : 'ngày';
+        if (updated.name.startsWith('Gói ') || updated.name === '') {
+          updated.name = value >= 12 && value % 12 === 0 && updated.unit === 'months'
+            ? `Gói ${value / 12} năm`
+            : `Gói ${value} ${u}`;
+        }
+      }
+      return updated;
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      setError('Vui lòng nhập tên sản phẩm.');
+      return;
+    }
+
+    if (plans.length === 0) {
+      setError('Sản phẩm cần ít nhất 1 gói dịch vụ.');
+      return;
+    }
+
+    for (let i = 0; i < plans.length; i++) {
+      if (!plans[i].name.trim()) {
+        setError(`Vui lòng nhập tên cho gói #${i + 1}.`);
+        return;
+      }
+      if (plans[i].duration <= 0) {
+        setError(`Thời hạn gói #${i + 1} phải lớn hơn 0.`);
+        return;
+      }
+    }
 
     try {
-    await addProduct({
-      name: name.trim(),
-      symbol: name.trim()[0].toUpperCase(),
-      category,
-      description: description.trim() || `Tài khoản ${name} bản quyền chính hãng.`,
-      plans: [
-        {
-          name: planName.trim() || 'Gói 1 tháng',
-          duration: Number(duration) || 1,
-          unit,
-          price: Number(price) || 0,
-          cost: Number(cost) || 0
-        }
-      ]
-    });
-    } catch (error) { setError(error instanceof Error ? error.message : 'Không thể lưu sản phẩm.'); }
+      await addProduct({
+        name: name.trim(),
+        symbol: name.trim()[0].toUpperCase(),
+        category,
+        description: description.trim() || `Tài khoản ${name.trim()} bản quyền chính hãng.`,
+        plans: plans.map(p => ({
+          name: p.name.trim(),
+          duration: Number(p.duration) || 1,
+          unit: p.unit,
+          price: Number(p.price) || 0,
+          cost: Number(p.cost) || 0
+        }))
+      });
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể lưu sản phẩm.');
+    }
   };
 
   return (
@@ -58,7 +145,7 @@ export function ProductDialog({
           <header className="dialog-header">
             <div>
               <h2 id="dialog-title">Thêm sản phẩm</h2>
-              <p>Khởi tạo sản phẩm cùng gói dịch vụ đầu tiên.</p>
+              <p>Khởi tạo sản phẩm cùng các gói thời hạn dịch vụ.</p>
             </div>
             <button
               type="button"
@@ -80,7 +167,7 @@ export function ProductDialog({
                 name="name"
                 required
                 maxLength={50}
-                placeholder="Ví dụ: Công cụ AI mới"
+                placeholder="Ví dụ: Midjourney, Cursor, Jasper..."
                 autoFocus
                 value={name}
                 onChange={e => setName(e.target.value)}
@@ -107,92 +194,208 @@ export function ProductDialog({
               <input
                 name="description"
                 maxLength={140}
-                placeholder="Một dòng mô tả sản phẩm..."
+                placeholder="Một dòng mô tả về sản phẩm..."
                 value={description}
                 onChange={e => setDescription(e.target.value)}
               />
             </label>
 
-            <div className="divider"></div>
-            <div className="form-section-title">Gói dịch vụ đầu tiên</div>
+            <div className="divider" style={{ margin: '20px 0 16px' }}></div>
 
-            <label className="field">
-              <span>Tên gói</span>
-              <input
-                name="planName"
-                required
-                maxLength={70}
-                placeholder="Ví dụ: Gói 1 tháng"
-                value={planName}
-                onChange={e => setPlanName(e.target.value)}
-              />
-            </label>
+            {/* Plans List Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div>
+                <div className="form-section-title" style={{ margin: 0, fontSize: '13px', fontWeight: 650 }}>
+                  Gói dịch vụ &amp; Thời hạn ({plans.length})
+                </div>
+                <small style={{ color: 'var(--muted)', fontSize: '11.5px' }}>
+                  Thiết lập các mốc thời gian bán (1 tháng, 3 tháng, 1 năm...)
+                </small>
+              </div>
 
-            <div className="form-grid">
-              <label className="field">
-                <span>Thời hạn</span>
-                <input
-                  name="duration"
-                  type="number"
-                  value={duration}
-                  min={1}
-                  max={365}
-                  step={1}
-                  required
-                  onChange={e => setDuration(Number(e.target.value))}
-                />
-              </label>
-
-              <label className="field">
-                <span>Đơn vị</span>
-                <select
-                  name="unit"
-                  value={unit}
-                  onChange={e => setUnit(e.target.value as 'months' | 'days')}
-                >
-                  <option value="months">Tháng lịch</option>
-                  <option value="days">Ngày</option>
-                </select>
-              </label>
+              <button
+                type="button"
+                className="button small soft"
+                onClick={() => handleAddPlan()}
+                style={{ gap: 4, height: 32, fontSize: 12 }}
+              >
+                <AppIcon name="plus" size={13} />
+                <span>Thêm gói</span>
+              </button>
             </div>
 
-            <div className="form-grid">
-              <label className="field">
-                <span>Giá bán mặc định</span>
-                <div className="input-prefix">
-                  <input
-                    name="price"
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    max={999999999}
-                    step={1000}
-                    required
-                    value={price}
-                    onChange={e => setPrice(Number(e.target.value))}
-                  />
-                  <span>₫</span>
-                </div>
-              </label>
-
-              <label className="field">
-                <span>Giá vốn mặc định</span>
-                <div className="input-prefix">
-                  <input
-                    name="cost"
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    max={999999999}
-                    step={1000}
-                    required
-                    value={cost}
-                    onChange={e => setCost(Number(e.target.value))}
-                  />
-                  <span>₫</span>
-                </div>
-              </label>
+            {/* Quick Presets */}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+              <span style={{ fontSize: 11, color: 'var(--muted)', alignSelf: 'center' }}>Thêm nhanh:</span>
+              <button
+                type="button"
+                className="badge neutral"
+                style={{ cursor: 'pointer', border: '1px solid var(--line)', background: '#fff' }}
+                onClick={() => handleAddPlan(1)}
+              >
+                + Gói 1 tháng
+              </button>
+              <button
+                type="button"
+                className="badge neutral"
+                style={{ cursor: 'pointer', border: '1px solid var(--line)', background: '#fff' }}
+                onClick={() => handleAddPlan(3)}
+              >
+                + Gói 3 tháng
+              </button>
+              <button
+                type="button"
+                className="badge neutral"
+                style={{ cursor: 'pointer', border: '1px solid var(--line)', background: '#fff' }}
+                onClick={() => handleAddPlan(6)}
+              >
+                + Gói 6 tháng
+              </button>
+              <button
+                type="button"
+                className="badge neutral"
+                style={{ cursor: 'pointer', border: '1px solid var(--line)', background: '#fff' }}
+                onClick={() => handleAddPlan(12)}
+              >
+                + Gói 1 năm
+              </button>
             </div>
+
+            {/* Plan Cards */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {plans.map((pl, idx) => {
+                const profit = pl.price - pl.cost;
+                return (
+                  <div
+                    key={pl.id}
+                    style={{
+                      border: '1px solid var(--line)',
+                      borderRadius: '10px',
+                      padding: '14px',
+                      background: '#fcfcff',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 10
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span className="badge blue" style={{ fontSize: 11, fontWeight: 600 }}>
+                        Gói #{idx + 1}
+                      </span>
+                      {plans.length > 1 && (
+                        <button
+                          type="button"
+                          className="text-button"
+                          style={{ color: 'var(--red)', fontSize: 11.5, padding: 0 }}
+                          onClick={() => handleRemovePlan(pl.id)}
+                          aria-label={`Xóa gói ${idx + 1}`}
+                        >
+                          Xóa gói này
+                        </button>
+                      )}
+                    </div>
+
+                    <label className="field" style={{ margin: 0 }}>
+                      <span>Tên gói dịch vụ</span>
+                      <input
+                        required
+                        maxLength={70}
+                        placeholder="Ví dụ: Gói 1 tháng, Gói 3 tháng..."
+                        value={pl.name}
+                        onChange={e => handleUpdatePlan(pl.id, 'name', e.target.value)}
+                      />
+                    </label>
+
+                    <div className="form-grid">
+                      <label className="field" style={{ margin: 0 }}>
+                        <span>Thời hạn</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={365}
+                          step={1}
+                          required
+                          value={pl.duration}
+                          onChange={e => handleUpdatePlan(pl.id, 'duration', Number(e.target.value))}
+                        />
+                      </label>
+
+                      <label className="field" style={{ margin: 0 }}>
+                        <span>Đơn vị</span>
+                        <select
+                          value={pl.unit}
+                          onChange={e => handleUpdatePlan(pl.id, 'unit', e.target.value as 'months' | 'days')}
+                        >
+                          <option value="months">Tháng lịch</option>
+                          <option value="days">Ngày</option>
+                        </select>
+                      </label>
+                    </div>
+
+                    <div className="form-grid">
+                      <label className="field" style={{ margin: 0 }}>
+                        <span>Giá bán mặc định</span>
+                        <div className="input-prefix">
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            max={999999999}
+                            step={1000}
+                            required
+                            value={pl.price}
+                            onChange={e => handleUpdatePlan(pl.id, 'price', Number(e.target.value))}
+                          />
+                          <span>₫</span>
+                        </div>
+                      </label>
+
+                      <label className="field" style={{ margin: 0 }}>
+                        <span>Giá vốn mặc định</span>
+                        <div className="input-prefix">
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            max={999999999}
+                            step={1000}
+                            required
+                            value={pl.cost}
+                            onChange={e => handleUpdatePlan(pl.id, 'cost', Number(e.target.value))}
+                          />
+                          <span>₫</span>
+                        </div>
+                      </label>
+                    </div>
+
+                    <div style={{ fontSize: 11, color: 'var(--muted)', display: 'flex', justifyContent: 'space-between', paddingTop: 2 }}>
+                      <span>Dự tính mỗi gói:</span>
+                      <strong className={profit < 0 ? 'negative' : 'positive'}>
+                        Lãi {formatMoney(profit)}
+                      </strong>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Add More Plan Button */}
+            <button
+              type="button"
+              className="button full"
+              style={{
+                marginTop: 12,
+                border: '1px dashed #cfd5e6',
+                background: '#fff',
+                color: 'var(--accent)',
+                fontWeight: 600,
+                fontSize: 12.5
+              }}
+              onClick={() => handleAddPlan()}
+            >
+              <AppIcon name="plus" size={14} />
+              <span>+ Thêm gói dịch vụ / thời hạn khác</span>
+            </button>
           </div>
 
           {/* Footer */}
@@ -209,7 +412,7 @@ export function ProductDialog({
               className="button primary"
             >
               <AppIcon name="plus" size={15} />
-              <span>Thêm sản phẩm</span>
+              <span>Tạo sản phẩm ({plans.length} gói)</span>
             </button>
           </footer>
         </form>

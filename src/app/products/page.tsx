@@ -117,6 +117,23 @@ export default function ProductsPage() {
                     </div>
                   </div>
                 ))}
+                <button
+                  type="button"
+                  className="button small ghost"
+                  style={{
+                    width: '100%',
+                    marginTop: '10px',
+                    border: '1px dashed #dce2ef',
+                    background: '#fcfcfe',
+                    color: 'var(--accent)',
+                    fontWeight: 550,
+                    gap: 6
+                  }}
+                  onClick={() => openDialog('add-plan', p.id)}
+                >
+                  <AppIcon name="plus" size={13} />
+                  <span>Thêm gói thời hạn mới</span>
+                </button>
               </div>
 
               <div className="product-card-footer">

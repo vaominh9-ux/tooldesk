@@ -10,7 +10,7 @@ import { LoginPanel } from '@/features/auth/login-panel';
 
 interface ToastItem { id: string; title: string; message?: string; type?: 'info' | 'success' | 'warning' | 'error' }
 interface DialogState {
-  type: 'create-order' | 'renew' | 'renew-subscription' | 'refund' | 'recover-cost' | 'pay-confirm' | 'customer' | 'order-detail' | 'customer-detail' | 'subscription-detail' | 'product' | 'plan' | 'campaign' | 'search' | 'activity' | 'help' | 'reset' | null;
+  type: 'create-order' | 'renew' | 'renew-subscription' | 'refund' | 'recover-cost' | 'pay-confirm' | 'customer' | 'order-detail' | 'customer-detail' | 'subscription-detail' | 'product' | 'plan' | 'add-plan' | 'campaign' | 'search' | 'activity' | 'help' | 'reset' | null;
   payload?: string | { id?: string; orderId?: string; customerId?: string; subscriptionId?: string; productId?: string; planId?: string; mode?: string; segment?: string };
 }
 interface CustomerInput { name: string; email?: string; phone?: string; source?: string; notes?: string; emailConsent?: Customer['emailConsent']; consentSource?: string }
@@ -38,6 +38,7 @@ interface TooldeskContextType {
   updateCustomer: (id: string, updates: Partial<Customer>) => Promise<void>;
   addProduct: (input: ProductInput) => Promise<void>;
   updatePlan: (planId: string, updates: { name: string; price: number; cost: number }) => Promise<void>;
+  addPlan: (productId: string, plan: { name: string; duration: number; unit: 'months' | 'days'; price: number; cost: number }) => Promise<void>;
   saveCampaign: (input: CampaignInput) => Promise<void>;
   updateSettings: (input: Partial<ShopSettings>) => Promise<void>;
   markContacted: (subscriptionId: string) => Promise<void>;
@@ -125,6 +126,7 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
     updateCustomer: async (id, updates) => { await run({ type: 'update_customer', input: { id, updates } }, 'Đã cập nhật khách'); },
     addProduct: async input => { await run({ type: 'add_product', input }, 'Đã thêm sản phẩm'); },
     updatePlan: async (planId, updates) => { await run({ type: 'update_plan', input: { planId, ...updates } }, 'Đã cập nhật gói bán'); },
+    addPlan: async (productId, plan) => { await run({ type: 'add_plan', input: { productId, ...plan } }, 'Đã thêm gói dịch vụ'); },
     saveCampaign: async input => { await run({ type: 'save_campaign', input }, 'Đã lưu bản nháp'); },
     updateSettings: async input => { await run({ type: 'update_settings', input }, 'Đã lưu cài đặt', false); },
     markContacted: async subscriptionId => { try { await run({ type: 'mark_contacted', input: { subscriptionId } }, 'Đã ghi nhận liên hệ', false); } catch { /* Error already shown to the user by run(). */ } },

@@ -159,9 +159,10 @@ export default function SettingsPage() {
       <div className="danger-zone">
         <h3>Dữ liệu hệ thống</h3>
         <p>
-          Thay đổi giao diện được giữ trong phiên hiện tại. Xuất tệp JSON để giữ bản sao trước khi tải lại hoặc khôi phục dữ liệu mẫu.
+          {dataStatus === 'mock' ? 'Thay đổi mẫu được giữ trong phiên hiện tại. Xuất tệp JSON để giữ bản sao.' : 'Dữ liệu thật được lưu vào database. Khôi phục dữ liệu mẫu bị khóa trong chế độ này.'}
         </p>
         <div className="page-actions">
+          {dataStatus === 'connected' && <button type="button" className="button" onClick={() => void logout().catch(error => addToast('Lỗi đăng xuất', error instanceof Error ? error.message : 'Lỗi chưa xác định.', 'error'))}>Đăng xuất</button>}
           <button
             type="button"
             className="button primary"
@@ -182,6 +183,7 @@ export default function SettingsPage() {
             type="button"
             className="button danger"
             onClick={() => openDialog('reset')}
+            disabled={dataStatus !== 'mock'}
           >
             <AppIcon name="refresh" size={15} />
             <span>Khôi phục mặc định</span>

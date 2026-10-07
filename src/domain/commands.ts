@@ -13,10 +13,11 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('renew_subscription'), input: z.object({ subscriptionId: id, planId: id, price: moneySchema, cost: moneySchema, payment: z.enum(['paid', 'unpaid']).default('unpaid') }).strict() }).strict(),
   z.object({ type: z.literal('record_refund'), input: z.object({ operationId: z.uuid(), orderId: id, amount: moneySchema, costRecovered: moneySchema.default(0), date: daySchema, reason: z.string().trim().min(3).max(500), method: z.enum(['bank', 'cash', 'wallet', 'other']), reference: z.string().trim().max(120).default(''), serviceAction: z.enum(['keep', 'end']).default('keep') }).strict() }).strict(),
   z.object({ type: z.literal('add_customer'), input: customerInput }).strict(),
-  z.object({ type: z.literal('update_customer'), input: z.object({ id, updates: customerFields.partial().strict() }).strict() }).strict(),
+  z.object({ type: z.literal('update_customer'), input: z.object({ id, updates: z.object({ name: z.string().trim().min(1).max(80).optional(), email: z.union([z.literal(''), z.email()]).optional(), phone: z.string().trim().max(25).optional(), source: z.string().trim().max(100).optional(), notes: z.string().trim().max(1000).optional(), emailConsent: z.enum(['unknown','opted_in','opted_out']).optional(), consentSource: z.string().trim().max(200).optional() }).strict() }).strict() }).strict(),
   z.object({ type: z.literal('mark_contacted'), input: z.object({ subscriptionId: id }).strict() }).strict(),
   z.object({ type: z.literal('update_settings'), input: settingsSchema.partial().strict() }).strict(),
   z.object({ type: z.literal('update_plan'), input: z.object({ planId: id, name: z.string().trim().min(1).max(80), price: moneySchema, cost: moneySchema }).strict() }).strict(),
+  z.object({ type: z.literal('add_plan'), input: z.object({ productId: id, name: z.string().trim().min(1).max(80), duration: z.number().int().min(1).max(1200), unit: z.enum(['months', 'days']), price: moneySchema, cost: moneySchema }).strict() }).strict(),
   z.object({ type: z.literal('add_product'), input: z.object({ name: z.string().trim().min(1).max(80), symbol: z.string().trim().max(4), category: z.string().trim().max(100), description: z.string().trim().max(1000), plans: z.array(z.object({ name: z.string().trim().min(1).max(80), duration: z.number().int().min(1).max(1200), unit: z.enum(['months', 'days']), price: moneySchema, cost: moneySchema }).strict()).min(1).max(20) }).strict() }).strict(),
   z.object({ type: z.literal('save_campaign'), input: z.object({ id: id.optional(), name: z.string().trim().min(1).max(120), subject: z.string().trim().min(1).max(180), body: z.string().trim().min(1).max(5000), segment: z.enum(['all', 'active', 'expiring', 'expired', 'vip']) }).strict() }).strict()
 ]);
@@ -103,6 +104,21 @@ export function executeCommand(original: AppData, command: Command, operation: O
       const plan = data.products.flatMap(product => product.plans).find(plan => plan.id === command.input.planId);
       if (!plan) throw new Error('Không tìm thấy gói bán.');
       Object.assign(plan, { name: command.input.name, price: command.input.price, cost: command.input.cost }); resultId = plan.id; break;
+    }
+    case 'add_plan': {
+      const prod = data.products.find(product => product.id === command.input.productId);
+      if (!prod) throw new Error('Không tìm thấy sản phẩm.');
+      const planId = newId('pl');
+      prod.plans.push({
+        id: planId,
+        name: command.input.name,
+        duration: command.input.duration,
+        unit: command.input.unit,
+        price: command.input.price,
+        cost: command.input.cost
+      });
+      resultId = planId;
+      break;
     }
     case 'add_product': {
       const productId = newId('p');

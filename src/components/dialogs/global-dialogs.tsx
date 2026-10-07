@@ -18,7 +18,7 @@ import { PaymentConfirmDialog } from './payment-confirm-dialog';
 import { SearchDialog } from './search-dialog';
 
 export function GlobalDialogs() {
-  const { data, dialog, closeDialog, toasts, removeToast, resetData, openDialog } = useTooldesk();
+  const { data, pending, dialog, closeDialog, toasts, removeToast, resetData, openDialog } = useTooldesk();
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); openDialog('search'); }
@@ -64,6 +64,7 @@ export function GlobalDialogs() {
 
   return (
     <>
+      {pending && <div className="save-overlay" role="status" aria-live="polite">Đang lưu dữ liệu… Vui lòng chờ.</div>}
       {/* Toast Stack */}
       <div className="ui-toast-stack" aria-live="polite" aria-relevant="additions">
         {toasts.map(t => (
@@ -177,6 +178,7 @@ export function GlobalDialogs() {
       )}
       {dialog.type === 'search' && <SearchDialog onClose={closeDialog} />}
       {dialog.type === 'plan' && <PlanDialog key={payloadStr || payloadObj?.planId || ''} planId={payloadStr || payloadObj?.planId || ''} onClose={closeDialog} />}
+      {dialog.type === 'add-plan' && <PlanDialog key={payloadStr || payloadObj?.productId || ''} productId={payloadStr || payloadObj?.productId || ''} onClose={closeDialog} />}
       {dialog.type === 'campaign' && (() => {
         const isCampaignId = Boolean(payloadStr && data.campaigns.some(c => c.id === payloadStr));
         const campaignId = isCampaignId ? payloadStr : payloadObj?.id;
