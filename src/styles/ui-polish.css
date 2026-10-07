@@ -1,4 +1,8 @@
 /* Layout corrections share the baseline Tooldesk tokens. */
+.sidebar { overflow: hidden; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+.sidebar-scroll { flex: 1 1 auto; min-height: 0; width: 100%; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.sidebar-bottom { flex: 0 0 auto; width: 100%; margin-top: 0; padding: 8px 0 0; background: var(--surface); }
+.sidebar-bottom > .nav-group { margin-bottom: 0; }
 .save-overlay { position:fixed; inset:0; z-index:200; display:flex; align-items:center; justify-content:center; background:#ffffffb8; color:var(--ink); font-weight:600; backdrop-filter:blur(2px); }
 .report-two-col { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:22px; align-items:start; }
 .reconciliation-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
@@ -275,9 +279,12 @@
 .topbar-user {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 10px !important;
-  padding: 4px 10px 4px 4px !important;
-  border-radius: 24px !important;
+  justify-content: center !important;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  padding: 4px !important;
+  border-radius: 50% !important;
   border: 1px solid transparent !important;
   background: transparent !important;
   text-decoration: none !important;

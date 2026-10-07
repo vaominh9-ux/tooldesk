@@ -40,12 +40,6 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <div className="hint-banner neutral">
-        <AppIcon name="info" size={18} />
-        <span>
-          Tên sản phẩm và mức giá trong bản này chỉ dùng minh họa giao diện, không phải bảng giá chính thức hay xác nhận quyền phân phối.
-        </span>
-      </div>
 
       <div className="list-toolbar" style={{ padding: '0 0 21px' }}>
         <label className="search-field">

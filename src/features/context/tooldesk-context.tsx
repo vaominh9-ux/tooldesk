@@ -1,8 +1,9 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { createInitialData, type Customer, type Order, type ShopSettings, type TooldeskData } from '@/mocks/fixtures';
-import { DEFAULT_APP_TODAY, runtimeToday } from '@/domain/dates';
+import { createEmptyProductionData, createInitialData, type Customer, type Order, type ShopSettings, type TooldeskData } from '@/mocks/fixtures';
+import { DEFAULT_APP_TODAY } from '@/domain/dates';
+import { runtimeToday } from '@/lib/app-clock';
 import { commandSchema, executeCommand } from '@/domain/commands';
 import { dataSchema } from '@/domain/data-schema';
 import type { RefundInput } from '@/domain/refunds';
@@ -44,13 +45,14 @@ interface TooldeskContextType {
   markContacted: (subscriptionId: string) => Promise<void>;
   importData: (input: TooldeskData) => void;
   resetData: () => void;
+  loadDemoData: () => void;
   syncWithSupabase: () => Promise<void>;
   logout: () => Promise<void>;
 }
 const TooldeskContext = createContext<TooldeskContextType | null>(null);
 
 export function TooldeskProvider({ children, dataSource = 'mock' }: { children: React.ReactNode; dataSource?: 'mock' | 'supabase' }) {
-  const [data, setData] = useState<TooldeskData>(() => createInitialData());
+  const [data, setData] = useState<TooldeskData>(() => createEmptyProductionData());
   const currentData = useRef(data);
   const [dataStatus, setDataStatus] = useState<TooldeskContextType['dataStatus']>(dataSource === 'mock' ? 'mock' : 'loading');
   const [needsLogin, setNeedsLogin] = useState(false);
@@ -60,7 +62,7 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
   const retryRequest = useRef<{ body: string; operationId: string } | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [dialog, setDialog] = useState<DialogState>({ type: null });
-  const [today, setToday] = useState(dataSource === 'mock' ? DEFAULT_APP_TODAY : runtimeToday());
+  const [today, setToday] = useState(() => runtimeToday());
   const updateData = (value: TooldeskData) => { currentData.current = value; setData(value); };
   const addToast: TooldeskContextType['addToast'] = (title, message, type = 'info') => {
     const id = crypto.randomUUID(); setToasts(previous => [...previous, { id, title, message, type }]);
@@ -68,7 +70,7 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
   };
   const closeDialog = () => { if (!busy.current) setDialog({ type: null }); };
   const load = async () => {
-    if (dataSource === 'mock') { addToast('Đang dùng dữ liệu mẫu', 'Không kết nối database thật trong bản demo.'); return; }
+    if (dataSource === 'mock') { return; }
     setDataStatus('loading');
     try {
       const response = await fetch('/api/data', { cache: 'no-store' });
@@ -82,10 +84,9 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
   };
   useEffect(() => { if (dataSource === 'supabase') void load(); }, [dataSource]);
   useEffect(() => {
-    if (dataSource === 'mock') return;
     const timer = setInterval(() => setToday(runtimeToday()), 60000);
     return () => clearInterval(timer);
-  }, [dataSource]);
+  }, []);
 
   async function run(raw: unknown, title: string, close = true): Promise<{ data: TooldeskData; resultId?: string }> {
     if (busy.current) throw new Error('Đang lưu thao tác trước. Vui lòng chờ.');
@@ -95,7 +96,7 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
       if (dataSource === 'supabase' && (role === 'viewer' || dataStatus !== 'connected')) throw new Error('Chưa có quyền hoặc chưa tải dữ liệu.');
       let result: { data: TooldeskData; resultId?: string };
       if (dataSource === 'mock') {
-        result = executeCommand(dataSchema.parse(currentData.current), command, { today: DEFAULT_APP_TODAY, now: new Date().toISOString(), actor: currentData.current.settings.ownerName, newId: prefix => prefix + '-' + crypto.randomUUID() });
+        result = executeCommand(dataSchema.parse(currentData.current), command, { today: runtimeToday(), now: new Date().toISOString(), actor: currentData.current.settings.ownerName, newId: prefix => prefix + '-' + crypto.randomUUID() });
       } else {
         const body = JSON.stringify(command);
         const operationId = retryRequest.current?.body === body ? retryRequest.current.operationId : crypto.randomUUID();
@@ -130,8 +131,9 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
     saveCampaign: async input => { await run({ type: 'save_campaign', input }, 'Đã lưu bản nháp'); },
     updateSettings: async input => { await run({ type: 'update_settings', input }, 'Đã lưu cài đặt', false); },
     markContacted: async subscriptionId => { try { await run({ type: 'mark_contacted', input: { subscriptionId } }, 'Đã ghi nhận liên hệ', false); } catch { /* Error already shown to the user by run(). */ } },
-    importData: input => { if (dataSource !== 'mock') { addToast('Chưa hỗ trợ nhập dữ liệu thật', 'Cần quy trình migration có kiểm tra.', 'error'); return; } updateData(dataSchema.parse(input)); closeDialog(); },
-    resetData: () => { if (dataSource !== 'mock') { addToast('Không thể reset dữ liệu thật', 'Khôi phục mẫu chỉ dùng trong demo.', 'error'); return; } updateData(createInitialData()); closeDialog(); addToast('Đã khôi phục dữ liệu mẫu'); },
+    importData: input => { updateData(dataSchema.parse(input)); closeDialog(); addToast('Đã nhập dữ liệu thành công', undefined, 'success'); },
+    resetData: () => { updateData(createEmptyProductionData()); closeDialog(); addToast('Đã làm sạch dữ liệu', 'Hệ thống đã sẵn sàng cho vận hành thực tế.', 'success'); },
+    loadDemoData: () => { updateData(createInitialData()); closeDialog(); addToast('Đã nạp dữ liệu mẫu', 'Đã tải 36 khách hàng và 98 đơn hàng demo.', 'info'); },
     syncWithSupabase: async () => { if (!busy.current) await load(); },
     logout: async () => { const response = await fetch('/api/auth/logout', { method: 'POST' }); if (!response.ok) throw new Error('Không thể đăng xuất.'); setNeedsLogin(true); setDataStatus('error'); }
   };

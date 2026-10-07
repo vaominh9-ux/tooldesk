@@ -591,12 +591,27 @@ export default function CustomersPage() {
             </div>
           </>
         ) : (
-          <div className="empty-state">
-            <div className="empty-icon">
-              <AppIcon name="inbox" size={28} />
+          <div className="empty-state" style={{ padding: '48px 20px', textAlign: 'center' }}>
+            <div className="empty-icon" style={{ margin: '0 auto 12px' }}>
+              <AppIcon name="inbox" size={32} />
             </div>
-            <h3>Không tìm thấy khách hàng</h3>
-            <p>Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm.</p>
+            <h3>{data.customers.length === 0 ? 'Chưa có khách hàng nào' : 'Không tìm thấy khách hàng'}</h3>
+            <p style={{ maxWidth: '400px', margin: '6px auto 0' }}>
+              {data.customers.length === 0
+                ? 'Thêm khách hàng đầu tiên để bắt đầu lưu thông tin và lịch sử dùng tool AI.'
+                : 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm.'}
+            </p>
+            {data.customers.length === 0 && (
+              <button
+                type="button"
+                className="button primary"
+                style={{ marginTop: 16 }}
+                onClick={() => openDialog('customer')}
+              >
+                <AppIcon name="plus" size={16} />
+                <span>Thêm khách hàng đầu tiên</span>
+              </button>
+            )}
           </div>
         )}
 

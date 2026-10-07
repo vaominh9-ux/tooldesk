@@ -19,7 +19,7 @@ Dùng .env.example làm mẫu. Không gửi mật khẩu SMTP vào chat hoặc l
 
 Sao lưu và kiểm tra staging trước. Với database mới: áp dụng supabase/schema.sql, sau đó supabase/migrations/20261007_backend_foundation.sql. Với DB cũ: chỉ áp dụng migration một lần. Migration có transaction; nếu phát hiện mã refund trùng thì unique index sẽ thất bại và rollback. Không sửa/xóa dữ liệu cũ âm thầm. CHECK NOT VALID vẫn kiểm tra các lần ghi mới; audit rồi VALIDATE dữ liệu legacy riêng.
 
-Migration gỡ policy Allow full access for anon và thu hồi quyền anon/authenticated trên các bảng Tooldesk. Cần kiểm tra ứng dụng khác đang dùng các bảng này trước khi áp dụng. Mã server dùng connection được bảo vệ và kiểm tra quyền ở từng API. Chưa có kiểm thử SQL trên PostgreSQL thật trong phiên này.
+Migration gỡ policy Allow full access for anon và thu hồi quyền anon/authenticated trên các bảng Tooldesk. Cần kiểm tra ứng dụng khác đang dùng các bảng này trước khi áp dụng. Mã server dùng connection được bảo vệ và kiểm tra quyền ở từng API. Đã kiểm thử schema/migration/repository trên PostgreSQL WASM trong bộ nhớ (PGlite), chưa xác nhận database cloud thực tế.
 
 Thêm user được phép vào app_users với UUID tài khoản Supabase Auth và role. API kiểm tra token Auth rồi app_users. Viewer không ghi được; staff không thay bảng giá/cài đặt. Không có tenant/workspace.
 
@@ -47,4 +47,4 @@ SMTP 4xx thử lại sau 15 phút, tối đa 3 lần; 5xx failed. Timeout hoặc
 
 Phiên này chưa xác nhận migration, SMTP hoặc scheduler cloud đã chạy. SUPABASE_GUIDE cũ không đại diện cho trạng thái backend hiện tại.
 
-Kiểm chứng mã nguồn: 24/24 unit test pass (11 domain, 8 commands/eligibility, 5 worker mock), typecheck pass, Next build pass. Lint đang bị bỏ qua theo cấu hình workspace, không báo lint pass. Auth/database/SMTP chưa được nghiệm thu end-to-end. Session hiện chỉ dùng access token, hết hạn thì đăng nhập lại; chưa có refresh session. Chiến dịch gửi hàng loạt chưa bật, chỉ email nhắc hạn tự động khi cấu hình đầy đủ.
+Kiểm chứng mã nguồn: 28/28 test pass (11 domain, 8 commands/eligibility, 5 worker mock, 4 migration/repository PostgreSQL trong bộ nhớ), typecheck pass, Next build pass. Lint đang bị bỏ qua theo cấu hình workspace, không báo lint pass. Auth/database cloud/SMTP chưa được nghiệm thu end-to-end. Session hiện chỉ dùng access token, hết hạn thì đăng nhập lại; chưa có refresh session. Chiến dịch gửi hàng loạt chưa bật, chỉ email nhắc hạn tự động khi cấu hình đầy đủ.

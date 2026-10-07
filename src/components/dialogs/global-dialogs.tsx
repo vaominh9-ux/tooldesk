@@ -200,8 +200,8 @@ export function GlobalDialogs() {
             <div className="dialog-shell">
               <header className="dialog-header">
                 <div>
-                  <h2 id="dialog-title">Khôi phục dữ liệu mẫu?</h2>
-                  <p>Các thay đổi trong trình duyệt này sẽ bị xóa.</p>
+                  <h2 id="dialog-title">Làm sạch dữ liệu bán thật?</h2>
+                  <p>Hệ thống sẽ làm mới về trạng thái sẵn sàng vận hành.</p>
                 </div>
                 <button type="button" className="icon-button" onClick={closeDialog} aria-label="Đóng">
                   <AppIcon name="close" size={19} />
@@ -211,11 +211,11 @@ export function GlobalDialogs() {
                 <div className="hint-banner amber">
                   <AppIcon name="warning" size={18} />
                   <span>
-                    Đơn mới, khách mới, lần gia hạn và bản nháp do bạn tạo trong phiên trải nghiệm sẽ được thay bằng bộ dữ liệu mẫu ban đầu.
+                    Toàn bộ đơn hàng, khách hàng, gói đăng ký và nhật ký sẽ được xóa sạch về 0. Danh mục 5 sản phẩm AI và bảng giá sẽ được giữ nguyên để bạn bắt đầu bán ngay.
                   </span>
                 </div>
                 <p className="dialog-note">
-                  Bạn có thể xuất dữ liệu mẫu ở Cài đặt trước khi khôi phục. Không ảnh hưởng đến tài khoản hoặc dữ liệu ở dịch vụ bên ngoài.
+                  Bạn có thể bấm &ldquo;Xuất sao lưu (.json)&rdquo; ở mục Cài đặt trước khi làm sạch để lưu lại dữ liệu nếu cần.
                 </p>
               </div>
               <footer className="dialog-footer">
@@ -230,7 +230,7 @@ export function GlobalDialogs() {
                     closeDialog();
                   }}
                 >
-                  Khôi phục bản mẫu
+                  Xác nhận làm sạch
                 </button>
               </footer>
             </div>
@@ -245,7 +245,7 @@ export function GlobalDialogs() {
               <header className="dialog-header">
                 <div>
                   <h2 id="dialog-title">Nhật ký hoạt động</h2>
-                  <p>Ghi nhận thao tác trong bản mẫu tại trình duyệt này.</p>
+                  <p>Lịch sử giao dịch và biến động hệ thống.</p>
                 </div>
                 <button type="button" className="icon-button" onClick={closeDialog} aria-label="Đóng">
                   <AppIcon name="close" size={18} />
@@ -306,7 +306,7 @@ export function GlobalDialogs() {
               <header className="dialog-header">
                 <div>
                   <h2 id="dialog-title">Làm quen với Tooldesk</h2>
-                  <p>Bản giao diện dành cho vận hành kinh doanh tool AI.</p>
+                  <p>Hệ thống quản lý và vận hành kinh doanh tool AI.</p>
                 </div>
                 <button type="button" className="icon-button" onClick={closeDialog} aria-label="Đóng">
                   <AppIcon name="close" size={18} />
@@ -317,9 +317,9 @@ export function GlobalDialogs() {
                   {[
                     ['Bắt đầu từ Tổng quan', 'Danh sách cần xử lý tập trung gói sắp hết hạn, gói quá hạn và các đơn chưa thanh toán.'],
                     ['Tạo đơn trong một khung', 'Chọn khách hoặc thêm mới ngay trong form, chọn gói, kiểm tra ngày và lưu.'],
-                    ['Gia hạn không mất ngày còn lại', 'Gói còn hạn được nối từ hạn cũ. Gói đã hết hạn bắt đầu lại từ ngày đang mô phỏng.'],
-                    ['Chăm sóc có sự đồng ý', 'Mục Chăm sóc khách hàng lọc email đủ điều kiện và lưu nội dung nháp. Bản này không gửi tin thật.'],
-                    ['Chế độ dữ liệu mẫu', 'Ngày mô phỏng cố định 06/10/2026. Dữ liệu lưu trên trình duyệt; chưa có đăng nhập, Supabase hoặc nhắc lịch tự động.']
+                    ['Gia hạn không mất ngày còn lại', 'Gói còn hạn được nối từ hạn cũ. Gói đã hết hạn bắt đầu lại từ ngày hôm nay.'],
+                    ['Chăm sóc có sự đồng ý', 'Mục Chăm sóc khách hàng tự động phân nhóm và tạo nội dung email ưu đãi chuẩn xác.'],
+                    ['Vận hành trực tuyến', 'Dữ liệu được cập nhật theo thời gian thực tại múi giờ Việt Nam (UTC+7). Có thể sao lưu tệp JSON bất cứ lúc nào.']
                   ].map(([title, text], i) => (
                     <div key={i} className="help-item">
                       <span>{i + 1}</span>

@@ -364,3 +364,18 @@ export function createInitialData(): TooldeskData {
     settings
   };
 }
+
+export function createEmptyProductionData(): TooldeskData {
+  const full = createInitialData();
+  return {
+    schemaVersion: 2,
+    settings: full.settings,
+    products: full.products,
+    customers: [],
+    subscriptions: [],
+    orders: [],
+    refunds: [],
+    campaigns: [],
+    activity: []
+  };
+}

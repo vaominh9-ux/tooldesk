@@ -50,8 +50,9 @@ export function Topbar({ mobileOpen = false, onToggleMobile }: TopbarProps) {
       </div>
 
       <div className="topbar-actions">
-        <span className="demo-pill">
-          <i></i>{dataStatus === 'connected' ? 'Đã tải Supabase' : dataStatus === 'loading' ? 'Đang tải dữ liệu' : dataStatus === 'error' ? 'Lỗi kết nối' : 'Dữ liệu mẫu'}
+        <span className="demo-pill" title="Trạng thái hệ thống">
+          <i style={{ background: dataStatus === 'error' ? '#e74c3c' : '#38cb89' }}></i>
+          {dataStatus === 'connected' ? 'Supabase trực tuyến' : dataStatus === 'loading' ? 'Đang kết nối' : dataStatus === 'error' ? 'Ngoại tuyến' : 'Hệ thống trực tuyến'}
         </span>
 
         <button
@@ -88,11 +89,6 @@ export function Topbar({ mobileOpen = false, onToggleMobile }: TopbarProps) {
           <span className="avatar lavender" aria-hidden="true">
             {initials}
           </span>
-          <span className="topbar-user-info">
-            <strong>{ownerName}</strong>
-            <small>Chủ cửa hàng · Tooldesk</small>
-          </span>
-          <AppIcon name="settings" size={14} className="topbar-user-icon" />
         </Link>
       </div>
     </header>

@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '@/components/shared/app-icon';
 import { ReminderStatusPanel } from '@/features/communications/reminder-status-panel';
 
 export default function SettingsPage() {
-  const { data, dataStatus, updateSettings, openDialog, addToast, syncWithSupabase, logout } = useTooldesk();
+  const { data, dataStatus, updateSettings, openDialog, addToast, syncWithSupabase, logout, importData, loadDemoData } = useTooldesk();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [emailStatus, setEmailStatus] = useState<{ emailConfigured: boolean; reminderSchedulerConfigured: boolean } | null>(null);
   useEffect(() => { fetch('/api/health').then(response => response.json()).then((value: unknown) => { if (value && typeof value === 'object' && 'emailConfigured' in value && 'reminderSchedulerConfigured' in value) setEmailStatus({ emailConfigured: value.emailConfigured === true, reminderSchedulerConfigured: value.reminderSchedulerConfigured === true }); }).catch(() => setEmailStatus(null)); }, []);
 
@@ -34,6 +35,22 @@ export default function SettingsPage() {
     a.click();
     URL.revokeObjectURL(url);
     addToast('Đã xuất file dữ liệu', 'Tệp .json đã được tải xuống máy tính.');
+  };
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const parsed = JSON.parse(event.target?.result as string);
+        importData(parsed);
+      } catch {
+        addToast('Lỗi nhập dữ liệu', 'Tệp JSON không đúng định dạng Tooldesk.', 'error');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
 
   return (
@@ -126,9 +143,9 @@ export default function SettingsPage() {
               </span>
               <div>
                 <strong>Supabase</strong>
-                <p>{dataStatus === 'mock' ? 'Bản trải nghiệm đang dùng dữ liệu mẫu' : 'Nguồn dữ liệu PostgreSQL'}</p>
+                <p>{dataStatus === 'connected' ? 'Đã kết nối cơ sở dữ liệu PostgreSQL' : 'Chế độ lưu trữ trực tiếp / Ngoại tuyến'}</p>
               </div>
-              <span className={`badge ${dataStatus === 'connected' ? 'green' : dataStatus === 'error' ? 'red' : 'neutral'}`}>{dataStatus === 'connected' ? 'Đã tải dữ liệu' : dataStatus === 'loading' ? 'Đang tải' : dataStatus === 'error' ? 'Lỗi kết nối' : 'Chưa kết nối'}</span>
+              <span className={`badge ${dataStatus === 'connected' ? 'green' : dataStatus === 'error' ? 'red' : 'neutral'}`}>{dataStatus === 'connected' ? 'Đã kết nối' : dataStatus === 'loading' ? 'Đang kiểm tra' : dataStatus === 'error' ? 'Lỗi kết nối' : 'Trực tiếp'}</span>
             </div>
 
             <div className="integration-row">
@@ -159,36 +176,69 @@ export default function SettingsPage() {
       {/* Danger Zone */}
       {dataStatus === 'connected' && <ReminderStatusPanel />}
       <div className="danger-zone">
-        <h3>Dữ liệu hệ thống</h3>
+        <h3>Quản lý dữ liệu hệ thống</h3>
         <p>
-          {dataStatus === 'mock' ? 'Thay đổi mẫu được giữ trong phiên hiện tại. Xuất tệp JSON để giữ bản sao.' : 'Dữ liệu thật được lưu vào database. Khôi phục dữ liệu mẫu bị khóa trong chế độ này.'}
+          Hệ thống lưu trữ đơn hàng, khách hàng, sản phẩm và gói dịch vụ. Bạn có thể xuất sao lưu dự phòng, nạp tệp sao lưu, làm sạch dữ liệu để bắt đầu bán thật, hoặc nạp lại dữ liệu demo mẫu để tham khảo.
         </p>
-        <div className="page-actions">
-          {dataStatus === 'connected' && <button type="button" className="button" onClick={() => void logout().catch(error => addToast('Lỗi đăng xuất', error instanceof Error ? error.message : 'Lỗi chưa xác định.', 'error'))}>Đăng xuất</button>}
-          <button
-            type="button"
-            className="button primary"
-            onClick={syncWithSupabase}
-          >
-            <AppIcon name="refresh" size={15} />
-            <span>{dataStatus === 'mock' ? 'Thông tin nguồn dữ liệu' : 'Tải lại từ Supabase'}</span>
-          </button>
+        <div className="page-actions" style={{ flexWrap: 'wrap', gap: '10px' }}>
+          {dataStatus === 'connected' && (
+            <button
+              type="button"
+              className="button"
+              onClick={() => void logout().catch(error => addToast('Lỗi đăng xuất', error instanceof Error ? error.message : 'Lỗi chưa xác định.', 'error'))}
+            >
+              Đăng xuất
+            </button>
+          )}
+          {dataStatus === 'connected' && (
+            <button
+              type="button"
+              className="button primary"
+              onClick={syncWithSupabase}
+            >
+              <AppIcon name="refresh" size={15} />
+              <span>Tải lại từ Supabase</span>
+            </button>
+          )}
           <button
             type="button"
             className="button"
             onClick={handleExportData}
           >
             <AppIcon name="download" size={15} />
-            <span>Xuất dữ liệu (.json)</span>
+            <span>Xuất sao lưu (.json)</span>
+          </button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImportFile}
+            accept=".json,application/json"
+            style={{ display: 'none' }}
+          />
+          <button
+            type="button"
+            className="button"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <AppIcon name="upload" size={15} />
+            <span>Nhập sao lưu (.json)</span>
+          </button>
+          <button
+            type="button"
+            className="button"
+            onClick={loadDemoData}
+            title="Nạp lại bộ dữ liệu 36 khách hàng và 98 đơn hàng demo"
+          >
+            <AppIcon name="database" size={15} />
+            <span>Nạp dữ liệu mẫu (Demo)</span>
           </button>
           <button
             type="button"
             className="button danger"
             onClick={() => openDialog('reset')}
-            disabled={dataStatus !== 'mock'}
           >
             <AppIcon name="refresh" size={15} />
-            <span>Khôi phục mặc định</span>
+            <span>Làm sạch dữ liệu bán thật</span>
           </button>
         </div>
       </div>

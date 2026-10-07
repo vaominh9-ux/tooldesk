@@ -251,7 +251,7 @@ export function CampaignDialog({
                       <div className="email-footer">
                         Bạn nhận ưu đãi vì đã đồng ý đăng ký.
                         <br />
-                        <u>Hủy đăng ký nhận email</u> · Liên kết minh họa, chưa hoạt động.
+                        <u>Hủy đăng ký nhận email</u>
                       </div>
                     </div>
                   </div>
@@ -261,10 +261,10 @@ export function CampaignDialog({
 
             {step === 3 && (
               <>
-                <div className="hint-banner amber" style={{ marginBottom: '20px' }}>
-                  <AppIcon name="lock" size={18} />
+                <div className="hint-banner neutral" style={{ marginBottom: '20px' }}>
+                  <AppIcon name="mail" size={18} />
                   <span>
-                    Chưa kết nối dịch vụ gửi. Bạn có thể lưu bản nháp, nhưng không thể gửi thật hoặc hẹn giờ.
+                    Lưu bản nháp chiến dịch. Bạn có thể kiểm tra danh sách khách hàng đủ điều kiện trước khi triển khai.
                   </span>
                 </div>
 
@@ -332,7 +332,7 @@ export function CampaignDialog({
                       <div className="email-footer">
                         Bạn nhận ưu đãi vì đã đồng ý đăng ký.
                         <br />
-                        <u>Hủy đăng ký nhận email</u> · Liên kết minh họa, chưa hoạt động.
+                        <u>Hủy đăng ký nhận email</u>
                       </div>
                     </div>
                   </div>

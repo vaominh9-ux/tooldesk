@@ -27,6 +27,7 @@ export function DesktopSidebar({ mobileOpen = false, onCloseMobile }: DesktopSid
 
   return (
     <aside className={`sidebar ${mobileOpen ? 'open' : ''}`} aria-label="Điều hướng chính">
+      <div className="sidebar-scroll">
       <Link className="brand" href="/" onClick={onCloseMobile} aria-label="Tooldesk — Tổng quan">
         <span className="brand-mark">
           <BrandLogoMark />
@@ -126,7 +127,8 @@ export function DesktopSidebar({ mobileOpen = false, onCloseMobile }: DesktopSid
         </Link>
       </nav>
 
-      <div className="sidebar-bottom" style={{ paddingBottom: 20 }}>
+      </div>
+      <div className="sidebar-bottom">
         <nav className="nav-group">
           <Link
             className={`nav-item ${isNavActive('/settings') ? 'active' : ''}`}

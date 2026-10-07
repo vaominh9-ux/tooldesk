@@ -398,12 +398,27 @@ export default function SubscriptionsPage() {
             </div>
           </>
         ) : (
-          <div className="empty-state">
-            <div className="empty-icon">
-              <AppIcon name="inbox" size={28} />
+          <div className="empty-state" style={{ padding: '48px 20px', textAlign: 'center' }}>
+            <div className="empty-icon" style={{ margin: '0 auto 12px' }}>
+              <AppIcon name="inbox" size={32} />
             </div>
-            <h3>Không tìm thấy gói dịch vụ</h3>
-            <p>Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm.</p>
+            <h3>{data.subscriptions.length === 0 ? 'Chưa có gói dịch vụ nào' : 'Không tìm thấy gói dịch vụ'}</h3>
+            <p style={{ maxWidth: '400px', margin: '6px auto 0' }}>
+              {data.subscriptions.length === 0
+                ? 'Gói dịch vụ sẽ tự động được tạo và theo dõi hạn sử dụng khi bạn tạo đơn hàng mới.'
+                : 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm.'}
+            </p>
+            {data.subscriptions.length === 0 && (
+              <button
+                type="button"
+                className="button primary"
+                style={{ marginTop: 16 }}
+                onClick={() => openDialog('create-order')}
+              >
+                <AppIcon name="plus" size={16} />
+                <span>Tạo đơn hàng để cấp gói</span>
+              </button>
+            )}
           </div>
         )}
 

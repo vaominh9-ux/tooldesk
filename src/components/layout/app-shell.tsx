@@ -44,15 +44,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           />
 
           <main id="main" className={`page-${routeName}`} tabIndex={-1}>
-            <div className={`data-notice ${dataStatus === 'error' ? 'error' : ''}`} role="status">
-              <span>{pending ? 'Đang lưu dữ liệu… Vui lòng chờ.' : dataStatus === 'mock' ? <><strong>Bản trải nghiệm · Dữ liệu mẫu.</strong> Thao tác chỉ giữ trong phiên này; bạn có thể xuất tệp ở Cài đặt.</> : 'Dữ liệu vận hành · Thao tác được lưu vào database sau khi xác nhận thành công.'}</span>
-            </div>
+            {(pending || dataStatus === 'error') && (
+              <div className={`data-notice ${dataStatus === 'error' ? 'error' : ''}`} role="status">
+                <span>{pending ? 'Đang lưu dữ liệu… Vui lòng chờ.' : 'Lỗi đồng bộ dữ liệu với máy chủ · Đang hoạt động ở chế độ ngoại tuyến.'}</span>
+              </div>
+            )}
             {children}
             <footer className="app-footer">
               <span>
-                <i></i>{dataStatus === 'connected' ? 'Dữ liệu đã tải từ Supabase' : dataStatus === 'mock' ? 'Dữ liệu mẫu · Không gửi tin hoặc chuyển tiền' : dataStatus === 'error' ? 'Lỗi tải dữ liệu · Đang hiển thị mẫu' : 'Đang tải dữ liệu'}
+                <i style={{ background: dataStatus === 'error' ? '#e74c3c' : '#38cb89' }}></i>
+                {dataStatus === 'connected' ? 'Dữ liệu Supabase trực tuyến' : dataStatus === 'error' ? 'Ngoại tuyến · Tự động đồng bộ lại khi có mạng' : 'Hệ thống Tooldesk trực tuyến'}
               </span>
-              <span>Tooldesk — Quản lý kinh doanh tool AI v0.2</span>
+              <span>Tooldesk — Quản lý kinh doanh tool AI</span>
             </footer>
           </main>
         </div>

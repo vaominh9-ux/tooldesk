@@ -380,12 +380,27 @@ export default function OrdersPage() {
             </div>
           </>
         ) : (
-          <div className="empty-state">
-            <div className="empty-icon">
-              <AppIcon name="inbox" size={28} />
+          <div className="empty-state" style={{ padding: '48px 20px', textAlign: 'center' }}>
+            <div className="empty-icon" style={{ margin: '0 auto 12px' }}>
+              <AppIcon name="inbox" size={32} />
             </div>
-            <h3>Không tìm thấy kết quả</h3>
-            <p>Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm.</p>
+            <h3>{allOrders.length === 0 ? 'Chưa có đơn hàng nào' : 'Không tìm thấy kết quả'}</h3>
+            <p style={{ maxWidth: '400px', margin: '6px auto 0' }}>
+              {allOrders.length === 0
+                ? 'Bắt đầu bằng việc tạo đơn hàng đầu tiên cho khách hàng của bạn.'
+                : 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm.'}
+            </p>
+            {allOrders.length === 0 && (
+              <button
+                type="button"
+                className="button primary"
+                style={{ marginTop: 16 }}
+                onClick={() => openDialog('create-order')}
+              >
+                <AppIcon name="plus" size={16} />
+                <span>Tạo đơn hàng đầu tiên</span>
+              </button>
+            )}
           </div>
         )}
 

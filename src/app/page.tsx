@@ -202,68 +202,93 @@ export default function DashboardPage() {
             <table className="work-table">
               <tbody>
                 {dashTab === 'unpaid' ? (
-                  unpaid.slice(0, 5).map(o => {
-                    const cust = findCustomer(o.customerId);
-                    const prod = findProduct(o.productId);
-                    const plan = findPlan(o.productId, o.planId);
-                    return (
-                      <tr key={o.id}>
-                        <td>
-                          <div className="person-cell">
-                            <span className={`avatar ${cust?.color || 'lavender'}`} aria-hidden="true">
-                              {getInitials(cust?.name)}
-                            </span>
-                            <div>
-                              <Link className="text-link strong" href={`/customers?id=${cust?.id}`}>
-                                {cust?.name || 'Khách đã xóa'}
-                              </Link>
-                              <small>{o.id}</small>
+                  unpaid.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} style={{ textAlign: 'center', padding: '36px 16px', color: '#778197' }}>
+                        <div style={{ display: 'inline-flex', marginBottom: '8px', color: '#38cb89' }}>
+                          <AppIcon name="circleCheck" size={24} />
+                        </div>
+                        <div>Không có đơn hàng nào chờ thanh toán.</div>
+                      </td>
+                    </tr>
+                  ) : (
+                    unpaid.slice(0, 5).map(o => {
+                      const cust = findCustomer(o.customerId);
+                      const prod = findProduct(o.productId);
+                      const plan = findPlan(o.productId, o.planId);
+                      return (
+                        <tr key={o.id}>
+                          <td>
+                            <div className="person-cell">
+                              <span className={`avatar ${cust?.color || 'lavender'}`} aria-hidden="true">
+                                {getInitials(cust?.name)}
+                              </span>
+                              <div>
+                                <Link className="text-link strong" href={`/customers?id=${cust?.id}`}>
+                                  {cust?.name || 'Khách đã xóa'}
+                                </Link>
+                                <small>{o.id}</small>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="product-cell">
-                            <span className={`product-logo ${prod?.color || 'mint'}`} aria-hidden="true">
-                              {prod?.symbol || '✦'}
-                            </span>
-                            <div>
-                              <span className="strong">{prod?.name || 'Sản phẩm'}</span>
-                              <small>{plan?.name || ''}</small>
+                          </td>
+                          <td>
+                            <div className="product-cell">
+                              <span className={`product-logo ${prod?.color || 'mint'}`} aria-hidden="true">
+                                {prod?.symbol || '✦'}
+                              </span>
+                              <div>
+                                <span className="strong">{prod?.name || 'Sản phẩm'}</span>
+                                <small>{plan?.name || ''}</small>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="remaining warning">
-                            {formatMoney(o.price)}
-                            <small>Chưa thanh toán</small>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="row-actions">
-                            <button
-                              type="button"
-                              className="button small renew-button"
-                              onClick={() => openDialog('order-detail', o.id)}
-                            >
-                              Thu tiền
-                            </button>
-                            <button
-                              type="button"
-                              className="icon-button"
-                              onClick={() => openDialog('order-detail', o.id)}
-                              aria-label={`Xem đơn ${o.id}`}
-                            >
-                              <AppIcon name="more" size={18} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
+                          </td>
+                          <td>
+                            <div className="remaining warning">
+                              {formatMoney(o.price)}
+                              <small>Chưa thanh toán</small>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="row-actions">
+                              <button
+                                type="button"
+                                className="button small renew-button"
+                                onClick={() => openDialog('order-detail', o.id)}
+                              >
+                                Thu tiền
+                              </button>
+                              <button
+                                type="button"
+                                className="icon-button"
+                                onClick={() => openDialog('order-detail', o.id)}
+                                aria-label={`Xem đơn ${o.id}`}
+                              >
+                                <AppIcon name="more" size={18} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )
                 ) : (
-                  (dashTab === 'expired' ? expired : expiring).slice(0, 5).map(s => {
-                    const cust = findCustomer(s.customerId);
-                    const prod = findProduct(s.productId);
+                  (dashTab === 'expired' ? expired : expiring).length === 0 ? (
+                    <tr>
+                      <td colSpan={4} style={{ textAlign: 'center', padding: '36px 16px', color: '#778197' }}>
+                        <div style={{ display: 'inline-flex', marginBottom: '8px', color: '#38cb89' }}>
+                          <AppIcon name="circleCheck" size={24} />
+                        </div>
+                        <div>
+                          {dashTab === 'expired'
+                            ? 'Không có gói dịch vụ nào bị quá hạn.'
+                            : 'Không có gói dịch vụ nào sắp hết hạn trong mốc theo dõi.'}
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    (dashTab === 'expired' ? expired : expiring).slice(0, 5).map(s => {
+                      const cust = findCustomer(s.customerId);
+                      const prod = findProduct(s.productId);
                     const plan = findPlan(s.productId, s.planId);
                     return (
                       <tr key={s.id}>
@@ -322,7 +347,7 @@ export default function DashboardPage() {
                       </tr>
                     );
                   })
-                )}
+                ))}
               </tbody>
             </table>
           </div>

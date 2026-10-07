@@ -24,8 +24,8 @@ export async function loadData(db: Db = getDbPool()): Promise<AppData> {
   const [settings, products, plans, customers, subscriptions, orders, refunds, campaigns, activity] = await Promise.all([
     rows(db, 'SELECT * FROM settings WHERE id=\'default\''), rows(db, 'SELECT * FROM products ORDER BY name'), rows(db, 'SELECT * FROM product_plans ORDER BY price'),
     rows(db, 'SELECT *, joined_at::text AS joined_at, consent_updated_at::text AS consent_updated_at FROM customers ORDER BY name'),
-    rows(db, 'SELECT *, starts_at::text AS starts_at, expires_at::text AS expires_at, reminded_at::text AS reminded_at FROM subscriptions ORDER BY expires_at'),
-    rows(db, 'SELECT *, date::text AS date, starts_at::text AS starts_at, expires_at::text AS expires_at, paid_at::text AS paid_at FROM orders ORDER BY date DESC,id DESC'),
+    rows(db, 'SELECT s.*, s.starts_at::text AS starts_at, s.expires_at::text AS expires_at, s.reminded_at::text AS reminded_at FROM subscriptions s ORDER BY s.expires_at'),
+    rows(db, 'SELECT o.*, o.date::text AS date, o.starts_at::text AS starts_at, o.expires_at::text AS expires_at, o.paid_at::text AS paid_at FROM orders o ORDER BY o.date DESC,o.id DESC'),
     rows(db, 'SELECT *, date::text AS date FROM refunds ORDER BY created_at DESC'), rows(db, 'SELECT * FROM campaigns ORDER BY created_at DESC'), rows(db, 'SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT 100')
   ]);
   if (!settings[0]) throw new Error('Thiếu cài đặt hệ thống. Chưa áp dụng schema?');

@@ -87,7 +87,7 @@ export default function CampaignsPage() {
         <div className="section-heading">
           <div>
             <h2>Chiến dịch của bạn</h2>
-            <p>{data.campaigns.length} bản nháp · Chưa có chiến dịch gửi thật</p>
+            <p>{data.campaigns.length} chiến dịch chăm sóc khách hàng</p>
           </div>
         </div>
 
@@ -115,7 +115,7 @@ export default function CampaignsPage() {
             )}
           </label>
           <span className="toolbar-end">
-            <span className="badge neutral">Email chưa kết nối</span>
+            <span className="badge primary">Chăm sóc & Ưu đãi</span>
           </span>
         </div>
 
