@@ -106,8 +106,8 @@ export interface ShopSettings {
   shopName: string;
   ownerName: string;
   reminderDays: number;
-  currency: string;
-  timezone: string;
+  currency: 'VND';
+  timezone: 'Asia/Ho_Chi_Minh';
 }
 
 export interface TooldeskData {

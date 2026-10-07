@@ -10,8 +10,10 @@ export async function runReminderWorker() {
   // Disabled mode never marks a reminder or consumes its delivery attempt.
   if (!emailConfigured()) return { enabled: false, sent: 0, failed: 0, cancelled: 0, unknown: 0 };
   const today = todayInHoChiMinh();
+  const sendHour = Number(process.env.REMINDER_SEND_HOUR || 9);
+  if (!Number.isInteger(sendHour) || sendHour < 0 || sendHour > 23) throw new Error('REMINDER_SEND_HOUR phải từ 0 đến 23.');
   const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', hourCycle: 'h23' }).format(new Date()));
-  if (hour < Number(process.env.REMINDER_SEND_HOUR || 9)) return { enabled: true, waitingForSendHour: true };
+  if (hour < sendHour) return { enabled: true, waitingForSendHour: true };
   await transaction(async client => {
     await client.query('SELECT pg_advisory_xact_lock(718326)');
     for (const item of reminderCandidates(await loadData(client), today)) {
@@ -33,7 +35,9 @@ export async function runReminderWorker() {
       const outcome = await transaction(async client => {
         // Serializes the final eligibility check + SMTP handoff with renewal/refund.
         await client.query('SELECT pg_advisory_xact_lock(718326)');
-        const item = reminderCandidates(await loadData(client), today).find(item => item.cycleKey === job.cycle_key);
+        const claimed = await client.query<{ status: string }>('SELECT status FROM email_outbox WHERE id=$1 FOR UPDATE', [job.id]);
+        if (claimed.rows[0]?.status !== 'sending') return 'cancelled';
+        const item = reminderCandidates(await loadData(client), todayInHoChiMinh()).find(item => item.cycleKey === job.cycle_key);
         if (!item) { await client.query("UPDATE email_outbox SET status='cancelled',last_error='Gói hoặc đồng ý nhận email đã thay đổi.' WHERE id=$1", [job.id]); return 'cancelled'; }
         const result = await sendEmail({ to: item.email, subject: item.subject, text: item.text });
         if (result.skipped) throw new Error('SMTP chưa được bật/cấu hình.');

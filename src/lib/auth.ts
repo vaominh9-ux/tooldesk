@@ -7,7 +7,7 @@ export async function requireUser(): Promise<{ id: string; email: string; role: 
   const token = cookies().get('tooldesk-access')?.value;
   const url = process.env.SUPABASE_URL, key = process.env.SUPABASE_ANON_KEY;
   if (!token || !url || !key) throw new AccessError(401, 'Vui lòng đăng nhập.');
-  const response = await fetch(url + '/auth/v1/user', { headers: { apikey: key, Authorization: 'Bearer ' + token }, cache: 'no-store' });
+  const response = await fetch(url + '/auth/v1/user', { headers: { apikey: key, Authorization: 'Bearer ' + token }, cache: 'no-store', signal: AbortSignal.timeout(10000) });
   if (!response.ok) throw new AccessError(401, 'Phiên đăng nhập đã hết hạn.');
   const user: unknown = await response.json();
   if (!user || typeof user !== 'object' || !('id' in user) || typeof user.id !== 'string' || !('email' in user) || typeof user.email !== 'string') throw new AccessError(401, 'Phiên không hợp lệ.');

@@ -12,7 +12,8 @@
     "test": "vitest run",
     "db:test": "node test-conn.js",
     "db:init": "node init-db.js",
-    "db:seed": "node seed-db.js"
+    "db:seed": "node seed-db.js",
+    "reminders:run": "node scripts/run-reminders.mjs"
   },
   "dependencies": {
     "@types/nodemailer": "^8.0.2",

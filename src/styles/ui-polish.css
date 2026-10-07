@@ -103,3 +103,54 @@
   vertical-align: middle;
 }
 
+/* Product card layout and add-plan button breathing room */
+.product-card {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.product-card .product-plans {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0 23px 18px !important;
+}
+
+.product-card .product-card-footer {
+  margin-top: auto;
+}
+
+.add-plan-action-btn {
+  width: 100%;
+  margin-top: 6px !important;
+  margin-bottom: 0 !important;
+  padding: 9px 14px !important;
+  min-height: 38px !important;
+  border: 1px dashed #d0d7e6 !important;
+  background: #fbfbfe !important;
+  color: var(--accent) !important;
+  font-size: 12.5px !important;
+  font-weight: 550 !important;
+  border-radius: 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease-in-out !important;
+  box-sizing: border-box;
+}
+
+.add-plan-action-btn:hover {
+  background: #f0f3fd !important;
+  border-color: #abb6e8 !important;
+  color: #3b45a9 !important;
+}
+
+.add-plan-action-btn:active {
+  transform: translateY(1px);
+}
+
+.product-plans > .add-plan-action-btn:first-child {
+  margin-top: 18px !important;
+}

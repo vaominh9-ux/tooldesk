@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '@/components/shared/app-icon';
+import { ReminderStatusPanel } from '@/features/communications/reminder-status-panel';
 
 export default function SettingsPage() {
   const { data, dataStatus, updateSettings, openDialog, addToast, syncWithSupabase, logout } = useTooldesk();
@@ -156,6 +157,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Danger Zone */}
+      {dataStatus === 'connected' && <ReminderStatusPanel />}
       <div className="danger-zone">
         <h3>Dữ liệu hệ thống</h3>
         <p>

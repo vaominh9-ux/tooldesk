@@ -119,16 +119,7 @@ export default function ProductsPage() {
                 ))}
                 <button
                   type="button"
-                  className="button small ghost"
-                  style={{
-                    width: '100%',
-                    marginTop: '10px',
-                    border: '1px dashed #dce2ef',
-                    background: '#fcfcfe',
-                    color: 'var(--accent)',
-                    fontWeight: 550,
-                    gap: 6
-                  }}
+                  className="add-plan-action-btn"
                   onClick={() => openDialog('add-plan', p.id)}
                 >
                   <AppIcon name="plus" size={13} />

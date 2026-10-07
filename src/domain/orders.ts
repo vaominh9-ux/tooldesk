@@ -4,6 +4,7 @@
 import { isSubscriptionActive, subStatus } from './subscriptions';
 import { totalPaid } from './money';
 import { DEFAULT_APP_TODAY } from './dates';
+import type { AppData } from './data-schema';
 
 export function normalizeText(value = ''): string {
   return String(value)
@@ -43,14 +44,14 @@ export function isValidEmail(email: string): boolean {
 }
 
 export interface CustomerStats {
-  orders: any[];
-  subscriptions: any[];
+  orders: AppData['orders'];
+  subscriptions: AppData['subscriptions'];
   spend: number;
   activeCount: number;
 }
 
 export function getCustomerStats(
-  data: { orders: any[]; subscriptions: any[]; refunds?: any[] },
+  data: Pick<AppData, 'orders' | 'subscriptions'> & { refunds?: AppData['refunds'] },
   customerId: string,
   today = DEFAULT_APP_TODAY
 ): CustomerStats {
@@ -65,7 +66,7 @@ export function getCustomerStats(
 }
 
 export function audienceFor(
-  data: { customers: any[]; orders: any[]; subscriptions: any[]; refunds?: any[]; settings?: any },
+  data: Pick<AppData, 'customers' | 'orders' | 'subscriptions'> & { refunds?: AppData['refunds']; settings?: { reminderDays?: number } },
   segment = 'all',
   today = DEFAULT_APP_TODAY
 ) {

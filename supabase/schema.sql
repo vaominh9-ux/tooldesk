@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS public.customers (
     email TEXT,
     phone TEXT,
     source TEXT DEFAULT 'Zalo',
-    email_consent TEXT DEFAULT 'opted_in', -- 'opted_in', 'opted_out', 'unknown'
+    email_consent TEXT DEFAULT 'unknown', -- Explicit consent only
     consent_source TEXT DEFAULT 'Đăng ký dịch vụ',
     consent_updated_at DATE DEFAULT CURRENT_DATE,
     notes TEXT DEFAULT '',
@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
     cost BIGINT NOT NULL DEFAULT 0,
     cancelled BOOLEAN NOT NULL DEFAULT FALSE,
     reminded_at DATE,
+    last_order_id TEXT,
     note TEXT DEFAULT '',
     created_at TIMESTAMPTZ DEFAULT TIMEZONE('Asia/Ho_Chi_Minh', NOW())
 );
@@ -88,6 +89,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
     kind TEXT NOT NULL DEFAULT 'new', -- 'new' hoặc 'renewal'
     paid_at DATE,
     paid_at_estimated BOOLEAN DEFAULT FALSE,
+    previous_subscription JSONB,
     note TEXT DEFAULT '',
     created_at TIMESTAMPTZ DEFAULT TIMEZONE('Asia/Ho_Chi_Minh', NOW())
 );
@@ -101,6 +103,10 @@ CREATE TABLE IF NOT EXISTS public.refunds (
     cost_recovered BIGINT NOT NULL DEFAULT 0,
     date DATE NOT NULL DEFAULT CURRENT_DATE,
     reason TEXT DEFAULT '',
+    actor TEXT,
+    method TEXT,
+    reference TEXT,
+    service_action TEXT DEFAULT 'keep',
     created_at TIMESTAMPTZ DEFAULT TIMEZONE('Asia/Ho_Chi_Minh', NOW())
 );
 
@@ -203,7 +209,7 @@ DO $$
 DECLARE
     tbl text;
 BEGIN
-    FOR tbl IN SELECT tablename FROM pg_tables WHERE schemaname = 'public'
+    FOREACH tbl IN ARRAY ARRAY['settings','products','product_plans','customers','subscriptions','orders','refunds','campaigns','activity_logs','app_users','command_idempotency','email_outbox']
     LOOP
         EXECUTE format('DROP POLICY IF EXISTS "Allow full access for anon" ON public.%I', tbl);
     END LOOP;

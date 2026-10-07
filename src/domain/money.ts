@@ -29,11 +29,11 @@ export interface MinimalOrder {
 }
 
 export interface MinimalRefund {
-  id: string;
+  id?: string;
   orderId: string;
   amount: number;
-  costRecovered: number;
-  date: string;
+  costRecovered?: number;
+  date?: string;
   reason?: string;
   kind?: string;
 }
