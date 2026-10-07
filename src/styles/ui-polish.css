@@ -717,5 +717,34 @@
   line-height: 1.5;
 }
 
+/* Login Remember Me Row */
+.login-remember-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: -4px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.login-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+}
+
+.login-checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #273452;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
 
 

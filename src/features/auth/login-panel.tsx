@@ -1,14 +1,26 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppIcon, BrandLogoMark } from '@/components/shared/app-icon';
 
 export function LoginPanel({ onSuccess }: { onSuccess: () => void }) {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('vaominh9@gmail.com');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    try {
+      const savedEmail = localStorage.getItem('tooldesk_saved_email');
+      if (savedEmail) {
+        setEmail(savedEmail);
+      }
+    } catch {
+      // ignore storage access errors
+    }
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -24,7 +36,11 @@ export function LoginPanel({ onSuccess }: { onSuccess: () => void }) {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), password })
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+          rememberMe
+        })
       });
 
       const payload = await response.json().catch(() => null);
@@ -37,7 +53,16 @@ export function LoginPanel({ onSuccess }: { onSuccess: () => void }) {
         );
       }
 
-      setPassword('');
+      try {
+        if (rememberMe) {
+          localStorage.setItem('tooldesk_saved_email', email.trim());
+        } else {
+          localStorage.removeItem('tooldesk_saved_email');
+        }
+      } catch {
+        // ignore storage errors
+      }
+
       onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Lỗi đăng nhập hệ thống.');
@@ -87,7 +112,13 @@ export function LoginPanel({ onSuccess }: { onSuccess: () => void }) {
         )}
 
         {/* Login Form */}
-        <form className="login-form" onSubmit={handleSubmit}>
+        <form
+          className="login-form"
+          method="post"
+          action="#"
+          autoComplete="on"
+          onSubmit={handleSubmit}
+        >
           <label className="field" style={{ margin: 0 }}>
             <span style={{ fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 6 }}>
               Email quản trị
@@ -97,9 +128,10 @@ export function LoginPanel({ onSuccess }: { onSuccess: () => void }) {
                 <AppIcon name="mail" size={16} />
               </span>
               <input
+                id="login-email"
                 className="login-input"
                 type="email"
-                name="email"
+                name="username"
                 autoComplete="username"
                 required
                 placeholder="name@example.com"
@@ -119,6 +151,7 @@ export function LoginPanel({ onSuccess }: { onSuccess: () => void }) {
                 <AppIcon name="lock" size={16} />
               </span>
               <input
+                id="login-password"
                 className="login-input"
                 type={showPassword ? 'text' : 'password'}
                 name="password"
@@ -140,6 +173,21 @@ export function LoginPanel({ onSuccess }: { onSuccess: () => void }) {
               </button>
             </div>
           </label>
+
+          {/* Remember me & browser persistence */}
+          <div className="login-remember-row">
+            <label className="login-checkbox-label">
+              <input
+                type="checkbox"
+                name="remember"
+                checked={rememberMe}
+                onChange={e => setRememberMe(e.target.checked)}
+                disabled={pending}
+              />
+              <span>Ghi nhớ đăng nhập trên thiết bị này</span>
+            </label>
+            <span style={{ fontSize: 11.5, color: '#94a3b8' }}>30 ngày</span>
+          </div>
 
           <button type="submit" className="login-submit" disabled={pending}>
             {pending ? (
