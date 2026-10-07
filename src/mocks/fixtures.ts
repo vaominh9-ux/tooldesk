@@ -172,6 +172,7 @@ export function createInitialData(): TooldeskData {
       description: 'Không gian làm việc cùng AI.',
       plans: [
         { id: 'pl-gem-1', name: 'Gói 1 tháng', duration: 1, unit: 'months', price: 390000, cost: 250000 },
+        { id: 'pl-gem-ultra-1', name: 'Gói Gemini Ultra (1 tháng)', duration: 1, unit: 'months', price: 490000, cost: 320000 },
         { id: 'pl-gem-3', name: 'Gói 3 tháng', duration: 3, unit: 'months', price: 1090000, cost: 720000 },
         { id: 'pl-gem-6', name: 'Gói 6 tháng', duration: 6, unit: 'months', price: 2090000, cost: 1390000 },
         { id: 'pl-gem-12', name: 'Gói 1 năm', duration: 12, unit: 'months', price: 3890000, cost: 2600000 }

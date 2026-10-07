@@ -58,7 +58,9 @@ interface TooldeskContextType {
 const TooldeskContext = createContext<TooldeskContextType | null>(null);
 
 export function TooldeskProvider({ children, dataSource = 'mock' }: { children: React.ReactNode; dataSource?: 'mock' | 'supabase' }) {
-  const [data, setData] = useState<TooldeskData>(() => createEmptyProductionData());
+  const [data, setData] = useState<TooldeskData>(() =>
+    dataSource === 'mock' ? createInitialData() : createEmptyProductionData()
+  );
   const currentData = useRef(data);
   const [dataStatus, setDataStatus] = useState<TooldeskContextType['dataStatus']>(dataSource === 'mock' ? 'mock' : 'loading');
   const [needsLogin, setNeedsLogin] = useState(false);
@@ -106,12 +108,16 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
         if (saved) {
           const parsed = JSON.parse(saved);
           const valid = dataSchema.safeParse(parsed);
-          if (valid.success) {
+          if (valid.success && valid.data.customers && valid.data.customers.length > 0) {
             currentData.current = valid.data;
             setData(valid.data);
             return;
           }
         }
+        const initial = createInitialData();
+        currentData.current = initial;
+        setData(initial);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
       } catch (err) {
         console.warn('LocalStorage load failed:', err);
       }
