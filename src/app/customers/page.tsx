@@ -159,7 +159,7 @@ export default function CustomersPage() {
                   {customerSubs.map(s => {
                     const prod = data.products.find(p => p.id === s.productId);
                     const plan = prod?.plans.find(pl => pl.id === s.planId);
-                    const status = subStatus(s, data.settings.reminderDays);
+                    const status = subStatus(s, today, data.settings.reminderDays);
 
                     return (
                       <div

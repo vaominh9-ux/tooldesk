@@ -49,7 +49,7 @@ export function SubscriptionDetailDialog({
   const customer = data.customers.find(c => c.id === sub.customerId);
   const product = data.products.find(p => p.id === sub.productId);
   const plan = product?.plans.find(pl => pl.id === sub.planId);
-  const status = subStatus(sub, data.settings.reminderDays);
+  const status = subStatus(sub, today, data.settings.reminderDays);
 
   const relatedOrders = data.orders
     .filter(o => o.subscriptionId === sub.id)
@@ -139,7 +139,7 @@ export function SubscriptionDetailDialog({
             {/* Hint banner */}
             <div className="date-summary">
               <div className="date-flow">
-                <strong>{remainingLabel(sub)}</strong>
+                <strong>{remainingLabel(sub, today)}</strong>
                 <small>{formatDateLabel(sub.expiresAt, true)}</small>
               </div>
               <small>Hết hạn tại 00:00 ngày hiển thị, giờ Việt Nam (UTC+7).</small>

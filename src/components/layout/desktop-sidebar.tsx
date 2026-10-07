@@ -20,9 +20,6 @@ export function DesktopSidebar({ mobileOpen = false, onCloseMobile }: DesktopSid
     s => subStatus(s, today, data.settings.reminderDays) === 'expiring'
   ).length;
 
-  const ownerName = data.settings.ownerName || 'Minh';
-  const initials = ownerName.split(/\s+/).slice(-2).map(s => s[0]).join('').toUpperCase() || 'M';
-
   const isNavActive = (href: string) => {
     if (href === '/') return pathname === '/';
     return pathname.startsWith(href);
@@ -129,8 +126,8 @@ export function DesktopSidebar({ mobileOpen = false, onCloseMobile }: DesktopSid
         </Link>
       </nav>
 
-      <div className="sidebar-bottom">
-        <nav className="nav-group" style={{ marginBottom: 19 }}>
+      <div className="sidebar-bottom" style={{ paddingBottom: 20 }}>
+        <nav className="nav-group">
           <Link
             className={`nav-item ${isNavActive('/settings') ? 'active' : ''}`}
             href="/settings"
@@ -153,21 +150,6 @@ export function DesktopSidebar({ mobileOpen = false, onCloseMobile }: DesktopSid
             <span>Hướng dẫn sử dụng</span>
           </button>
         </nav>
-
-        <Link
-          className="sidebar-user"
-          href="/settings"
-          onClick={onCloseMobile}
-        >
-          <span className="avatar lavender" aria-hidden="true">
-            {initials}
-          </span>
-          <span>
-            <strong>{ownerName}</strong>
-            <small>Chủ cửa hàng · Tooldesk</small>
-          </span>
-          <AppIcon name="settings" size={15} />
-        </Link>
       </div>
     </aside>
   );

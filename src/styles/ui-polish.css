@@ -270,3 +270,76 @@
     max-width: 100% !important;
   }
 }
+
+/* Topbar User Profile */
+.topbar-user {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 4px 10px 4px 4px !important;
+  border-radius: 24px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  text-decoration: none !important;
+  color: var(--ink) !important;
+  transition: all 0.15s ease-in-out !important;
+  cursor: pointer !important;
+  margin-left: 2px !important;
+}
+
+.topbar-user:hover {
+  background: #f4f6fa !important;
+  border-color: var(--line) !important;
+}
+
+.topbar-user .avatar {
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  border-radius: 50% !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+}
+
+.topbar-user-info {
+  display: flex !important;
+  flex-direction: column !important;
+  text-align: left !important;
+  line-height: 1.25 !important;
+}
+
+.topbar-user-info strong {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--ink) !important;
+  white-space: nowrap !important;
+}
+
+.topbar-user-info small {
+  font-size: 11px !important;
+  color: var(--muted) !important;
+  white-space: nowrap !important;
+}
+
+.topbar-user-icon {
+  color: #9ba5b6 !important;
+  margin-left: 2px !important;
+  transition: color 0.15s, transform 0.15s !important;
+}
+
+.topbar-user:hover .topbar-user-icon {
+  color: var(--accent) !important;
+  transform: rotate(30deg);
+}
+
+@media (max-width: 900px) {
+  .topbar-user-info,
+  .topbar-user-icon {
+    display: none !important;
+  }
+  .topbar-user {
+    padding: 2px !important;
+    border-radius: 50% !important;
+  }
+}

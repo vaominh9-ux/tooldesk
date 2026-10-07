@@ -138,7 +138,7 @@ export function CustomerDetailDialog({
                   {subs.map(sub => {
                     const product = data.products.find(p => p.id === sub.productId);
                     const plan = product?.plans.find(pl => pl.id === sub.planId);
-                    const status = subStatus(sub, data.settings.reminderDays);
+                    const status = subStatus(sub, today, data.settings.reminderDays);
 
                     return (
                       <div
@@ -160,7 +160,7 @@ export function CustomerDetailDialog({
                             <small style={{ color: '#778197' }}>({plan?.name})</small>
                           </div>
                           <span style={{ fontSize: '11.5px', color: '#778197', display: 'block', marginTop: '2px' }}>
-                            Hạn dùng: {formatDateLabel(sub.expiresAt, true)} ({remainingLabel(sub)})
+                            Hạn dùng: {formatDateLabel(sub.expiresAt, true)} ({remainingLabel(sub, today)})
                           </span>
                         </div>
 

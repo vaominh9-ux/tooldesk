@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AppIcon } from '../shared/app-icon';
 import { useTooldesk } from '@/features/context/tooldesk-context';
@@ -26,6 +27,8 @@ export function Topbar({ mobileOpen = false, onToggleMobile }: TopbarProps) {
   const { data, dataStatus, openDialog } = useTooldesk();
 
   const currentTitle = routeLabels[pathname] || 'Tooldesk';
+  const ownerName = data.settings.ownerName || 'Minh';
+  const initials = ownerName.split(/\s+/).slice(-2).map(s => s[0]).join('').toUpperCase() || 'M';
 
   return (
     <header className="topbar">
@@ -69,9 +72,28 @@ export function Topbar({ mobileOpen = false, onToggleMobile }: TopbarProps) {
           className="icon-button notification-button"
           onClick={() => openDialog('activity')}
           aria-label="Xem lịch sử hoạt động"
+          title="Thông báo & Hoạt động"
         >
           <AppIcon name="bell" size={19} />
         </button>
+
+        <span className="topbar-divider"></span>
+
+        <Link
+          href="/settings"
+          className="topbar-user"
+          title="Tài khoản & Cài đặt"
+          aria-label="Cài đặt tài khoản"
+        >
+          <span className="avatar lavender" aria-hidden="true">
+            {initials}
+          </span>
+          <span className="topbar-user-info">
+            <strong>{ownerName}</strong>
+            <small>Chủ cửa hàng · Tooldesk</small>
+          </span>
+          <AppIcon name="settings" size={14} className="topbar-user-icon" />
+        </Link>
       </div>
     </header>
   );

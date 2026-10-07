@@ -295,7 +295,7 @@ export default function DashboardPage() {
                         </td>
                         <td>
                           <div className={`remaining ${dashTab === 'expired' ? 'danger' : 'warning'}`}>
-                            {remainingLabel(s)}
+                            {remainingLabel(s, today)}
                             <small>{formatDateLabel(s.expiresAt, true)}</small>
                           </div>
                         </td>

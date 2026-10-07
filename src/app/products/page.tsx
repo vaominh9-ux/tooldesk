@@ -78,7 +78,7 @@ export default function ProductsPage() {
       <section className="products-grid">
         {filtered.map(p => {
           const activeCount = data.subscriptions.filter(
-            s => s.productId === p.id && isActive(s)
+            s => s.productId === p.id && isActive(s, today)
           ).length;
 
           return (

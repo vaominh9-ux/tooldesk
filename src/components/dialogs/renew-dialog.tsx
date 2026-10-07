@@ -23,7 +23,7 @@ export function RenewDialog({
   const [selectedPlanId, setSelectedPlanId] = useState(sub?.planId || product?.plans[0]?.id || '');
   const plan = product?.plans.find(p => p.id === selectedPlanId) || product?.plans[0];
 
-  const dates = sub && plan ? renewalDates(sub, plan) : { startsAt: today, expiresAt: today };
+  const dates = sub && plan ? renewalDates(sub, plan, today) : { startsAt: today, expiresAt: today };
 
   const [price, setPrice] = useState(plan?.price || 0);
   const [cost, setCost] = useState(plan?.cost || 0);

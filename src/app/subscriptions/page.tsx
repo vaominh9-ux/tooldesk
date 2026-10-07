@@ -65,7 +65,7 @@ export default function SubscriptionsPage() {
   };
 
   const renderSubscriptionBadge = (sub: typeof data.subscriptions[0]) => {
-    const status = subStatus(sub, windowDays);
+    const status = subStatus(sub, today, windowDays);
     const badges: Record<string, { label: string; tone: string }> = {
       active: { label: 'Đang hoạt động', tone: 'green' },
       expiring: { label: 'Sắp hết hạn', tone: 'amber' },
@@ -258,7 +258,7 @@ export default function SubscriptionsPage() {
                             {formatDateLabel(s.expiresAt, true)}
                           </strong>
                           <span className="sub-label">
-                            {remainingLabel(s)}
+                            {remainingLabel(s, today)}
                           </span>
                         </td>
                         <td>{renderSubscriptionBadge(s)}</td>
@@ -314,7 +314,7 @@ export default function SubscriptionsPage() {
                 const cust = findCustomer(sub.customerId);
                 const prod = findProduct(sub.productId);
                 const plan = findPlan(sub.productId, sub.planId);
-                const status = subStatus(sub, windowDays);
+                const status = subStatus(sub, today, windowDays);
 
                 return (
                   <article key={sub.id} className="record-card">
@@ -351,7 +351,7 @@ export default function SubscriptionsPage() {
                         Hết hạn <strong>{formatDateLabel(sub.expiresAt, true)}</strong>
                       </span>
                       <strong className={status === 'expired' ? 'negative' : status === 'expiring' ? 'warning' : ''}>
-                        {remainingLabel(sub)}
+                        {remainingLabel(sub, today)}
                       </strong>
                     </div>
 
