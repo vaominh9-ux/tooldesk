@@ -2,11 +2,11 @@
 
 import { useBackdropDismiss } from './use-backdrop-dismiss';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
 import { orderFinancials, formatMoney } from '@/domain/money';
-import { formatDateLabel } from '@/domain/dates';
+import { formatDateLabel, addDuration } from '@/domain/dates';
 import { formatOrderCode } from '@/domain/orders';
 
 export function OrderDetailDialog({
@@ -16,9 +16,32 @@ export function OrderDetailDialog({
   orderId: string;
   onClose: () => void;
 }) {
-  const { data, openDialog, recordPayment, addToast } = useTooldesk();
+  const { data, openDialog, recordPayment, updateOrder, addToast } = useTooldesk();
   const backdropDismiss = useBackdropDismiss(onClose);
   const order = data.orders.find(o => o.id === orderId);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editPrice, setEditPrice] = useState(order?.price || 0);
+  const [editCost, setEditCost] = useState(order?.cost || 0);
+  const [editStartsAt, setEditStartsAt] = useState(order?.startsAt || '');
+  const [editExpiresAt, setEditExpiresAt] = useState(order?.expiresAt || '');
+  const [editPayment, setEditPayment] = useState<'paid' | 'unpaid'>(order?.payment || 'paid');
+  const [editPlanId, setEditPlanId] = useState(order?.planId || '');
+  const [editNote, setEditNote] = useState(order?.note || '');
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState('');
+
+  useEffect(() => {
+    if (order) {
+      setEditPrice(order.price);
+      setEditCost(order.cost);
+      setEditStartsAt(order.startsAt);
+      setEditExpiresAt(order.expiresAt);
+      setEditPayment(order.payment);
+      setEditPlanId(order.planId);
+      setEditNote(order.note || '');
+    }
+  }, [order?.id, isEditing]);
 
   if (!order) {
     return (
@@ -62,6 +85,55 @@ export function OrderDetailDialog({
     return name.split(/\s+/).slice(-2).map(s => s[0]).join('').toUpperCase();
   };
 
+  const handleEditPlanChange = (newPlanId: string) => {
+    setEditPlanId(newPlanId);
+    const pl = product?.plans.find(p => p.id === newPlanId);
+    if (pl) {
+      setEditPrice(pl.price);
+      setEditCost(pl.cost);
+      if (editStartsAt) {
+        try {
+          setEditExpiresAt(addDuration(editStartsAt, pl.duration, pl.unit));
+        } catch {}
+      }
+    }
+  };
+
+  const handleEditStartsAtChange = (newStartsAt: string) => {
+    setEditStartsAt(newStartsAt);
+    const pl = product?.plans.find(p => p.id === editPlanId);
+    if (pl && newStartsAt) {
+      try {
+        setEditExpiresAt(addDuration(newStartsAt, pl.duration, pl.unit));
+      } catch {}
+    }
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!order) return;
+    setEditError('');
+    setSaving(true);
+    try {
+      await updateOrder({
+        orderId: order.id,
+        price: Number(editPrice),
+        cost: Number(editCost),
+        startsAt: editStartsAt,
+        expiresAt: editExpiresAt,
+        payment: editPayment,
+        planId: editPlanId,
+        note: editNote.trim()
+      });
+      setIsEditing(false);
+      addToast('Đã cập nhật thông tin đơn hàng', undefined, 'success');
+    } catch (err: any) {
+      setEditError(err.message || 'Không thể lưu thay đổi.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const renderPaymentBadge = () => {
     if (f.status === 'unpaid') {
       return <span className="badge amber"><i></i>Chưa thanh toán</span>;
@@ -80,24 +152,207 @@ export function OrderDetailDialog({
   return (
     <div className="dialog-overlay" {...backdropDismiss}>
       <dialog id="active-dialog" className="drawer" open onClick={e => e.stopPropagation()} aria-labelledby="dialog-title">
-        <div className="dialog-shell">
-          {/* Header */}
-          <header className="dialog-header">
-            <div>
-              <h2 id="dialog-title">{formatOrderCode(order.id)}</h2>
-              <p>
-                {order.kind === 'renewal' ? 'Đơn gia hạn' : 'Đơn mua mới'} · Tạo ngày {formatDateLabel(order.date, true)}
-              </p>
+        {isEditing ? (
+          <form className="dialog-shell" onSubmit={handleSaveEdit}>
+            <header className="dialog-header">
+              <div>
+                <h2 id="dialog-title">Sửa đơn {formatOrderCode(order.id)}</h2>
+                <p>Chỉnh sửa giá tiền, hạn dịch vụ, thanh toán hoặc ghi chú đơn.</p>
+              </div>
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => setIsEditing(false)}
+                aria-label="Đóng chỉnh sửa"
+              >
+                <AppIcon name="close" size={18} />
+              </button>
+            </header>
+
+            <div className="dialog-content">
+              {editError && (
+                <div className="dialog-error" role="alert">
+                  {editError}
+                </div>
+              )}
+
+              {/* Customer preview (read-only) */}
+              <div className="customer-preview" style={{ marginBottom: 16 }}>
+                <span className={`avatar ${customer?.color || 'lavender'}`} aria-hidden="true">
+                  {getInitials(customer?.name)}
+                </span>
+                <div>
+                  <strong>{customer?.name || 'Khách đã xóa'}</strong>
+                  <small>{customer?.email || customer?.phone || 'Chưa có liên hệ'}</small>
+                </div>
+              </div>
+
+              {/* Plan selection */}
+              <div className="form-grid">
+                <label className="field">
+                  <span>Sản phẩm</span>
+                  <input
+                    type="text"
+                    value={product?.name || 'Sản phẩm'}
+                    disabled
+                    style={{ background: '#f8fafc', color: '#64748b' }}
+                  />
+                </label>
+
+                <label className="field">
+                  <span>Gói dịch vụ</span>
+                  <select
+                    value={editPlanId}
+                    onChange={e => handleEditPlanChange(e.target.value)}
+                    required
+                  >
+                    {product?.plans.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              {/* Dates */}
+              <div className="form-grid">
+                <label className="field">
+                  <span>Ngày bắt đầu</span>
+                  <input
+                    type="date"
+                    value={editStartsAt}
+                    required
+                    onChange={e => handleEditStartsAtChange(e.target.value)}
+                  />
+                </label>
+
+                <label className="field">
+                  <span>Ngày hết hạn</span>
+                  <input
+                    type="date"
+                    value={editExpiresAt}
+                    required
+                    onChange={e => setEditExpiresAt(e.target.value)}
+                  />
+                </label>
+              </div>
+
+              {/* Financials */}
+              <div className="form-grid">
+                <label className="field">
+                  <span>Giá bán</span>
+                  <div className="input-prefix">
+                    <input
+                      type="number"
+                      min={0}
+                      step={1000}
+                      required
+                      value={editPrice}
+                      onChange={e => setEditPrice(Number(e.target.value))}
+                    />
+                    <span>₫</span>
+                  </div>
+                </label>
+
+                <label className="field">
+                  <span>Giá vốn</span>
+                  <div className="input-prefix">
+                    <input
+                      type="number"
+                      min={0}
+                      step={1000}
+                      required
+                      value={editCost}
+                      onChange={e => setEditCost(Number(e.target.value))}
+                    />
+                    <span>₫</span>
+                  </div>
+                </label>
+              </div>
+
+              <label className="field">
+                <span>Trạng thái thanh toán</span>
+                <select
+                  value={editPayment}
+                  onChange={e => setEditPayment(e.target.value as 'paid' | 'unpaid')}
+                >
+                  <option value="unpaid">Chưa thanh toán</option>
+                  <option value="paid">Đã nhận đủ tiền</option>
+                </select>
+              </label>
+
+              <label className="field">
+                <span>Tài khoản nhận tool / Ghi chú đơn</span>
+                <textarea
+                  maxLength={500}
+                  placeholder="Email/pass nhận tool hoặc thông tin lưu ý..."
+                  value={editNote}
+                  onChange={e => setEditNote(e.target.value)}
+                  rows={3}
+                />
+              </label>
             </div>
-            <button
-              type="button"
-              className="icon-button"
-              onClick={onClose}
-              aria-label="Đóng"
-            >
-              <AppIcon name="close" size={18} />
-            </button>
-          </header>
+
+            <footer className="dialog-footer">
+              <button
+                type="button"
+                className="button"
+                onClick={() => setIsEditing(false)}
+                disabled={saving}
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                className="button primary"
+                disabled={saving}
+              >
+                {saving ? (
+                  <>
+                    <AppIcon name="refresh" size={15} />
+                    <span>Đang lưu…</span>
+                  </>
+                ) : (
+                  <>
+                    <AppIcon name="check" size={15} />
+                    <span>Lưu thay đổi</span>
+                  </>
+                )}
+              </button>
+            </footer>
+          </form>
+        ) : (
+          <div className="dialog-shell">
+            {/* Header */}
+            <header className="dialog-header">
+              <div>
+                <h2 id="dialog-title">{formatOrderCode(order.id)}</h2>
+                <p>
+                  {order.kind === 'renewal' ? 'Đơn gia hạn' : 'Đơn mua mới'} · Tạo ngày {formatDateLabel(order.date, true)}
+                </p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <button
+                  type="button"
+                  className="button small ghost"
+                  onClick={() => setIsEditing(true)}
+                  title="Chỉnh sửa đơn hàng"
+                  style={{ height: 32, padding: '4px 10px', fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                >
+                  <AppIcon name="edit" size={14} />
+                  <span>Sửa đơn</span>
+                </button>
+                <button
+                  type="button"
+                  className="icon-button"
+                  onClick={onClose}
+                  aria-label="Đóng"
+                >
+                  <AppIcon name="close" size={18} />
+                </button>
+              </div>
+            </header>
 
           {/* Content */}
           <div className="dialog-content">
@@ -307,6 +562,16 @@ export function OrderDetailDialog({
               Đóng
             </button>
 
+            <button
+              type="button"
+              className="button ghost"
+              onClick={() => setIsEditing(true)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            >
+              <AppIcon name="edit" size={15} />
+              <span>Sửa đơn hàng</span>
+            </button>
+
             {order.payment === 'unpaid' ? (
               <button
                 type="button"
@@ -332,6 +597,7 @@ export function OrderDetailDialog({
             )}
           </footer>
         </div>
+        )}
       </dialog>
     </div>
   );

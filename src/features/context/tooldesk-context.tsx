@@ -18,6 +18,7 @@ interface DialogState {
 }
 interface CustomerInput { name: string; email?: string; phone?: string; source?: string; notes?: string; emailConsent?: Customer['emailConsent']; consentSource?: string }
 interface CreateOrderInput { customerId?: string; newCustomer?: { name: string; email?: string; phone?: string }; productId: string; planId: string; startsAt: string; price: number; cost: number; payment: 'paid' | 'unpaid'; note?: string }
+export interface UpdateOrderInput { orderId: string; price?: number; cost?: number; startsAt?: string; expiresAt?: string; payment?: 'paid' | 'unpaid'; note?: string; planId?: string }
 interface RenewalInput { subscriptionId: string; planId: string; startsAt: string; price: number; cost: number; payment?: 'paid' | 'unpaid' }
 interface ProductInput { name: string; symbol: string; category: string; description: string; plans: { name: string; duration: number; unit: 'months' | 'days'; price: number; cost: number }[] }
 interface UpdateProductInput { name: string; category?: string; description?: string; color?: string; symbol?: string }
@@ -36,6 +37,7 @@ interface TooldeskContextType {
   openDialog: (type: DialogState['type'], payload?: DialogState['payload']) => void;
   closeDialog: () => void;
   createOrder: (input: CreateOrderInput) => Promise<Order>;
+  updateOrder: (input: UpdateOrderInput) => Promise<void>;
   renewSubscription: (input: RenewalInput) => Promise<Order>;
   recordPayment: (orderId: string) => Promise<void>;
   processRefund: (input: RefundInput) => Promise<void>;
@@ -204,6 +206,7 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
     removeToast: id => setToasts(previous => previous.filter(item => item.id !== id)),
     openDialog: (type, payload) => { if (!busy.current) setDialog({ type, payload }); }, closeDialog,
     createOrder: async input => { const result = await run({ type: 'create_order', input }, 'Đã tạo đơn'); const order = result.data.orders.find(item => item.id === result.resultId); if (!order) throw new Error('Thiếu đơn trong phản hồi.'); return order; },
+    updateOrder: async input => { await run({ type: 'update_order', input }, 'Đã cập nhật đơn hàng', false); },
     renewSubscription: async ({ startsAt: _startsAt, ...input }) => { const result = await run({ type: 'renew_subscription', input }, 'Đã gia hạn'); const order = result.data.orders.find(item => item.id === result.resultId); if (!order) throw new Error('Thiếu đơn gia hạn.'); return order; },
     recordPayment: async orderId => { await run({ type: 'record_payment', input: { orderId } }, 'Đã ghi nhận thanh toán'); },
     processRefund: async ({ actor: _actor, ...input }) => { await run({ type: 'record_refund', input: { ...input, operationId: input.operationId || crypto.randomUUID() } }, 'Đã ghi nhận hoàn/thu hồi vốn'); },

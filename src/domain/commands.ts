@@ -9,6 +9,7 @@ const customerFields = z.object({ name: z.string().trim().min(1).max(80), email:
 const customerInput = customerFields.refine(value => value.email || value.phone, 'Cần email hoặc số điện thoại.').refine(value => value.emailConsent !== 'opted_in' || value.consentSource.length > 0, 'Cần nguồn xác nhận đồng ý nhận email.');
 export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('create_order'), input: z.object({ customerId: id.optional(), newCustomer: customerInput.optional(), productId: id, planId: id, startsAt: daySchema, price: moneySchema, cost: moneySchema, payment: z.enum(['paid', 'unpaid']), note: z.string().trim().max(500).default('') }).strict() }).strict(),
+  z.object({ type: z.literal('update_order'), input: z.object({ orderId: id, price: moneySchema.optional(), cost: moneySchema.optional(), startsAt: daySchema.optional(), expiresAt: daySchema.optional(), payment: z.enum(['paid', 'unpaid']).optional(), note: z.string().trim().max(500).optional(), planId: id.optional() }).strict() }).strict(),
   z.object({ type: z.literal('record_payment'), input: z.object({ orderId: id }).strict() }).strict(),
   z.object({ type: z.literal('renew_subscription'), input: z.object({ subscriptionId: id, planId: id, price: moneySchema, cost: moneySchema, payment: z.enum(['paid', 'unpaid']).default('unpaid') }).strict() }).strict(),
   z.object({ type: z.literal('record_refund'), input: z.object({ operationId: z.uuid(), orderId: id, amount: moneySchema, costRecovered: moneySchema.default(0), date: daySchema, reason: z.string().trim().min(3).max(500), method: z.enum(['bank', 'cash', 'wallet', 'other']), reference: z.string().trim().max(120).default(''), serviceAction: z.enum(['keep', 'end']).default('keep') }).strict() }).strict(),
@@ -52,6 +53,42 @@ export function executeCommand(original: AppData, command: Command, operation: O
       data.subscriptions.unshift({ ...common, id: subscriptionId, cancelled: false, lastOrderId: orderId, note: input.note || '' });
       data.orders.unshift({ ...common, id: orderId, subscriptionId, date: today, payment: input.payment, paidAt: input.payment === 'paid' ? today : null, note: input.note, status: 'completed', kind: 'new' });
       resultId = orderId; break;
+    }
+    case 'update_order': {
+      const input = command.input;
+      const order = data.orders.find(o => o.id === input.orderId);
+      if (!order) throw new Error('Đơn hàng không tồn tại.');
+      if (input.price !== undefined) order.price = input.price;
+      if (input.cost !== undefined) order.cost = input.cost;
+      if (input.startsAt !== undefined) order.startsAt = input.startsAt;
+      if (input.expiresAt !== undefined) order.expiresAt = input.expiresAt;
+      if (input.note !== undefined) order.note = input.note;
+      if (input.planId !== undefined && input.planId !== order.planId) {
+        const prod = data.products.find(p => p.id === order.productId);
+        const plan = prod?.plans.find(pl => pl.id === input.planId);
+        if (plan) order.planId = plan.id;
+      }
+      if (input.payment !== undefined && input.payment !== order.payment) {
+        order.payment = input.payment;
+        if (input.payment === 'paid') {
+          order.paidAt = today;
+        } else {
+          order.paidAt = null;
+        }
+      }
+      if (order.subscriptionId) {
+        const sub = data.subscriptions.find(s => s.id === order.subscriptionId);
+        if (sub) {
+          if (input.startsAt !== undefined) sub.startsAt = input.startsAt;
+          if (input.expiresAt !== undefined) sub.expiresAt = input.expiresAt;
+          if (input.price !== undefined) sub.price = input.price;
+          if (input.cost !== undefined) sub.cost = input.cost;
+          if (input.note !== undefined) sub.note = input.note;
+          if (input.planId !== undefined) sub.planId = input.planId;
+        }
+      }
+      resultId = order.id;
+      break;
     }
     case 'record_payment': {
       const order = data.orders.find(order => order.id === command.input.orderId);
