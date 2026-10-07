@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '@/components/shared/app-icon';
 import { ReminderStatusPanel } from '@/features/communications/reminder-status-panel';
+import { SmtpSettingsPanel } from '@/components/settings/smtp-settings-panel';
+import { ApiIntegrationPanel } from '@/features/api-integration/api-integration-panel';
 
 export default function SettingsPage() {
   const { data, dataStatus, updateSettings, openDialog, addToast, syncWithSupabase, logout, importData, loadDemoData } = useTooldesk();
@@ -173,7 +175,9 @@ export default function SettingsPage() {
         </aside>
       </div>
 
-      {/* Danger Zone */}
+      {/* Integrations */}
+      <ApiIntegrationPanel />
+      <SmtpSettingsPanel />
       {dataStatus === 'connected' && <ReminderStatusPanel />}
       <div className="danger-zone">
         <h3>Quản lý dữ liệu hệ thống</h3>

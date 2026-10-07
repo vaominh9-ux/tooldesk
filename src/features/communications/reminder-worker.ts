@@ -3,14 +3,16 @@ import { randomUUID } from 'node:crypto';
 import { getDbPool, transaction } from '@/lib/db';
 import { loadData } from '@/lib/data-repository';
 import { todayInHoChiMinh } from '@/lib/clock';
-import { emailConfigured, sendEmail } from '@/lib/email';
+import { sendEmail } from '@/lib/email';
+import { readSmtpConfig } from '@/lib/smtp-config-store';
 import { reminderCandidates } from '@/domain/reminders';
 
 export async function runReminderWorker() {
   // Disabled mode never marks a reminder or consumes its delivery attempt.
-  if (!emailConfigured()) return { enabled: false, sent: 0, failed: 0, cancelled: 0, unknown: 0 };
+  const { config } = await readSmtpConfig();
+  if (!config?.enabled) return { enabled: false, sent: 0, failed: 0, cancelled: 0, unknown: 0 };
   const today = todayInHoChiMinh();
-  const sendHour = Number(process.env.REMINDER_SEND_HOUR || 9);
+  const sendHour = config.sendHour;
   if (!Number.isInteger(sendHour) || sendHour < 0 || sendHour > 23) throw new Error('REMINDER_SEND_HOUR phải từ 0 đến 23.');
   const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', hourCycle: 'h23' }).format(new Date()));
   if (hour < sendHour) return { enabled: true, waitingForSendHour: true };

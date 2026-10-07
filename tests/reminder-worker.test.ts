@@ -6,6 +6,7 @@ vi.mock('server-only', () => ({}));
 vi.mock('../src/lib/db', () => ({ getDbPool: () => ({ query: mocks.query }), transaction: (callback: (client: { query: typeof mocks.query }) => Promise<unknown>) => callback({ query: mocks.query }) }));
 vi.mock('../src/lib/data-repository', () => ({ loadData: mocks.load }));
 vi.mock('../src/lib/email', () => ({ emailConfigured: mocks.configured, sendEmail: mocks.send }));
+vi.mock('../src/lib/smtp-config-store', () => ({ readSmtpConfig: async () => ({ config: { enabled: mocks.configured(), sendHour: 9 }, source: 'environment' }) }));
 import { runReminderWorker } from '../src/features/communications/reminder-worker';
 import { reminderCandidates } from '../src/domain/reminders';
 
