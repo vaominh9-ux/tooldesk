@@ -203,5 +203,94 @@ describe('Domain: Short ID generation & display formatting', () => {
     const updatedSub = updated.data.subscriptions.find(s => s.id === sub.id);
     expect(updatedSub?.note).toBe('Tài khoản: account_updated@gmail.com');
   });
+
+  it('safely handles delete_plan with integrity rules', () => {
+    const data = createInitialData();
+    let count = 0;
+    const op = { today: '2026-10-07', now: new Date().toISOString(), actor: 'Tester', newId: (p: string) => `${p}-${++count}` };
+
+    // Create an unused product with 2 plans
+    const prodAdded = executeCommand(data, {
+      type: 'add_product',
+      input: {
+        name: 'Test Tool AI',
+        symbol: 'TT',
+        category: 'Test',
+        description: 'Test Description',
+        plans: [
+          { name: 'Gói 1 tháng', duration: 1, unit: 'months', price: 100000, cost: 50000 },
+          { name: 'Gói 1 năm', duration: 12, unit: 'months', price: 1000000, cost: 500000 }
+        ]
+      }
+    }, op);
+
+    const testProd = prodAdded.data.products.find(p => p.name === 'Test Tool AI')!;
+    expect(testProd.plans.length).toBe(2);
+    const planToDelete = testProd.plans[1];
+
+    // Deleting one plan succeeds
+    const deletedPlan = executeCommand(prodAdded.data, {
+      type: 'delete_plan',
+      input: { planId: planToDelete.id }
+    }, op);
+
+    const updatedProd = deletedPlan.data.products.find(p => p.name === 'Test Tool AI')!;
+    expect(updatedProd.plans.length).toBe(1);
+    expect(updatedProd.plans[0].name).toBe('Gói 1 tháng');
+
+    // Deleting the last remaining plan throws error
+    expect(() => {
+      executeCommand(deletedPlan.data, {
+        type: 'delete_plan',
+        input: { planId: updatedProd.plans[0].id }
+      }, op);
+    }).toThrow('Mỗi sản phẩm cần giữ lại ít nhất 1 gói bán');
+
+    // Deleting a plan linked to existing orders throws error
+    const linkedPlanId = data.orders[0].planId;
+    expect(() => {
+      executeCommand(data, {
+        type: 'delete_plan',
+        input: { planId: linkedPlanId }
+      }, op);
+    }).toThrow('Không thể xóa gói này vì đã có đơn hàng hoặc gói dịch vụ liên kết');
+  });
+
+  it('safely handles delete_product with integrity rules', () => {
+    const data = createInitialData();
+    let count = 0;
+    const op = { today: '2026-10-07', now: new Date().toISOString(), actor: 'Tester', newId: (p: string) => `${p}-${++count}` };
+
+    // Create an unused product
+    const prodAdded = executeCommand(data, {
+      type: 'add_product',
+      input: {
+        name: 'Disposable Tool',
+        symbol: 'DT',
+        category: 'Test',
+        description: 'Unused tool',
+        plans: [{ name: 'Gói 1 tháng', duration: 1, unit: 'months', price: 50000, cost: 20000 }]
+      }
+    }, op);
+
+    const productId = prodAdded.resultId!;
+    expect(prodAdded.data.products.some(p => p.id === productId)).toBe(true);
+
+    // Deleting unused product succeeds
+    const deleted = executeCommand(prodAdded.data, {
+      type: 'delete_product',
+      input: { productId }
+    }, op);
+    expect(deleted.data.products.some(p => p.id === productId)).toBe(false);
+
+    // Deleting a product linked to existing orders throws error
+    const linkedProductId = data.orders[0].productId;
+    expect(() => {
+      executeCommand(data, {
+        type: 'delete_product',
+        input: { productId: linkedProductId }
+      }, op);
+    }).toThrow('Không thể xóa sản phẩm này vì đã có đơn hàng hoặc gói dịch vụ liên kết');
+  });
 });
 

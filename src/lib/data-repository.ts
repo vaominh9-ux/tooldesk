@@ -55,6 +55,16 @@ function changed<T extends { id: string }>(before: T[], after: T[]): T[] {
 }
 export async function saveChanges(db: Db, before: AppData, after: AppData): Promise<void> {
   if (JSON.stringify(before.settings) !== JSON.stringify(after.settings)) await upsert(db, 'settings', { id: 'default', shop_name: after.settings.shopName, owner_name: after.settings.ownerName, reminder_days: after.settings.reminderDays, currency: after.settings.currency, timezone: after.settings.timezone });
+  const beforePlanIds = new Set(before.products.flatMap(p => p.plans.map(pl => pl.id)));
+  const afterPlanIds = new Set(after.products.flatMap(p => p.plans.map(pl => pl.id)));
+  for (const id of beforePlanIds) {
+    if (!afterPlanIds.has(id)) await db.query('DELETE FROM product_plans WHERE id = $1', [id]);
+  }
+  const beforeProductIds = new Set(before.products.map(p => p.id));
+  const afterProductIds = new Set(after.products.map(p => p.id));
+  for (const id of beforeProductIds) {
+    if (!afterProductIds.has(id)) await db.query('DELETE FROM products WHERE id = $1', [id]);
+  }
   for (const p of changed(before.products, after.products)) {
     await upsert(db, 'products', { id: p.id, name: p.name, category: p.category, color: p.color, symbol: p.symbol, description: p.description });
     for (const plan of p.plans) await upsert(db, 'product_plans', { id: plan.id, product_id: p.id, name: plan.name, duration: plan.duration, unit: plan.unit, price: plan.price, cost: plan.cost });

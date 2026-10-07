@@ -42,8 +42,10 @@ interface TooldeskContextType {
   addCustomerNote: (customerId: string, body: string) => Promise<void>;
   addProduct: (input: ProductInput) => Promise<void>;
   updateProduct: (productId: string, updates: UpdateProductInput) => Promise<void>;
+  deleteProduct: (productId: string) => Promise<void>;
   updatePlan: (planId: string, updates: { name: string; price: number; cost: number }) => Promise<void>;
   addPlan: (productId: string, plan: { name: string; duration: number; unit: 'months' | 'days'; price: number; cost: number }) => Promise<void>;
+  deletePlan: (planId: string) => Promise<void>;
   saveCampaign: (input: CampaignInput) => Promise<void>;
   updateSettings: (input: Partial<ShopSettings>) => Promise<void>;
   markContacted: (subscriptionId: string) => Promise<void>;
@@ -106,26 +108,8 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
           const parsed = JSON.parse(saved);
           const valid = dataSchema.safeParse(parsed);
           if (valid.success) {
-            const freshInitial = createEmptyProductionData();
-            const mergedProducts = freshInitial.products.map(freshProd => {
-              const savedProd = valid.data.products.find(p => p.id === freshProd.id);
-              if (!savedProd) return freshProd;
-              const existingPlanIds = new Set(savedProd.plans.map(p => p.id));
-              const newPlans = freshProd.plans.filter(p => !existingPlanIds.has(p.id));
-              return {
-                ...savedProd,
-                plans: [...savedProd.plans, ...newPlans]
-              };
-            });
-            const savedCustomProducts = valid.data.products.filter(
-              p => !freshInitial.products.some(fp => fp.id === p.id)
-            );
-            const restored: TooldeskData = {
-              ...valid.data,
-              products: [...mergedProducts, ...savedCustomProducts]
-            };
-            currentData.current = restored;
-            setData(restored);
+            currentData.current = valid.data;
+            setData(valid.data);
             return;
           }
         }
@@ -180,8 +164,10 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
     addCustomerNote: async (customerId, body) => { await run({ type: 'add_customer_note', input: { customerId, body } }, 'Đã thêm ghi chú chăm sóc', false); },
     addProduct: async input => { await run({ type: 'add_product', input }, 'Đã thêm sản phẩm'); },
     updateProduct: async (productId, updates) => { await run({ type: 'update_product', input: { productId, ...updates } }, 'Đã cập nhật sản phẩm'); },
+    deleteProduct: async productId => { await run({ type: 'delete_product', input: { productId } }, 'Đã xóa sản phẩm'); },
     updatePlan: async (planId, updates) => { await run({ type: 'update_plan', input: { planId, ...updates } }, 'Đã cập nhật gói bán'); },
     addPlan: async (productId, plan) => { await run({ type: 'add_plan', input: { productId, ...plan } }, 'Đã thêm gói dịch vụ'); },
+    deletePlan: async planId => { await run({ type: 'delete_plan', input: { planId } }, 'Đã xóa gói dịch vụ'); },
     saveCampaign: async input => { await run({ type: 'save_campaign', input }, 'Đã lưu bản nháp'); },
     updateSettings: async input => { await run({ type: 'update_settings', input }, 'Đã lưu cài đặt', false); },
     markContacted: async subscriptionId => { try { await run({ type: 'mark_contacted', input: { subscriptionId } }, 'Đã ghi nhận liên hệ', false); } catch { /* Error already shown to the user by run(). */ } },

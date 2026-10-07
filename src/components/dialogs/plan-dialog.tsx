@@ -16,7 +16,7 @@ export function PlanDialog({
   productId?: string;
   onClose: () => void;
 }) {
-  const { data, pending, updatePlan, addPlan } = useTooldesk();
+  const { data, pending, updatePlan, addPlan, deletePlan } = useTooldesk();
   const backdropDismiss = useBackdropDismiss(onClose);
 
   // Find product and plan depending on which prop is passed
@@ -119,6 +119,29 @@ export function PlanDialog({
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Không thể lưu gói dịch vụ.');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!planId || !plan || !product) return;
+    if (product.plans.length <= 1) {
+      setError('Mỗi sản phẩm cần giữ lại ít nhất 1 gói bán. Nếu không kinh doanh sản phẩm này nữa, vui lòng xóa sản phẩm.');
+      return;
+    }
+    const hasOrders = data.orders.some(o => o.planId === planId);
+    const hasSubs = data.subscriptions.some(s => s.planId === planId);
+    if (hasOrders || hasSubs) {
+      setError('Không thể xóa gói này vì đã có đơn hàng hoặc gói dịch vụ liên kết trong lịch sử.');
+      return;
+    }
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa gói "${plan.name}" khỏi sản phẩm "${product.name}"?`)) {
+      return;
+    }
+    try {
+      await deletePlan(planId);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể xóa gói dịch vụ.');
     }
   };
 
@@ -343,6 +366,18 @@ export function PlanDialog({
           </div>
 
           <footer className="dialog-footer">
+            {!isCreating && (
+              <button
+                type="button"
+                className="button danger"
+                onClick={handleDelete}
+                disabled={pending}
+                style={{ marginRight: 'auto' }}
+              >
+                <AppIcon name="trash" size={15} />
+                <span>Xóa gói này</span>
+              </button>
+            )}
             <button className="button" type="button" onClick={onClose}>
               Hủy
             </button>

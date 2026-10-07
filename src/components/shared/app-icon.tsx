@@ -42,7 +42,8 @@ const paths: Record<string, string> = {
   database: '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0"/>',
   edit: '<path d="m16 3 5 5-12 12H4v-5L16 3Zm-2 2 5 5"/>',
   phone: '<path d="m6 3 3 5-2 2a12 12 0 0 0 7 7l2-2 5 3-1 3c-9 1-18-8-17-17l3-1Z"/>',
-  folder: '<path d="M3 7V4h6l3 3h9v13H3V7Z"/>'
+  folder: '<path d="M3 7V4h6l3 3h9v13H3V7Z"/>',
+  trash: '<path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/>'
 };
 
 export interface AppIconProps extends React.SVGProps<SVGSVGElement> {

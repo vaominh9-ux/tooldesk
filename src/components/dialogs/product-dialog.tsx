@@ -25,7 +25,7 @@ export function ProductDialog({
   productId?: string;
   onClose: () => void;
 }) {
-  const { data, addProduct, updateProduct } = useTooldesk();
+  const { data, pending, addProduct, updateProduct, deleteProduct } = useTooldesk();
   const backdropDismiss = useBackdropDismiss(onClose);
   const existingProduct = productId ? data.products.find(p => p.id === productId) : undefined;
   const isEditing = Boolean(existingProduct);
@@ -155,6 +155,25 @@ export function ProductDialog({
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Không thể lưu sản phẩm.');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!productId || !existingProduct) return;
+    const hasOrders = data.orders.some(o => o.productId === productId);
+    const hasSubs = data.subscriptions.some(s => s.productId === productId);
+    if (hasOrders || hasSubs) {
+      setError('Không thể xóa sản phẩm này vì đã có đơn hàng hoặc gói dịch vụ liên kết trong lịch sử.');
+      return;
+    }
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn sản phẩm "${existingProduct.name}" và toàn bộ gói của sản phẩm này?`)) {
+      return;
+    }
+    try {
+      await deleteProduct(productId);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể xóa sản phẩm.');
     }
   };
 
@@ -469,6 +488,18 @@ export function ProductDialog({
 
           {/* Footer */}
           <footer className="dialog-footer">
+            {isEditing && (
+              <button
+                type="button"
+                className="button danger"
+                onClick={handleDelete}
+                disabled={pending}
+                style={{ marginRight: 'auto' }}
+              >
+                <AppIcon name="trash" size={15} />
+                <span>Xóa sản phẩm</span>
+              </button>
+            )}
             <button
               type="button"
               className="button"
@@ -479,8 +510,11 @@ export function ProductDialog({
             <button
               type="submit"
               className="button primary"
+              disabled={pending}
             >
-              {isEditing ? (
+              {pending ? (
+                'Đang lưu…'
+              ) : isEditing ? (
                 <>
                   <AppIcon name="circleCheck" size={15} />
                   <span>Lưu thay đổi</span>

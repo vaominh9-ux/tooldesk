@@ -19,8 +19,10 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('update_settings'), input: settingsSchema.partial().strict() }).strict(),
   z.object({ type: z.literal('update_plan'), input: z.object({ planId: id, name: z.string().trim().min(1).max(80), price: moneySchema, cost: moneySchema }).strict() }).strict(),
   z.object({ type: z.literal('add_plan'), input: z.object({ productId: id, name: z.string().trim().min(1).max(80), duration: z.number().int().min(1).max(1200), unit: z.enum(['months', 'days']), price: moneySchema, cost: moneySchema }).strict() }).strict(),
+  z.object({ type: z.literal('delete_plan'), input: z.object({ planId: id }).strict() }).strict(),
   z.object({ type: z.literal('add_product'), input: z.object({ name: z.string().trim().min(1).max(80), symbol: z.string().trim().max(4), category: z.string().trim().max(100), description: z.string().trim().max(1000), plans: z.array(z.object({ name: z.string().trim().min(1).max(80), duration: z.number().int().min(1).max(1200), unit: z.enum(['months', 'days']), price: moneySchema, cost: moneySchema }).strict()).min(1).max(20) }).strict() }).strict(),
   z.object({ type: z.literal('update_product'), input: z.object({ productId: id, name: z.string().trim().min(1).max(80), category: z.string().trim().max(100).optional(), description: z.string().trim().max(1000).optional(), color: z.string().trim().max(30).optional(), symbol: z.string().trim().max(4).optional() }).strict() }).strict(),
+  z.object({ type: z.literal('delete_product'), input: z.object({ productId: id }).strict() }).strict(),
   z.object({ type: z.literal('save_campaign'), input: z.object({ id: id.optional(), name: z.string().trim().min(1).max(120), subject: z.string().trim().min(1).max(180), body: z.string().trim().min(1).max(5000), segment: z.enum(['all', 'active', 'expiring', 'expired', 'vip']) }).strict() }).strict()
 ]);
 export type Command = z.infer<typeof commandSchema>;
@@ -128,6 +130,21 @@ export function executeCommand(original: AppData, command: Command, operation: O
       resultId = planId;
       break;
     }
+    case 'delete_plan': {
+      const product = data.products.find(prod => prod.plans.some(pl => pl.id === command.input.planId));
+      if (!product) throw new Error('Không tìm thấy gói bán.');
+      if (product.plans.length <= 1) {
+        throw new Error('Mỗi sản phẩm cần giữ lại ít nhất 1 gói bán. Nếu không kinh doanh sản phẩm này nữa, vui lòng xóa sản phẩm.');
+      }
+      const planInOrders = data.orders.some(o => o.planId === command.input.planId);
+      const planInSubs = data.subscriptions.some(s => s.planId === command.input.planId);
+      if (planInOrders || planInSubs) {
+        throw new Error('Không thể xóa gói này vì đã có đơn hàng hoặc gói dịch vụ liên kết.');
+      }
+      product.plans = product.plans.filter(pl => pl.id !== command.input.planId);
+      resultId = command.input.planId;
+      break;
+    }
     case 'add_product': {
       const productId = newId('p');
       data.products.push({ ...command.input, id: productId, color: 'indigo', plans: command.input.plans.map(plan => ({ ...plan, id: newId('pl') })) }); resultId = productId; break;
@@ -141,6 +158,19 @@ export function executeCommand(original: AppData, command: Command, operation: O
       if (command.input.color !== undefined) prod.color = command.input.color;
       if (command.input.symbol !== undefined) prod.symbol = command.input.symbol;
       resultId = prod.id;
+      break;
+    }
+    case 'delete_product': {
+      const prodIndex = data.products.findIndex(prod => prod.id === command.input.productId);
+      if (prodIndex === -1) throw new Error('Không tìm thấy sản phẩm.');
+      const prod = data.products[prodIndex];
+      const prodInOrders = data.orders.some(o => o.productId === command.input.productId);
+      const prodInSubs = data.subscriptions.some(s => s.productId === command.input.productId);
+      if (prodInOrders || prodInSubs) {
+        throw new Error('Không thể xóa sản phẩm này vì đã có đơn hàng hoặc gói dịch vụ liên kết.');
+      }
+      data.products.splice(prodIndex, 1);
+      resultId = command.input.productId;
       break;
     }
     case 'save_campaign': {
