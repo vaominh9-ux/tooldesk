@@ -1,11 +1,21 @@
 import dotenv from "dotenv";
 import { Client } from "pg";
 import { randomBytes, randomUUID, createCipheriv } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 dotenv.config({ path: ".env.local", quiet: true });
 dotenv.config({ path: ".env", quiet: true });
 const save = process.argv.includes("--save");
-const client = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: true, ...(process.env.DATABASE_CA_CERT ? { ca: process.env.DATABASE_CA_CERT.replaceAll("\\n", "\n") } : {}) }, connectionTimeoutMillis: 10000 });
+
+let caCert = process.env.DATABASE_CA_CERT ? process.env.DATABASE_CA_CERT.replaceAll("\\n", "\n") : undefined;
+if (!caCert && existsSync("supabase/certs/prod-ca-2021.crt")) {
+  caCert = readFileSync("supabase/certs/prod-ca-2021.crt", "utf8");
+}
+
+const client = new Client({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: true, ...(caCert ? { ca: caCert } : {}) },
+  connectionTimeoutMillis: 10000
+});
 try {
   if (!process.env.DATABASE_URL) throw new Error("Missing DATABASE_URL");
   await client.connect();
@@ -23,7 +33,9 @@ try {
     await client.query("BEGIN");
     const existing = check.rows[0].smtp_table;
     if (!existing) {
-      const migration = readFileSync("supabase/migrations/20261007_smtp_configuration.sql","utf8").replace(/^BEGIN;s*/m,"").replace(/^COMMIT;s*/m,"");
+      const migration = readFileSync("supabase/migrations/20261007_smtp_configuration.sql","utf8")
+        .replace(/^BEGIN;\s*/m,"")
+        .replace(/^COMMIT;\s*/m,"");
       await client.query(migration);
     }
     let actorId = randomUUID();
