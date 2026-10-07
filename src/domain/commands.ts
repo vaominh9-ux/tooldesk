@@ -15,6 +15,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('add_customer'), input: customerInput }).strict(),
   z.object({ type: z.literal('update_customer'), input: z.object({ id, updates: z.object({ name: z.string().trim().min(1).max(80).optional(), email: z.union([z.literal(''), z.email()]).optional(), phone: z.string().trim().max(25).optional(), source: z.string().trim().max(100).optional(), notes: z.string().trim().max(1000).optional(), emailConsent: z.enum(['unknown','opted_in','opted_out']).optional(), consentSource: z.string().trim().max(200).optional() }).strict() }).strict() }).strict(),
   z.object({ type: z.literal('mark_contacted'), input: z.object({ subscriptionId: id }).strict() }).strict(),
+  z.object({ type: z.literal('update_subscription_note'), input: z.object({ subscriptionId: id, note: z.string().trim().max(500) }).strict() }).strict(),
   z.object({ type: z.literal('update_settings'), input: settingsSchema.partial().strict() }).strict(),
   z.object({ type: z.literal('update_plan'), input: z.object({ planId: id, name: z.string().trim().min(1).max(80), price: moneySchema, cost: moneySchema }).strict() }).strict(),
   z.object({ type: z.literal('add_plan'), input: z.object({ productId: id, name: z.string().trim().min(1).max(80), duration: z.number().int().min(1).max(1200), unit: z.enum(['months', 'days']), price: moneySchema, cost: moneySchema }).strict() }).strict(),
@@ -46,7 +47,7 @@ export function executeCommand(original: AppData, command: Command, operation: O
       const orderId = newId('DH'), subscriptionId = newId('sub');
       const expiresAt = addDuration(input.startsAt, plan.duration, plan.unit);
       const common = { customerId: customer.id, productId: product.id, planId: plan.id, startsAt: input.startsAt, expiresAt, price: input.price, cost: input.cost };
-      data.subscriptions.unshift({ ...common, id: subscriptionId, cancelled: false, lastOrderId: orderId });
+      data.subscriptions.unshift({ ...common, id: subscriptionId, cancelled: false, lastOrderId: orderId, note: input.note || '' });
       data.orders.unshift({ ...common, id: orderId, subscriptionId, date: today, payment: input.payment, paidAt: input.payment === 'paid' ? today : null, note: input.note, status: 'completed', kind: 'new' });
       resultId = orderId; break;
     }
@@ -99,6 +100,12 @@ export function executeCommand(original: AppData, command: Command, operation: O
       const sub = data.subscriptions.find(sub => sub.id === command.input.subscriptionId);
       if (!sub) throw new Error('Không tìm thấy gói dịch vụ.');
       sub.remindedAt = today; resultId = sub.id; break;
+    }
+    case 'update_subscription_note': {
+      const sub = data.subscriptions.find(sub => sub.id === command.input.subscriptionId);
+      if (!sub) throw new Error('Không tìm thấy gói dịch vụ.');
+      sub.note = command.input.note;
+      resultId = sub.id; break;
     }
     case 'update_settings': data.settings = settingsSchema.parse({ ...data.settings, ...command.input }); break;
     case 'update_plan': {

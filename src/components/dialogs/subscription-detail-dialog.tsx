@@ -2,7 +2,7 @@
 
 import { useBackdropDismiss } from './use-backdrop-dismiss';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
 import { formatMoney } from '@/domain/money';
@@ -17,7 +17,7 @@ export function SubscriptionDetailDialog({
   subscriptionId: string;
   onClose: () => void;
 }) {
-  const { data, openDialog, markContacted, today } = useTooldesk();
+  const { data, openDialog, markContacted, updateSubscriptionNote, today } = useTooldesk();
   const backdropDismiss = useBackdropDismiss(onClose);
   const sub = data.subscriptions.find(s => s.id === subscriptionId);
 
@@ -54,6 +54,22 @@ export function SubscriptionDetailDialog({
   const product = data.products.find(p => p.id === sub.productId);
   const plan = product?.plans.find(pl => pl.id === sub.planId);
   const status = subStatus(sub, today, data.settings.reminderDays);
+
+  const [isEditingNote, setIsEditingNote] = useState(false);
+  const [noteVal, setNoteVal] = useState(sub.note || '');
+  const [isSavingNote, setIsSavingNote] = useState(false);
+
+  const handleSaveNote = async () => {
+    setIsSavingNote(true);
+    try {
+      await updateSubscriptionNote(sub.id, noteVal.trim());
+      setIsEditingNote(false);
+    } catch {
+      // handled
+    } finally {
+      setIsSavingNote(false);
+    }
+  };
 
   const relatedOrders = data.orders
     .filter(o => o.subscriptionId === sub.id)
@@ -108,6 +124,73 @@ export function SubscriptionDetailDialog({
                 >
                   <AppIcon name="external" size={16} />
                 </button>
+              )}
+            </div>
+
+            {/* Account / Email for this subscription */}
+            <div style={{
+              margin: '14px 0',
+              padding: '12px 14px',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '10px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <AppIcon name="email" size={16} />
+                  <strong style={{ fontSize: '13px', color: '#1e293b' }}>Tài khoản nhận tool:</strong>
+                </div>
+                {!isEditingNote && (
+                  <button
+                    type="button"
+                    className="text-button"
+                    style={{ fontSize: '12px', fontWeight: 600, color: '#4f46e5' }}
+                    onClick={() => { setIsEditingNote(true); setNoteVal(sub.note || ''); }}
+                  >
+                    {sub.note ? 'Sửa' : '+ Thêm email riêng'}
+                  </button>
+                )}
+              </div>
+
+              {!isEditingNote ? (
+                <div style={{ marginTop: '6px', fontSize: '13px' }}>
+                  {sub.note ? (
+                    <span style={{ fontWeight: 600, background: '#e0e7ff', color: '#3730a3', padding: '3px 8px', borderRadius: '5px', display: 'inline-block' }}>
+                      {sub.note}
+                    </span>
+                  ) : (
+                    <span style={{ color: '#64748b', fontSize: '12.5px' }}>
+                      Đang dùng chung email khách: <strong>{customer?.email || 'Chưa có email'}</strong>
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                  <input
+                    type="text"
+                    className="input"
+                    style={{ flex: 1, fontSize: '13px', padding: '6px 10px', height: '36px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                    placeholder="Ví dụ: taikhoan-dung-tool@gmail.com"
+                    value={noteVal}
+                    onChange={e => setNoteVal(e.target.value)}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    className="button small primary"
+                    onClick={handleSaveNote}
+                    disabled={isSavingNote}
+                  >
+                    Lưu
+                  </button>
+                  <button
+                    type="button"
+                    className="button small"
+                    onClick={() => setIsEditingNote(false)}
+                  >
+                    Hủy
+                  </button>
+                </div>
               )}
             </div>
 

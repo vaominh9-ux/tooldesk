@@ -197,6 +197,14 @@ export default function CustomersPage() {
                                 {formatDateLabel(s.startsAt, true)} → {formatDateLabel(s.expiresAt, true)}
                               </span>
                             </div>
+                            {s.note && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '5px', fontSize: '12px' }}>
+                                <span style={{ color: '#4f46e5', fontWeight: 600 }}>Tài khoản:</span>
+                                <span style={{ background: '#f1f5f9', color: '#0f172a', padding: '1px 7px', borderRadius: '4px', fontWeight: 500 }}>
+                                  {s.note.replace(/^Tài khoản:\s*/i, '')}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
 

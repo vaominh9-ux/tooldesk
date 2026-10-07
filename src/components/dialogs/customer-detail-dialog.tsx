@@ -165,6 +165,11 @@ export function CustomerDetailDialog({
                           <span style={{ fontSize: '11.5px', color: '#778197', display: 'block', marginTop: '2px' }}>
                             Hạn dùng: {formatDateLabel(sub.expiresAt, true)} ({remainingLabel(sub, today)})
                           </span>
+                          {sub.note && (
+                            <span style={{ fontSize: '11px', color: '#4f46e5', display: 'block', marginTop: '2px', fontWeight: 500 }}>
+                              Tài khoản: {sub.note.replace(/^Tài khoản:\s*/i, '')}
+                            </span>
+                          )}
                         </div>
 
                         <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto', flexShrink: 0 }}>

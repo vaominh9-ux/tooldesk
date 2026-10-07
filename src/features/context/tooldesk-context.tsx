@@ -39,6 +39,7 @@ interface TooldeskContextType {
   processRefund: (input: RefundInput) => Promise<void>;
   addCustomer: (input: CustomerInput) => Promise<Customer>;
   updateCustomer: (id: string, updates: Partial<Customer>) => Promise<void>;
+  addCustomerNote: (customerId: string, body: string) => Promise<void>;
   addProduct: (input: ProductInput) => Promise<void>;
   updateProduct: (productId: string, updates: UpdateProductInput) => Promise<void>;
   updatePlan: (planId: string, updates: { name: string; price: number; cost: number }) => Promise<void>;
@@ -46,6 +47,7 @@ interface TooldeskContextType {
   saveCampaign: (input: CampaignInput) => Promise<void>;
   updateSettings: (input: Partial<ShopSettings>) => Promise<void>;
   markContacted: (subscriptionId: string) => Promise<void>;
+  updateSubscriptionNote: (subscriptionId: string, note: string) => Promise<void>;
   importData: (input: TooldeskData) => void;
   resetData: () => void;
   loadDemoData: () => void;
@@ -175,6 +177,7 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
     processRefund: async ({ actor: _actor, ...input }) => { await run({ type: 'record_refund', input: { ...input, operationId: input.operationId || crypto.randomUUID() } }, 'Đã ghi nhận hoàn/thu hồi vốn'); },
     addCustomer: async input => { const result = await run({ type: 'add_customer', input }, 'Đã thêm khách'); const customer = result.data.customers.find(item => item.id === result.resultId); if (!customer) throw new Error('Thiếu khách trong phản hồi.'); return customer; },
     updateCustomer: async (id, updates) => { await run({ type: 'update_customer', input: { id, updates } }, 'Đã cập nhật khách'); },
+    addCustomerNote: async (customerId, body) => { await run({ type: 'add_customer_note', input: { customerId, body } }, 'Đã thêm ghi chú chăm sóc', false); },
     addProduct: async input => { await run({ type: 'add_product', input }, 'Đã thêm sản phẩm'); },
     updateProduct: async (productId, updates) => { await run({ type: 'update_product', input: { productId, ...updates } }, 'Đã cập nhật sản phẩm'); },
     updatePlan: async (planId, updates) => { await run({ type: 'update_plan', input: { planId, ...updates } }, 'Đã cập nhật gói bán'); },
@@ -182,6 +185,7 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
     saveCampaign: async input => { await run({ type: 'save_campaign', input }, 'Đã lưu bản nháp'); },
     updateSettings: async input => { await run({ type: 'update_settings', input }, 'Đã lưu cài đặt', false); },
     markContacted: async subscriptionId => { try { await run({ type: 'mark_contacted', input: { subscriptionId } }, 'Đã ghi nhận liên hệ', false); } catch { /* Error already shown to the user by run(). */ } },
+    updateSubscriptionNote: async (subscriptionId, note) => { await run({ type: 'update_subscription_note', input: { subscriptionId, note } }, 'Đã lưu tài khoản gói', false); },
     importData: input => { updateData(dataSchema.parse(input)); closeDialog(); addToast('Đã nhập dữ liệu thành công', undefined, 'success'); },
     resetData: () => { updateData(createEmptyProductionData()); closeDialog(); addToast('Đã làm sạch dữ liệu', 'Hệ thống đã sẵn sàng cho vận hành thực tế.', 'success'); },
     loadDemoData: () => { updateData(createInitialData()); closeDialog(); addToast('Đã nạp dữ liệu mẫu', 'Đã tải 36 khách hàng và 98 đơn hàng demo.', 'info'); },

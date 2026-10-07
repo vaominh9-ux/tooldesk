@@ -123,6 +123,14 @@ export function OrderDetailDialog({
               )}
             </div>
 
+            {/* Tool account / Order note */}
+            {order.note && (
+              <div style={{ margin: '12px 0', padding: '10px 14px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '9px', fontSize: '13px' }}>
+                <span style={{ color: '#64748b', fontSize: '11.5px', display: 'block', marginBottom: '2px', fontWeight: 600 }}>Tài khoản / Ghi chú đơn:</span>
+                <strong style={{ color: '#1e293b' }}>{order.note}</strong>
+              </div>
+            )}
+
             {/* Product detail */}
             <div className="detail-product">
               <span className={`product-logo large ${product?.color || 'mint'}`} aria-hidden="true">

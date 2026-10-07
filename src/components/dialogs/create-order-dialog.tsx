@@ -40,6 +40,7 @@ export function CreateOrderDialog({
   const [price, setPrice] = useState(currentPlan?.price || 0);
   const [cost, setCost] = useState(currentPlan?.cost || 0);
   const [payment, setPayment] = useState<'paid' | 'unpaid'>('paid');
+  const [accountEmail, setAccountEmail] = useState('');
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
 
@@ -77,6 +78,12 @@ export function CreateOrderDialog({
       if (isNewCustomer && !newCustomerName.trim()) {
         throw new Error('Vui lòng nhập họ tên khách hàng mới.');
       }
+      let finalNote = note.trim();
+      if (accountEmail.trim()) {
+        finalNote = finalNote
+          ? `Tài khoản: ${accountEmail.trim()} | ${finalNote}`
+          : `Tài khoản: ${accountEmail.trim()}`;
+      }
       await createOrder({
         customerId: isNewCustomer ? undefined : selectedCustomerId,
         newCustomer: isNewCustomer
@@ -88,7 +95,7 @@ export function CreateOrderDialog({
         price: Number(price),
         cost: Number(cost),
         payment,
-        note
+        note: finalNote
       });
     } catch (err: any) {
       setError(err.message || 'Không thể tạo đơn hàng.');
@@ -235,6 +242,18 @@ export function CreateOrderDialog({
                 </select>
               </label>
             </div>
+
+            <label className="field">
+              <span>Email / Tài khoản nhận tool (nếu khác email khách)</span>
+              <input
+                type="text"
+                name="accountEmail"
+                placeholder="Ví dụ: taikhoan-nhan-tool@gmail.com"
+                value={accountEmail}
+                onChange={e => setAccountEmail(e.target.value)}
+              />
+              <small>Nhập email nhận gói để phân biệt khi khách mua nhiều đơn cho các email khác nhau (để trống nếu dùng email khách).</small>
+            </label>
 
             <label className="field">
               <span>Ngày bắt đầu</span>

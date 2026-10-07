@@ -4,6 +4,7 @@ import { addDuration, addDays, daysLeft, formatDateLabel } from '../src/domain/d
 import { subStatus, renewalDates } from '../src/domain/subscriptions';
 import { validateRefundInput, refundServiceOption } from '../src/domain/refunds';
 import { createShortId, formatOrderCode, formatCustomerCode } from '../src/domain/orders';
+import { executeCommand } from '../src/domain/commands';
 import { createInitialData } from '../src/mocks/fixtures';
 
 describe('Domain: Money calculations', () => {
@@ -164,4 +165,43 @@ describe('Domain: Short ID generation & display formatting', () => {
     expect(formatCustomerCode('KH-01')).toBe('KH-01');
     expect(formatCustomerCode('KH-965C40')).toBe('KH-965C40');
   });
+
+  it('propagates note to subscription when creating order and updates via update_subscription_note', () => {
+    const data = createInitialData();
+    const op = {
+      today: '2026-10-07',
+      now: new Date().toISOString(),
+      actor: 'Tester',
+      newId: (p: string) => `${p}-TEST`
+    };
+
+    const created = executeCommand(data, {
+      type: 'create_order',
+      input: {
+        customerId: data.customers[0].id,
+        productId: data.products[0].id,
+        planId: data.products[0].plans[0].id,
+        startsAt: '2026-10-07',
+        price: 200000,
+        cost: 100000,
+        payment: 'paid',
+        note: 'Tài khoản: account2@gmail.com'
+      }
+    }, op);
+
+    const sub = created.data.subscriptions[0];
+    expect(sub.note).toBe('Tài khoản: account2@gmail.com');
+
+    const updated = executeCommand(created.data, {
+      type: 'update_subscription_note',
+      input: {
+        subscriptionId: sub.id,
+        note: 'Tài khoản: account_updated@gmail.com'
+      }
+    }, op);
+
+    const updatedSub = updated.data.subscriptions.find(s => s.id === sub.id);
+    expect(updatedSub?.note).toBe('Tài khoản: account_updated@gmail.com');
+  });
 });
+
