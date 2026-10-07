@@ -1,11 +1,14 @@
 'use client';
 
+import { useBackdropDismiss } from './use-backdrop-dismiss';
+
 import React, { useState } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
 import { orderFinancials, formatMoney } from '@/domain/money';
 import { refundServiceOption } from '@/domain/refunds';
 import { formatDateLabel } from '@/domain/dates';
+import { formatOrderCode } from '@/domain/orders';
 
 export function RefundDialog({
   orderId,
@@ -17,6 +20,7 @@ export function RefundDialog({
   onClose: () => void;
 }) {
   const { data, processRefund, addToast, openDialog, today } = useTooldesk();
+  const backdropDismiss = useBackdropDismiss(onClose);
 
   const order = data.orders.find(o => o.id === orderId);
   const customer = data.customers.find(c => c.id === order?.customerId);
@@ -38,7 +42,7 @@ export function RefundDialog({
 
   if (!order || !f || !serviceOpt) {
     return (
-      <div className="dialog-overlay" onClick={onClose}>
+      <div className="dialog-overlay" {...backdropDismiss}>
         <dialog id="active-dialog" className="drawer" open onClick={e => e.stopPropagation()}>
           <div className="dialog-shell">
             <header className="dialog-header">
@@ -72,7 +76,7 @@ export function RefundDialog({
 
   if (cannotRecord) {
     return (
-      <div className="dialog-overlay" onClick={onClose}>
+      <div className="dialog-overlay" {...backdropDismiss}>
         <dialog id="active-dialog" className="drawer" open onClick={e => e.stopPropagation()}>
           <div className="dialog-shell">
             <header className="dialog-header">
@@ -136,7 +140,7 @@ export function RefundDialog({
   const grossAfter = f.gross - activeAmount + activeCostRecovered;
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
+    <div className="dialog-overlay" {...backdropDismiss}>
       <dialog
         id="active-dialog"
         className="drawer refund-drawer"
@@ -151,7 +155,7 @@ export function RefundDialog({
               <h2 id="dialog-title">
                 {recoveryMode ? 'Thu hồi giá vốn' : 'Ghi nhận hoàn tiền'}
               </h2>
-              <p>{order.id} · {customer?.name || ''}</p>
+              <p>{formatOrderCode(order.id)} · {customer?.name || ''}</p>
             </div>
             <button
               type="button"

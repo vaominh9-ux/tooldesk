@@ -1,11 +1,14 @@
 'use client';
 
+import { useBackdropDismiss } from './use-backdrop-dismiss';
+
 import React from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
 import { formatMoney } from '@/domain/money';
 import { formatDateLabel, remainingLabel } from '@/domain/dates';
 import { subStatus } from '@/domain/subscriptions';
+import { formatOrderCode } from '@/domain/orders';
 
 export function SubscriptionDetailDialog({
   subscriptionId,
@@ -15,11 +18,12 @@ export function SubscriptionDetailDialog({
   onClose: () => void;
 }) {
   const { data, openDialog, markContacted, today } = useTooldesk();
+  const backdropDismiss = useBackdropDismiss(onClose);
   const sub = data.subscriptions.find(s => s.id === subscriptionId);
 
   if (!sub) {
     return (
-      <div className="dialog-overlay" onClick={onClose}>
+      <div className="dialog-overlay" {...backdropDismiss}>
         <dialog id="active-dialog" className="drawer" open onClick={e => e.stopPropagation()}>
           <div className="dialog-shell">
             <header className="dialog-header">
@@ -69,7 +73,7 @@ export function SubscriptionDetailDialog({
   };
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
+    <div className="dialog-overlay" {...backdropDismiss}>
       <dialog id="active-dialog" className="drawer" open onClick={e => e.stopPropagation()} aria-labelledby="dialog-title">
         <div className="dialog-shell">
           {/* Header */}
@@ -181,7 +185,7 @@ export function SubscriptionDetailDialog({
                       style={{ fontWeight: 600 }}
                       onClick={() => openDialog('order-detail', o.id)}
                     >
-                      {o.id}
+                      {formatOrderCode(o.id)}
                       <AppIcon name="chevron" size={14} />
                     </button>
                     <span style={{ color: '#778197' }}>

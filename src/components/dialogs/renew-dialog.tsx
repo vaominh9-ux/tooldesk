@@ -1,5 +1,7 @@
 'use client';
 
+import { useBackdropDismiss } from './use-backdrop-dismiss';
+
 import React, { useState } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
@@ -15,6 +17,7 @@ export function RenewDialog({
   onClose: () => void;
 }) {
   const { data, renewSubscription, addToast, today } = useTooldesk();
+  const backdropDismiss = useBackdropDismiss(onClose);
 
   const sub = data.subscriptions.find(s => s.id === subscriptionId);
   const customer = data.customers.find(c => c.id === sub?.customerId);
@@ -32,7 +35,7 @@ export function RenewDialog({
 
   if (!sub || !product || !plan || !customer) {
     return (
-      <div className="dialog-overlay" onClick={onClose}>
+      <div className="dialog-overlay" {...backdropDismiss}>
         <dialog id="active-dialog" className="drawer" open onClick={e => e.stopPropagation()}>
           <div className="dialog-shell">
             <header className="dialog-header">
@@ -87,7 +90,7 @@ export function RenewDialog({
   const isStillActive = !sub.cancelled && sub.expiresAt > today;
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
+    <div className="dialog-overlay" {...backdropDismiss}>
       <dialog
         id="active-dialog"
         className="drawer"

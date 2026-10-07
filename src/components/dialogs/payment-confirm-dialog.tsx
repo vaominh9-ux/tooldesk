@@ -1,9 +1,12 @@
 'use client';
 
+import { useBackdropDismiss } from './use-backdrop-dismiss';
+
 import React from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
 import { formatMoney } from '@/domain/money';
+import { formatOrderCode } from '@/domain/orders';
 
 export function PaymentConfirmDialog({
   orderId,
@@ -13,13 +16,14 @@ export function PaymentConfirmDialog({
   onClose: () => void;
 }) {
   const { data, recordPayment, addToast } = useTooldesk();
+  const backdropDismiss = useBackdropDismiss(onClose);
 
   const order = data.orders.find(o => o.id === orderId);
   const customer = data.customers.find(c => c.id === order?.customerId);
 
   if (!order) {
     return (
-      <div className="dialog-overlay center" onClick={onClose}>
+      <div className="dialog-overlay center" {...backdropDismiss}>
         <dialog id="active-dialog" className="modal small-modal" open onClick={e => e.stopPropagation()}>
           <div className="dialog-shell">
             <header className="dialog-header">
@@ -49,7 +53,7 @@ export function PaymentConfirmDialog({
   };
 
   return (
-    <div className="dialog-overlay center" onClick={onClose}>
+    <div className="dialog-overlay center" {...backdropDismiss}>
       <dialog
         id="active-dialog"
         className="modal small-modal"
@@ -61,7 +65,7 @@ export function PaymentConfirmDialog({
           <header className="dialog-header">
             <div>
               <h2 id="dialog-title">Xác nhận đã nhận đủ tiền</h2>
-              <p>{order.id} · {customer?.name}</p>
+              <p>{formatOrderCode(order.id)} · {customer?.name}</p>
             </div>
             <button
               type="button"

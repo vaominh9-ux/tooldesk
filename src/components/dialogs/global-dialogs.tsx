@@ -1,5 +1,7 @@
 'use client';
 
+import { useBackdropDismiss } from './use-backdrop-dismiss';
+
 import React, { useEffect } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { CreateOrderDialog } from './create-order-dialog';
@@ -19,6 +21,7 @@ import { SearchDialog } from './search-dialog';
 
 export function GlobalDialogs() {
   const { data, pending, dialog, closeDialog, toasts, removeToast, resetData, openDialog } = useTooldesk();
+  const backdropDismiss = useBackdropDismiss(closeDialog);
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); openDialog('search'); }
@@ -197,7 +200,7 @@ export function GlobalDialogs() {
 
 
       {dialog.type === 'reset' && (
-        <div className="dialog-overlay center" onClick={closeDialog}>
+        <div className="dialog-overlay center" {...backdropDismiss}>
           <dialog id="active-dialog" className="modal small-modal" open onClick={e => e.stopPropagation()}>
             <div className="dialog-shell">
               <header className="dialog-header">
@@ -241,7 +244,7 @@ export function GlobalDialogs() {
       )}
 
       {dialog.type === 'activity' && (
-        <div className="dialog-overlay" onClick={closeDialog}>
+        <div className="dialog-overlay" {...backdropDismiss}>
           <dialog id="active-dialog" className="drawer" open onClick={e => e.stopPropagation()}>
             <div className="dialog-shell">
               <header className="dialog-header">
@@ -302,7 +305,7 @@ export function GlobalDialogs() {
       )}
 
       {dialog.type === 'help' && (
-        <div className="dialog-overlay center" onClick={closeDialog}>
+        <div className="dialog-overlay center" {...backdropDismiss}>
           <dialog id="active-dialog" className="modal" open onClick={e => e.stopPropagation()} style={{ maxWidth: '580px' }}>
             <div className="dialog-shell">
               <header className="dialog-header">

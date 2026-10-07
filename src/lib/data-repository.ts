@@ -3,6 +3,7 @@ import type { PoolClient } from 'pg';
 import { getDbPool, transaction } from './db';
 import { dataSchema, type AppData } from '@/domain/data-schema';
 import { executeCommand, type Command } from '@/domain/commands';
+import { createShortId } from '@/domain/orders';
 import { todayInHoChiMinh } from './clock';
 import { createHash, randomUUID } from 'node:crypto';
 
@@ -77,7 +78,7 @@ export async function runCommand(command: Command, operationId: string, actor: {
       if (previous.rows[0].request_hash !== hash || previous.rows[0].actor_user_id !== actor.id) throw new Error('Mã yêu cầu đã được sử dụng cho nội dung khác.');
       return { data: before, resultId: previous.rows[0].result_id || undefined };
     }
-    const result = executeCommand(before, command, { today: todayInHoChiMinh(), now: new Date().toISOString(), actor: actor.email, newId: prefix => prefix + '-' + randomUUID() });
+    const result = executeCommand(before, command, { today: todayInHoChiMinh(), now: new Date().toISOString(), actor: actor.email, newId: prefix => createShortId(prefix) });
     await saveChanges(client, before, result.data);
     await client.query('INSERT INTO command_idempotency (operation_id,command_type,result_id,actor_user_id,request_hash) VALUES ($1,$2,$3,$4,$5)', [operationId, command.type, result.resultId || null, actor.id, hash]);
     return result;

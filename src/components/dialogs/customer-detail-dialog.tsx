@@ -1,9 +1,11 @@
 'use client';
 
+import { useBackdropDismiss } from './use-backdrop-dismiss';
+
 import React from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
-import { getCustomerStats } from '@/domain/orders';
+import { getCustomerStats, formatOrderCode, formatCustomerCode } from '@/domain/orders';
 import { formatMoney } from '@/domain/money';
 import { formatDateLabel, remainingLabel } from '@/domain/dates';
 import { subStatus } from '@/domain/subscriptions';
@@ -16,11 +18,12 @@ export function CustomerDetailDialog({
   onClose: () => void;
 }) {
   const { data, openDialog, today } = useTooldesk();
+  const backdropDismiss = useBackdropDismiss(onClose);
   const customer = data.customers.find(c => c.id === customerId);
 
   if (!customer) {
     return (
-      <div className="dialog-overlay" onClick={onClose}>
+      <div className="dialog-overlay" {...backdropDismiss}>
         <dialog id="active-dialog" className="drawer" open onClick={e => e.stopPropagation()}>
           <div className="dialog-shell">
             <header className="dialog-header">
@@ -57,7 +60,7 @@ export function CustomerDetailDialog({
   };
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
+    <div className="dialog-overlay" {...backdropDismiss}>
       <dialog id="active-dialog" className="drawer" open onClick={e => e.stopPropagation()} aria-labelledby="dialog-title">
         <div className="dialog-shell">
           {/* Header */}
@@ -70,7 +73,7 @@ export function CustomerDetailDialog({
                 </span>
               </div>
               <p>
-                Mã: {customer.id} · Gia nhập {formatDateLabel(customer.joinedAt, true)}
+                Mã: {formatCustomerCode(customer.id)} · Gia nhập {formatDateLabel(customer.joinedAt, true)}
               </p>
             </div>
             <button type="button" className="icon-button" onClick={onClose} aria-label="Đóng">
@@ -220,7 +223,7 @@ export function CustomerDetailDialog({
                             onClick={() => openDialog('order-detail', order.id)}
                             title="Xem chi tiết đơn này"
                           >
-                            {order.id}
+                            {formatOrderCode(order.id)}
                             <AppIcon name="chevron" size={13} />
                           </button>
                           <span style={{ color: '#778197' }}>· {prod?.name}</span>

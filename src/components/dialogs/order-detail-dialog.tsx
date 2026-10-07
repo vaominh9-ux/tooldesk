@@ -1,10 +1,13 @@
 'use client';
 
+import { useBackdropDismiss } from './use-backdrop-dismiss';
+
 import React from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
 import { orderFinancials, formatMoney } from '@/domain/money';
 import { formatDateLabel } from '@/domain/dates';
+import { formatOrderCode } from '@/domain/orders';
 
 export function OrderDetailDialog({
   orderId,
@@ -14,11 +17,12 @@ export function OrderDetailDialog({
   onClose: () => void;
 }) {
   const { data, openDialog, recordPayment, addToast } = useTooldesk();
+  const backdropDismiss = useBackdropDismiss(onClose);
   const order = data.orders.find(o => o.id === orderId);
 
   if (!order) {
     return (
-      <div className="dialog-overlay" onClick={onClose}>
+      <div className="dialog-overlay" {...backdropDismiss}>
         <dialog id="active-dialog" className="drawer" open onClick={e => e.stopPropagation()}>
           <div className="dialog-shell">
             <header className="dialog-header">
@@ -74,13 +78,13 @@ export function OrderDetailDialog({
   const grossProfit = order.payment === 'paid' ? f.gross : (order.price - order.cost);
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
+    <div className="dialog-overlay" {...backdropDismiss}>
       <dialog id="active-dialog" className="drawer" open onClick={e => e.stopPropagation()} aria-labelledby="dialog-title">
         <div className="dialog-shell">
           {/* Header */}
           <header className="dialog-header">
             <div>
-              <h2 id="dialog-title">{order.id}</h2>
+              <h2 id="dialog-title">{formatOrderCode(order.id)}</h2>
               <p>
                 {order.kind === 'renewal' ? 'Đơn gia hạn' : 'Đơn mua mới'} · Tạo ngày {formatDateLabel(order.date, true)}
               </p>

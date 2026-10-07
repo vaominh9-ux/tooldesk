@@ -1,5 +1,7 @@
 'use client';
 
+import { useBackdropDismiss } from './use-backdrop-dismiss';
+
 import React, { useState } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
@@ -23,6 +25,7 @@ export function CampaignDialog({
   onClose: () => void;
 }) {
   const { data, saveCampaign, addToast, today } = useTooldesk();
+  const backdropDismiss = useBackdropDismiss(onClose);
 
   const existing = campaignId ? data.campaigns.find(item => item.id === campaignId) : null;
 
@@ -65,7 +68,7 @@ export function CampaignDialog({
   };
 
   return (
-    <div className="dialog-overlay center" onClick={onClose}>
+    <div className="dialog-overlay center" {...backdropDismiss}>
       <dialog
         id="active-dialog"
         className="modal wide"

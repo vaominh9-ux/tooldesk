@@ -6,6 +6,7 @@ import { DEFAULT_APP_TODAY } from '@/domain/dates';
 import { runtimeToday } from '@/lib/app-clock';
 import { commandSchema, executeCommand } from '@/domain/commands';
 import { dataSchema } from '@/domain/data-schema';
+import { createShortId } from '@/domain/orders';
 import type { RefundInput } from '@/domain/refunds';
 import { LoginPanel } from '@/features/auth/login-panel';
 
@@ -145,7 +146,7 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
       if (dataSource === 'supabase' && (role === 'viewer' || dataStatus !== 'connected')) throw new Error('Chưa có quyền hoặc chưa tải dữ liệu.');
       let result: { data: TooldeskData; resultId?: string };
       if (dataSource === 'mock') {
-        result = executeCommand(dataSchema.parse(currentData.current), command, { today: runtimeToday(), now: new Date().toISOString(), actor: currentData.current.settings.ownerName, newId: prefix => prefix + '-' + crypto.randomUUID() });
+        result = executeCommand(dataSchema.parse(currentData.current), command, { today: runtimeToday(), now: new Date().toISOString(), actor: currentData.current.settings.ownerName, newId: prefix => createShortId(prefix) });
       } else {
         const body = JSON.stringify(command);
         const operationId = retryRequest.current?.body === body ? retryRequest.current.operationId : crypto.randomUUID();

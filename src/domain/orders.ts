@@ -111,3 +111,54 @@ export function audienceFor(
     excludedCount: selected.length - eligible.length
   };
 }
+
+/**
+ * Generate a concise, user-friendly ID (e.g. DH-728EE7, KH-965C40, sub-a4e022)
+ * 6-character hex provides 16.7+ million distinct IDs without long messy UUID strings.
+ */
+export function createShortId(prefix: string): string {
+  let hex = '';
+  if (typeof crypto !== 'undefined') {
+    if (crypto.randomUUID) {
+      hex = crypto.randomUUID().replace(/-/g, '').slice(0, 6);
+    } else if (crypto.getRandomValues) {
+      const bytes = new Uint8Array(3);
+      crypto.getRandomValues(bytes);
+      hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+    }
+  }
+  if (!hex) {
+    hex = Math.random().toString(36).slice(2, 8);
+  }
+  const isUpper = prefix === 'DH' || prefix === 'KH' || prefix === 'HT';
+  return `${isUpper ? prefix.toUpperCase() : prefix.toLowerCase()}-${isUpper ? hex.toUpperCase() : hex.toLowerCase()}`;
+}
+
+/**
+ * Format order ID to a clean, user-friendly short code for UI display.
+ * If given a long UUID like DH-22cb7a14-4e00-48ae-8ede-ff64c5728ee7,
+ * it returns a clean DH-22CB7A.
+ */
+export function formatOrderCode(orderId: string): string {
+  if (!orderId) return '';
+  if (orderId.startsWith('DH-') && orderId.length > 15) {
+    const core = orderId.slice(3).replace(/-/g, '');
+    return `DH-${core.slice(0, 6).toUpperCase()}`;
+  }
+  return orderId;
+}
+
+/**
+ * Format customer ID to a clean, user-friendly short code for UI display.
+ * If given KH-b2698857-965c-4047-becb-1276522862d9,
+ * it returns KH-B26988.
+ */
+export function formatCustomerCode(customerId: string): string {
+  if (!customerId) return '';
+  if (customerId.toLowerCase().startsWith('kh-') && customerId.length > 15) {
+    const core = customerId.slice(3).replace(/-/g, '');
+    return `KH-${core.slice(0, 6).toUpperCase()}`;
+  }
+  return customerId;
+}
+

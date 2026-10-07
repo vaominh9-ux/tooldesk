@@ -1,5 +1,7 @@
 'use client';
 
+import { useBackdropDismiss } from './use-backdrop-dismiss';
+
 import React, { useState } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
@@ -12,6 +14,7 @@ export function CustomerDialog({
   onClose: () => void;
 }) {
   const { data, addCustomer, updateCustomer, addToast } = useTooldesk();
+  const backdropDismiss = useBackdropDismiss(onClose);
   const existing = customerId ? data.customers.find(c => c.id === customerId) : null;
 
   const [name, setName] = useState(existing?.name || '');
@@ -85,7 +88,7 @@ export function CustomerDialog({
   };
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
+    <div className="dialog-overlay" {...backdropDismiss}>
       <dialog
         id="active-dialog"
         className="drawer"

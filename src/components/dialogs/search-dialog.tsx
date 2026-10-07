@@ -1,14 +1,18 @@
 'use client';
 
+import { useBackdropDismiss } from './use-backdrop-dismiss';
+
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
 import { formatMoney } from '@/domain/money';
+import { formatOrderCode, formatCustomerCode } from '@/domain/orders';
 
 export function SearchDialog({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const { data, openDialog } = useTooldesk();
+  const backdropDismiss = useBackdropDismiss(onClose);
   const [query, setQuery] = useState('');
 
   // Handle Esc key to close
@@ -27,7 +31,7 @@ export function SearchDialog({ onClose }: { onClose: () => void }) {
 
   const filteredCustomers = q
     ? data.customers
-        .filter(c => `${c.name} ${c.id} ${c.email || ''} ${c.phone || ''}`.toLowerCase().includes(q))
+        .filter(c => `${c.name} ${c.id} ${formatCustomerCode(c.id)} ${c.email || ''} ${c.phone || ''}`.toLowerCase().includes(q))
         .slice(0, 5)
     : [];
 
@@ -36,7 +40,7 @@ export function SearchDialog({ onClose }: { onClose: () => void }) {
         .filter(o => {
           const cust = data.customers.find(c => c.id === o.customerId);
           const prod = data.products.find(p => p.id === o.productId);
-          return `${o.id} ${cust?.name || ''} ${cust?.email || ''} ${cust?.phone || ''} ${prod?.name || ''}`
+          return `${o.id} ${formatOrderCode(o.id)} ${cust?.name || ''} ${cust?.email || ''} ${cust?.phone || ''} ${prod?.name || ''}`
             .toLowerCase()
             .includes(q);
         })
@@ -59,7 +63,7 @@ export function SearchDialog({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="dialog-overlay center" onClick={onClose}>
+    <div className="dialog-overlay center" {...backdropDismiss}>
       <dialog
         id="active-dialog"
         className="command-dialog"
@@ -125,7 +129,7 @@ export function SearchDialog({ onClose }: { onClose: () => void }) {
                         </span>
                         <div>
                           <strong>{c.name}</strong>
-                          <small>{c.email || c.phone || 'Chưa có liên hệ'} · {c.id.toUpperCase()}</small>
+                          <small>{c.email || c.phone || 'Chưa có liên hệ'} · {formatCustomerCode(c.id)}</small>
                         </div>
                         <AppIcon name="arrow" size={15} />
                       </button>
@@ -149,7 +153,7 @@ export function SearchDialog({ onClose }: { onClose: () => void }) {
                       >
                         <AppIcon name="orders" size={20} />
                         <div>
-                          <strong>{o.id} · {prod?.name || 'Sản phẩm'}</strong>
+                          <strong>{formatOrderCode(o.id)} · {prod?.name || 'Sản phẩm'}</strong>
                           <small>{cust?.name || 'Khách hàng'} · {formatMoney(o.price)}</small>
                         </div>
                         <AppIcon name="arrow" size={15} />

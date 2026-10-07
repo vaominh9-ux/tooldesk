@@ -1,5 +1,7 @@
 'use client';
 
+import { useBackdropDismiss } from './use-backdrop-dismiss';
+
 import React, { useState } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
@@ -15,6 +17,7 @@ export function PlanDialog({
   onClose: () => void;
 }) {
   const { data, pending, updatePlan, addPlan } = useTooldesk();
+  const backdropDismiss = useBackdropDismiss(onClose);
 
   // Find product and plan depending on which prop is passed
   const product = productId
@@ -61,7 +64,7 @@ export function PlanDialog({
 
   if (!product) {
     return (
-      <div className="dialog-overlay" onClick={onClose}>
+      <div className="dialog-overlay" {...backdropDismiss}>
         <dialog id="active-dialog" className="drawer" open onClick={e => e.stopPropagation()}>
           <div className="dialog-shell">
             <header className="dialog-header">
@@ -122,7 +125,7 @@ export function PlanDialog({
   const profit = price - cost;
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
+    <div className="dialog-overlay" {...backdropDismiss}>
       <dialog
         id="active-dialog"
         className="drawer"

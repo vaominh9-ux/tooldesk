@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '@/components/shared/app-icon';
 import { formatMoney, orderFinancials } from '@/domain/money';
-import { getCustomerStats, paginate } from '@/domain/orders';
+import { getCustomerStats, paginate, formatOrderCode } from '@/domain/orders';
 import { formatDateLabel, remainingLabel } from '@/domain/dates';
 import { subStatus } from '@/domain/subscriptions';
 import Link from 'next/link';
@@ -259,9 +259,9 @@ export default function CustomersPage() {
                                 type="button"
                                 className="text-link order-number"
                                 onClick={() => openDialog('order-detail', o.id)}
-                                title="Bấm xem chi tiết đơn hàng này"
+                                title={`Mã đơn: ${o.id}`}
                               >
-                                {o.id}
+                                {formatOrderCode(o.id)}
                               </button>
                             </td>
                             <td>{prod?.name || 'Sản phẩm'}</td>

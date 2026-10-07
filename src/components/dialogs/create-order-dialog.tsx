@@ -1,10 +1,13 @@
 'use client';
 
+import { useBackdropDismiss } from './use-backdrop-dismiss';
+
 import React, { useState } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
 import { addDuration, formatDateLabel } from '@/domain/dates';
 import { formatMoney } from '@/domain/money';
+import { formatCustomerCode } from '@/domain/orders';
 
 export function CreateOrderDialog({
   onClose,
@@ -16,6 +19,7 @@ export function CreateOrderDialog({
   defaultProductId?: string;
 }) {
   const { data, createOrder, today } = useTooldesk();
+  const backdropDismiss = useBackdropDismiss(onClose);
 
   const [isNewCustomer, setIsNewCustomer] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState(
@@ -92,7 +96,7 @@ export function CreateOrderDialog({
   };
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
+    <div className="dialog-overlay" {...backdropDismiss}>
       <dialog
         id="active-dialog"
         className="drawer"
@@ -148,7 +152,7 @@ export function CreateOrderDialog({
                   >
                     {data.customers.map(c => (
                       <option key={c.id} value={c.id}>
-                        {c.name} · {c.id.toUpperCase()} ({c.phone || c.email || 'Trực tiếp'})
+                        {c.name} · {formatCustomerCode(c.id)} ({c.phone || c.email || 'Trực tiếp'})
                       </option>
                     ))}
                   </select>

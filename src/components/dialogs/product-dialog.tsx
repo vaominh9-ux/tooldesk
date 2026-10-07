@@ -1,5 +1,7 @@
 'use client';
 
+import { useBackdropDismiss } from './use-backdrop-dismiss';
+
 import React, { useState } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
@@ -24,6 +26,7 @@ export function ProductDialog({
   onClose: () => void;
 }) {
   const { data, addProduct, updateProduct } = useTooldesk();
+  const backdropDismiss = useBackdropDismiss(onClose);
   const existingProduct = productId ? data.products.find(p => p.id === productId) : undefined;
   const isEditing = Boolean(existingProduct);
 
@@ -156,7 +159,7 @@ export function ProductDialog({
   };
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
+    <div className="dialog-overlay" {...backdropDismiss}>
       <dialog
         id="active-dialog"
         className="drawer"

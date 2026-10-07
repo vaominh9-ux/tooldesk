@@ -7,6 +7,7 @@ import { AppIcon } from '@/components/shared/app-icon';
 import { calculateTotals, formatMoney, orderFinancials, cashSummary } from '@/domain/money';
 import { formatDateLabel, remainingLabel, addDays } from '@/domain/dates';
 import { subStatus, isActive } from '@/domain/subscriptions';
+import { formatOrderCode } from '@/domain/orders';
 
 export default function DashboardPage() {
   const { data, today, openDialog } = useTooldesk();
@@ -227,7 +228,7 @@ export default function DashboardPage() {
                                 <Link className="text-link strong" href={`/customers?id=${cust?.id}`}>
                                   {cust?.name || 'Khách đã xóa'}
                                 </Link>
-                                <small>{o.id}</small>
+                                <small>{formatOrderCode(o.id)}</small>
                               </div>
                             </div>
                           </td>

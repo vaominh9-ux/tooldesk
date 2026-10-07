@@ -5,7 +5,7 @@ import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '@/components/shared/app-icon';
 import { orderFinancials, formatMoney } from '@/domain/money';
 import { formatDateLabel } from '@/domain/dates';
-import { paginate } from '@/domain/orders';
+import { paginate, formatOrderCode } from '@/domain/orders';
 import Link from 'next/link';
 
 export default function OrdersPage() {
@@ -47,7 +47,7 @@ export default function OrdersPage() {
     items = items.filter(o => {
       const cust = data.customers.find(c => c.id === o.customerId);
       const prod = data.products.find(p => p.id === o.productId);
-      const text = `${o.id} ${cust?.name || ''} ${cust?.email || ''} ${cust?.phone || ''} ${prod?.name || ''}`.toLowerCase();
+      const text = `${o.id} ${formatOrderCode(o.id)} ${cust?.name || ''} ${cust?.email || ''} ${cust?.phone || ''} ${prod?.name || ''}`.toLowerCase();
       return text.includes(q);
     });
   }
@@ -237,8 +237,9 @@ export default function OrdersPage() {
                             type="button"
                             className="text-link order-number"
                             onClick={() => openDialog('order-detail', o.id)}
+                            title={`Mã đơn: ${o.id}`}
                           >
-                            {o.id}
+                            {formatOrderCode(o.id)}
                           </button>
                           <span className="order-kind">
                             {o.kind === 'renewal' ? 'Gia hạn' : 'Mua mới'}
@@ -315,8 +316,9 @@ export default function OrdersPage() {
                         type="button"
                         className="text-button order-number"
                         onClick={() => openDialog('order-detail', o.id)}
+                        title={`Mã đơn: ${o.id}`}
                       >
-                        {o.id}
+                        {formatOrderCode(o.id)}
                         <AppIcon name="chevron" size={14} />
                       </button>
                       {renderPaymentBadge(o)}

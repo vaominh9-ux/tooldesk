@@ -3,6 +3,7 @@ import { orderFinancials, totalPaid, cashSummary, formatMoney } from '../src/dom
 import { addDuration, addDays, daysLeft, formatDateLabel } from '../src/domain/dates';
 import { subStatus, renewalDates } from '../src/domain/subscriptions';
 import { validateRefundInput, refundServiceOption } from '../src/domain/refunds';
+import { createShortId, formatOrderCode, formatCustomerCode } from '../src/domain/orders';
 import { createInitialData } from '../src/mocks/fixtures';
 
 describe('Domain: Money calculations', () => {
@@ -131,5 +132,36 @@ describe('Domain: Refund validation', () => {
         method: 'bank'
       });
     }).toThrow(/Chỉ còn có thể hoàn/);
+  });
+});
+
+describe('Domain: Short ID generation & display formatting', () => {
+  it('generates concise short IDs with 6-char hex suffix', () => {
+    const orderId = createShortId('DH');
+    expect(orderId).toMatch(/^DH-[0-9A-F]{6}$/);
+
+    const customerId = createShortId('KH');
+    expect(customerId).toMatch(/^KH-[0-9A-F]{6}$/);
+
+    const subId = createShortId('sub');
+    expect(subId).toMatch(/^sub-[0-9a-f]{6}$/);
+  });
+
+  it('formats legacy long UUID order codes to clean 6-char display codes', () => {
+    const legacy = 'DH-22cb7a14-4e00-48ae-8ede-ff64c5728ee7';
+    expect(formatOrderCode(legacy)).toBe('DH-22CB7A');
+
+    // Leaves already short codes untouched
+    expect(formatOrderCode('DH-8F64C5')).toBe('DH-8F64C5');
+    expect(formatOrderCode('DH-1')).toBe('DH-1');
+  });
+
+  it('formats legacy long UUID customer codes to clean 6-char display codes', () => {
+    const legacy = 'KH-b2698857-965c-4047-becb-1276522862d9';
+    expect(formatCustomerCode(legacy)).toBe('KH-B26988');
+
+    // Leaves already short codes untouched
+    expect(formatCustomerCode('KH-01')).toBe('KH-01');
+    expect(formatCustomerCode('KH-965C40')).toBe('KH-965C40');
   });
 });
