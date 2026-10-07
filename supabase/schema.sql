@@ -155,6 +155,20 @@ CREATE TABLE IF NOT EXISTS public.command_idempotency (
     request_hash TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+CREATE TABLE IF NOT EXISTS public.email_outbox (
+    id UUID PRIMARY KEY,
+    subscription_id TEXT NOT NULL REFERENCES public.subscriptions(id) ON DELETE RESTRICT,
+    cycle_key TEXT NOT NULL UNIQUE,
+    status TEXT NOT NULL CHECK (status IN ('pending','sending','sent','retry','failed','cancelled','unknown')),
+    attempts INT NOT NULL DEFAULT 0 CHECK (attempts>=0),
+    recipient TEXT,
+    provider_message_id TEXT,
+    last_error TEXT,
+    attempted_at TIMESTAMPTZ,
+    sent_at TIMESTAMPTZ,
+    next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
 -- ========================================================
 -- INDEXES & PERFORMANCE OPTIMIZATIONS
@@ -182,6 +196,7 @@ ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.app_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reminder_deliveries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.command_idempotency ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.email_outbox ENABLE ROW LEVEL SECURITY;
 
 -- Mẫu RLS Policy cho phép đọc/ghi công khai (có thể tùy chỉnh lại theo User ID khi tích hợp Auth)
 DO $$

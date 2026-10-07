@@ -11,7 +11,7 @@ import { LoginPanel } from '@/features/auth/login-panel';
 interface ToastItem { id: string; title: string; message?: string; type?: 'info' | 'success' | 'warning' | 'error' }
 interface DialogState {
   type: 'create-order' | 'renew' | 'renew-subscription' | 'refund' | 'recover-cost' | 'pay-confirm' | 'customer' | 'order-detail' | 'customer-detail' | 'subscription-detail' | 'product' | 'plan' | 'campaign' | 'search' | 'activity' | 'help' | 'reset' | null;
-  payload?: string | { id?: string; orderId?: string; customerId?: string; subscriptionId?: string; productId?: string; planId?: string; mode?: string };
+  payload?: string | { id?: string; orderId?: string; customerId?: string; subscriptionId?: string; productId?: string; planId?: string; mode?: string; segment?: string };
 }
 interface CustomerInput { name: string; email?: string; phone?: string; source?: string; notes?: string; emailConsent?: Customer['emailConsent']; consentSource?: string }
 interface CreateOrderInput { customerId?: string; newCustomer?: { name: string; email?: string; phone?: string }; productId: string; planId: string; startsAt: string; price: number; cost: number; payment: 'paid' | 'unpaid'; note?: string }

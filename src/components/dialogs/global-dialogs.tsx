@@ -49,26 +49,18 @@ export function GlobalDialogs() {
     return () => { cancelAnimationFrame(frame); document.body.style.overflow = previousOverflow; document.removeEventListener('keydown', trapFocus); if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus(); };
   }, [dialog.type]);
 
-  const orderId =
-    typeof dialog.payload === 'string'
-      ? dialog.payload
-      : dialog.payload?.orderId || dialog.payload?.id || '';
+  const payloadObj = typeof dialog.payload === 'object' && dialog.payload !== null ? dialog.payload : undefined;
+  const payloadStr = typeof dialog.payload === 'string' ? dialog.payload : undefined;
 
-  const customerId =
-    typeof dialog.payload === 'string'
-      ? dialog.payload
-      : dialog.payload?.customerId || dialog.payload?.id || '';
+  const orderId = payloadStr || payloadObj?.orderId || payloadObj?.id || '';
+  const customerId = payloadStr || payloadObj?.customerId || payloadObj?.id || '';
+  const subscriptionId = payloadStr || payloadObj?.subscriptionId || payloadObj?.id || '';
 
-  const subscriptionId =
-    typeof dialog.payload === 'string'
-      ? dialog.payload
-      : dialog.payload?.subscriptionId || dialog.payload?.id || '';
-
-  const defaultCustomerId =
-    typeof dialog.payload === 'string' && dialog.payload.startsWith('kh-')
-      ? dialog.payload
-      : dialog.payload?.customerId;
-  const defaultProductId = typeof dialog.payload === 'string' && data.products.some(product => product.id === dialog.payload) ? dialog.payload : dialog.payload?.productId;
+  const defaultCustomerId = payloadStr?.startsWith('kh-') ? payloadStr : payloadObj?.customerId;
+  const defaultProductId =
+    payloadStr && data.products.some(product => product.id === payloadStr)
+      ? payloadStr
+      : payloadObj?.productId;
 
   return (
     <>
@@ -128,7 +120,7 @@ export function GlobalDialogs() {
         <RefundDialog
           key={`${orderId}:refund`}
           orderId={orderId}
-          isRecovery={dialog.payload?.mode === 'recovery'}
+          isRecovery={payloadObj?.mode === 'recovery'}
           onClose={closeDialog}
         />
       )}
@@ -184,11 +176,11 @@ export function GlobalDialogs() {
         />
       )}
       {dialog.type === 'search' && <SearchDialog onClose={closeDialog} />}
-      {dialog.type === 'plan' && <PlanDialog key={typeof dialog.payload === 'string' ? dialog.payload : dialog.payload?.planId} planId={typeof dialog.payload === 'string' ? dialog.payload : dialog.payload?.planId || ''} onClose={closeDialog} />}
+      {dialog.type === 'plan' && <PlanDialog key={payloadStr || payloadObj?.planId || ''} planId={payloadStr || payloadObj?.planId || ''} onClose={closeDialog} />}
       {dialog.type === 'campaign' && (() => {
-        const isCampaignId = typeof dialog.payload === 'string' && data.campaigns.some(c => c.id === dialog.payload);
-        const campaignId = isCampaignId ? dialog.payload : dialog.payload?.id;
-        const segment = !isCampaignId && typeof dialog.payload === 'string' ? dialog.payload : dialog.payload?.segment;
+        const isCampaignId = Boolean(payloadStr && data.campaigns.some(c => c.id === payloadStr));
+        const campaignId = isCampaignId ? payloadStr : payloadObj?.id;
+        const segment = !isCampaignId ? payloadStr : payloadObj?.segment;
         return (
           <CampaignDialog
             key={campaignId || segment || 'new'}

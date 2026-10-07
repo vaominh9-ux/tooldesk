@@ -10,6 +10,6 @@ export async function sendEmail(input: { to: string; subject: string; text: stri
   const port = Number(process.env.SMTP_PORT || 587);
   const transporter = nodemailer.createTransport({ host: process.env.SMTP_HOST, port, secure: process.env.SMTP_SECURE === 'true' || port === 465, requireTLS: process.env.SMTP_REQUIRE_TLS !== 'false', auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD }, connectionTimeout: 10000, greetingTimeout: 10000, socketTimeout: 15000 });
   const result = await transporter.sendMail({ from: process.env.EMAIL_FROM, to: input.to, subject: input.subject, text: input.text, html: input.html });
-  if (!result.accepted?.includes(input.to) || result.rejected?.length) throw new Error('SMTP không chấp nhận địa chỉ người nhận.');
+  if (!result.accepted?.includes(input.to) || result.rejected?.length) throw Object.assign(new Error('SMTP không chấp nhận địa chỉ người nhận.'), { responseCode: 550 });
   return { messageId: result.messageId, skipped: false };
 }
