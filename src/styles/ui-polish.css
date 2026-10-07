@@ -1,4 +1,6 @@
 /* Layout corrections share the baseline Tooldesk tokens. */
+.plan-name-button { font:inherit; font-weight:inherit; text-align:left; white-space:normal; justify-content:flex-start; color:var(--ink); padding:0; }
+.plan-name-button:hover { color:var(--accent); text-decoration:underline; }
 .sidebar { overflow: hidden; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
 .sidebar-scroll { flex: 1 1 auto; min-height: 0; width: 100%; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .sidebar-bottom { flex: 0 0 auto; width: 100%; margin-top: 0; padding: 8px 0 0; background: var(--surface); }

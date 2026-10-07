@@ -93,7 +93,7 @@ export default function ProductsPage() {
                 {p.plans.map(pl => (
                   <div key={pl.id} className="product-plan">
                     <div>
-                      <h3>{pl.name}</h3>
+                      <h3><button type="button" className="text-button plan-name-button" onClick={() => openDialog('plan', pl.id)} title="Chỉnh sửa tên và giá gói" aria-label={'Chỉnh sửa gói ' + p.name + ' ' + pl.name}>{pl.name}</button></h3>
                       <p>
                         Giá vốn {formatMoney(pl.cost)} · Lãi {formatMoney(pl.price - pl.cost)}
                       </p>

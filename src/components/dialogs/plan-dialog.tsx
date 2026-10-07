@@ -14,7 +14,7 @@ export function PlanDialog({
   productId?: string;
   onClose: () => void;
 }) {
-  const { data, updatePlan, addPlan } = useTooldesk();
+  const { data, pending, updatePlan, addPlan } = useTooldesk();
 
   // Find product and plan depending on which prop is passed
   const product = productId
@@ -134,7 +134,7 @@ export function PlanDialog({
         <form className="dialog-shell" id="plan-form" onSubmit={handleSubmit}>
           <header className="dialog-header">
             <div>
-              <h2 id="dialog-title">{isCreating ? 'Thêm gói thời hạn mới' : 'Cập nhật giá gói'}</h2>
+              <h2 id="dialog-title">{isCreating ? 'Thêm gói thời hạn mới' : 'Chỉnh sửa tên và giá gói'}</h2>
               <p>{product.name} {plan ? `· ${plan.name}` : ''}</p>
             </div>
             <button className="icon-button" type="button" onClick={onClose} aria-label="Đóng">
@@ -248,7 +248,7 @@ export function PlanDialog({
                 name="name"
                 value={name}
                 required
-                maxLength={70}
+                maxLength={80}
                 placeholder="Ví dụ: Gói 3 tháng, Gói 6 tháng, Gói 1 năm..."
                 onChange={e => setName(e.target.value)}
               />
@@ -297,7 +297,7 @@ export function PlanDialog({
                     name="price"
                     required
                     min={0}
-                    step={1000}
+                    step={1}
                     value={price}
                     onChange={e => setPrice(Number(e.target.value))}
                   />
@@ -313,7 +313,7 @@ export function PlanDialog({
                     name="cost"
                     required
                     min={0}
-                    step={1000}
+                    step={1}
                     value={cost}
                     onChange={e => setCost(Number(e.target.value))}
                   />
@@ -343,8 +343,8 @@ export function PlanDialog({
             <button className="button" type="button" onClick={onClose}>
               Hủy
             </button>
-            <button className="button primary" type="submit">
-              {isCreating ? 'Thêm gói dịch vụ' : 'Lưu giá mới'}
+            <button className="button primary" type="submit" disabled={pending}>
+              {pending ? 'Đang lưu…' : isCreating ? 'Thêm gói dịch vụ' : 'Lưu thay đổi gói'}
             </button>
           </footer>
         </form>

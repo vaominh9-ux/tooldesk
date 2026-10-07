@@ -5,7 +5,8 @@ import { readSmtpConfig } from '@/lib/smtp-config-store';
 export async function POST(request: Request) {
   try {
     requireSameOrigin(request);
-    if (process.env.APP_DATA_SOURCE !== 'supabase') return NextResponse.json({ error: 'Bản demo không kết nối SMTP thật.' }, { status: 409 });
+    const isDbConfigured = process.env.APP_DATA_SOURCE === 'supabase' || Boolean(process.env.DATABASE_URL);
+    if (!isDbConfigured) return NextResponse.json({ error: 'Bản demo không kết nối SMTP thật.' }, { status: 409 });
     const user = await requireUser();
     if (user.role !== 'admin') throw new AccessError(403, 'Chỉ quản trị viên được kiểm tra SMTP.');
     const { config } = await readSmtpConfig();

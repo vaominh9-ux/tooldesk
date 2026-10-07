@@ -28,9 +28,11 @@ function environmentConfig(): SmtpConfig | null {
   return parsed.success ? parsed.data : null;
 }
 export async function readSmtpConfig(): Promise<{ config: SmtpConfig | null; source: 'database' | 'environment' | 'empty' }> {
-  if (process.env.APP_DATA_SOURCE === 'supabase') {
-    const result = await getDbPool().query<{ encrypted_config: string }>("SELECT encrypted_config FROM smtp_configuration WHERE id='default'");
-    if (result.rows[0]) return { config: decryptSmtpConfig(result.rows[0].encrypted_config), source: 'database' };
+  if (process.env.APP_DATA_SOURCE === 'supabase' || process.env.DATABASE_URL) {
+    try {
+      const result = await getDbPool().query<{ encrypted_config: string }>("SELECT encrypted_config FROM smtp_configuration WHERE id='default'");
+      if (result.rows[0]) return { config: decryptSmtpConfig(result.rows[0].encrypted_config), source: 'database' };
+    } catch {}
   }
   const config = environmentConfig();
   return { config, source: config ? 'environment' : 'empty' };
