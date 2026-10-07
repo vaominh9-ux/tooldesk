@@ -394,7 +394,7 @@ export function ProductDialog({
               onClick={() => handleAddPlan()}
             >
               <AppIcon name="plus" size={14} />
-              <span>+ Thêm gói dịch vụ / thời hạn khác</span>
+              <span>Thêm gói dịch vụ / thời hạn khác</span>
             </button>
           </div>
 
