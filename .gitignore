@@ -19,6 +19,7 @@
 # Scratch scripts & temporary data
 /scratch/
 *.tmp
+THONG-TIN-VERCEL.txt
 
 # Operating System files
 .DS_Store
