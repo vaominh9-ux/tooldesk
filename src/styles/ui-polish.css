@@ -154,3 +154,119 @@
 .product-plans > .add-plan-action-btn:first-child {
   margin-top: 18px !important;
 }
+
+/* Explicit mint product logo color */
+.product-logo.mint {
+  background: #e8f5ee !important;
+  color: #3b7c5e !important;
+}
+
+/* Enhanced Product Header Banner in Dialogs (Plan / Product management) */
+.product-dialog-banner {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  padding: 14px 18px !important;
+  background: linear-gradient(135deg, #fcfdfe 0%, #f6f8fc 100%) !important;
+  border: 1px solid #e2e7f1 !important;
+  border-radius: 12px !important;
+  margin-bottom: 22px !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03) !important;
+}
+
+.product-dialog-banner .product-banner-main {
+  display: flex !important;
+  align-items: center !important;
+  gap: 13px !important;
+  min-width: 0 !important;
+  flex: 1 !important;
+}
+
+.product-dialog-banner .product-logo.large {
+  width: 46px !important;
+  height: 46px !important;
+  min-width: 46px !important;
+  font-size: 26px !important;
+  border-radius: 12px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  border: 1px solid rgba(0, 0, 0, 0.04) !important;
+}
+
+.product-dialog-banner .product-banner-info {
+  min-width: 0 !important;
+  flex: 1 !important;
+}
+
+.product-dialog-banner .product-banner-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+
+.product-dialog-banner .product-banner-title h3 {
+  font-size: 15.5px !important;
+  font-weight: 650 !important;
+  color: var(--ink) !important;
+  letter-spacing: -0.2px !important;
+  margin: 0 !important;
+  line-height: 1.3 !important;
+}
+
+.product-dialog-banner .product-banner-sub {
+  font-size: 12px !important;
+  color: var(--muted) !important;
+  margin-top: 3px !important;
+  line-height: 1.4 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 250px !important;
+}
+
+.product-dialog-banner .product-banner-side {
+  text-align: right !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  gap: 4px !important;
+}
+
+.product-dialog-banner .product-banner-side .badge {
+  font-weight: 600 !important;
+  font-size: 11.5px !important;
+  padding: 3px 9px !important;
+}
+
+.product-dialog-banner .product-banner-side small {
+  font-size: 11px !important;
+  color: var(--muted) !important;
+  max-width: 170px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  display: block !important;
+}
+
+@media (max-width: 639px) {
+  .product-dialog-banner {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    padding: 12px 14px !important;
+  }
+  .product-dialog-banner .product-banner-side {
+    align-items: flex-start !important;
+    text-align: left !important;
+    width: 100% !important;
+    padding-top: 10px !important;
+    border-top: 1px dashed #e2e7f1 !important;
+  }
+  .product-dialog-banner .product-banner-side small {
+    max-width: 100% !important;
+  }
+}

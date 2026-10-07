@@ -89,10 +89,10 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
 
   async function run(raw: unknown, title: string, close = true): Promise<{ data: TooldeskData; resultId?: string }> {
     if (busy.current) throw new Error('Đang lưu thao tác trước. Vui lòng chờ.');
-    const command = commandSchema.parse(raw);
-    if (dataSource === 'supabase' && (role === 'viewer' || dataStatus !== 'connected')) throw new Error('Chưa có quyền hoặc chưa tải dữ liệu.');
     busy.current = true; setPending(true);
     try {
+      const command = commandSchema.parse(raw);
+      if (dataSource === 'supabase' && (role === 'viewer' || dataStatus !== 'connected')) throw new Error('Chưa có quyền hoặc chưa tải dữ liệu.');
       let result: { data: TooldeskData; resultId?: string };
       if (dataSource === 'mock') {
         result = executeCommand(dataSchema.parse(currentData.current), command, { today: DEFAULT_APP_TODAY, now: new Date().toISOString(), actor: currentData.current.settings.ownerName, newId: prefix => prefix + '-' + crypto.randomUUID() });
@@ -132,7 +132,7 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
     markContacted: async subscriptionId => { try { await run({ type: 'mark_contacted', input: { subscriptionId } }, 'Đã ghi nhận liên hệ', false); } catch { /* Error already shown to the user by run(). */ } },
     importData: input => { if (dataSource !== 'mock') { addToast('Chưa hỗ trợ nhập dữ liệu thật', 'Cần quy trình migration có kiểm tra.', 'error'); return; } updateData(dataSchema.parse(input)); closeDialog(); },
     resetData: () => { if (dataSource !== 'mock') { addToast('Không thể reset dữ liệu thật', 'Khôi phục mẫu chỉ dùng trong demo.', 'error'); return; } updateData(createInitialData()); closeDialog(); addToast('Đã khôi phục dữ liệu mẫu'); },
-    syncWithSupabase: load,
+    syncWithSupabase: async () => { if (!busy.current) await load(); },
     logout: async () => { const response = await fetch('/api/auth/logout', { method: 'POST' }); if (!response.ok) throw new Error('Không thể đăng xuất.'); setNeedsLogin(true); setDataStatus('error'); }
   };
   return <TooldeskContext.Provider value={value}>{dataSource === 'supabase' && needsLogin ? <LoginPanel onSuccess={() => void load()} /> : dataSource === 'supabase' && dataStatus !== 'connected' ? <div className="panel" style={{ margin: 32, padding: 24 }} role="status"><h1>{dataStatus === 'loading' ? 'Đang tải Tooldesk…' : 'Không tải được dữ liệu'}</h1><p>Kiểm tra cấu hình, quyền tài khoản và migration database.</p>{dataStatus === 'error' && <button className="button" onClick={() => void load()}>Thử lại</button>}</div> : children}</TooldeskContext.Provider>;

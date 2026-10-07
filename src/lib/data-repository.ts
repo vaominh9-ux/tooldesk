@@ -13,6 +13,7 @@ function mapRow(row: Row): Row {
   return Object.fromEntries(Object.entries(row).map(([key, value]) => [camel(key), value instanceof Date ? value.toISOString() : value]));
 }
 function money(value: unknown): number {
+  if (value === null || value === undefined || (typeof value !== 'number' && typeof value !== 'string') || value === '') throw new Error('Dữ liệu tiền trong DB bị thiếu.');
   const result = Number(value);
   if (!Number.isSafeInteger(result) || result < 0) throw new Error('Dữ liệu tiền trong DB không hợp lệ.');
   return result;

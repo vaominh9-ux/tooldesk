@@ -24,11 +24,39 @@ export function PlanDialog({
   const plan = planId ? product?.plans.find(item => item.id === planId) : undefined;
   const isCreating = !planId && Boolean(product);
 
-  const [name, setName] = useState(plan?.name || 'Gói 3 tháng');
-  const [duration, setDuration] = useState(plan?.duration || 3);
-  const [unit, setUnit] = useState<'months' | 'days'>(plan?.unit || 'months');
-  const [price, setPrice] = useState(plan?.price || 1000000);
-  const [cost, setCost] = useState(plan?.cost || 700000);
+  const initialPreset = React.useMemo(() => {
+    if (!product || !isCreating) {
+      return {
+        name: plan?.name || 'Gói 1 tháng',
+        duration: plan?.duration || 1,
+        unit: plan?.unit || ('months' as const),
+        price: plan?.price || 500000,
+        cost: plan?.cost || 300000
+      };
+    }
+    const hasDur = (d: number, u: string) =>
+      product.plans.some(p => p.duration === d && (p.unit || 'months') === u);
+
+    if (!hasDur(1, 'months')) {
+      return { name: 'Gói 1 tháng', duration: 1, unit: 'months' as const, price: 450000, cost: 300000 };
+    }
+    if (!hasDur(3, 'months')) {
+      return { name: 'Gói 3 tháng', duration: 3, unit: 'months' as const, price: 1250000, cost: 850000 };
+    }
+    if (!hasDur(6, 'months')) {
+      return { name: 'Gói 6 tháng', duration: 6, unit: 'months' as const, price: 2350000, cost: 1600000 };
+    }
+    if (!hasDur(12, 'months')) {
+      return { name: 'Gói 1 năm', duration: 12, unit: 'months' as const, price: 4200000, cost: 2900000 };
+    }
+    return { name: 'Gói 6 tháng', duration: 6, unit: 'months' as const, price: 2350000, cost: 1600000 };
+  }, [product, isCreating, plan]);
+
+  const [name, setName] = useState(initialPreset.name);
+  const [duration, setDuration] = useState(initialPreset.duration);
+  const [unit, setUnit] = useState<'months' | 'days'>(initialPreset.unit);
+  const [price, setPrice] = useState(initialPreset.price);
+  const [cost, setCost] = useState(initialPreset.cost);
   const [error, setError] = useState('');
 
   if (!product) {
@@ -117,15 +145,102 @@ export function PlanDialog({
           <div className="dialog-content">
             {error && <div className="dialog-error" role="alert">{error}</div>}
 
-            <div className="customer-preview" style={{ marginBottom: '20px' }}>
-              <div className="product-logo large" aria-hidden="true">
-                {product.symbol || product.name[0]?.toUpperCase()}
+            {/* Enhanced Product Header Banner */}
+            <div className="product-dialog-banner">
+              <div className="product-banner-main">
+                <span
+                  className={`product-logo large ${product.color || 'mint'}`}
+                  aria-hidden="true"
+                >
+                  {product.symbol || '◈'}
+                </span>
+                <div className="product-banner-info">
+                  <div className="product-banner-title">
+                    <h3>{product.name}</h3>
+                    <span className="badge neutral">{product.category}</span>
+                  </div>
+                  <p className="product-banner-sub">
+                    {product.description || 'Dịch vụ phần mềm AI'}
+                  </p>
+                </div>
               </div>
-              <div>
-                <strong>{product.name}</strong>
-                <small>{product.category}</small>
+
+              <div className="product-banner-side">
+                {isCreating ? (
+                  <>
+                    <span className="badge blue">
+                      {product.plans.length} gói hiện có
+                    </span>
+                    <small title={product.plans.map(p => p.name).join(' · ')}>
+                      {product.plans.length > 0
+                        ? product.plans.map(p => p.name).join(' · ')
+                        : 'Chưa có gói nào'}
+                    </small>
+                  </>
+                ) : (
+                  <>
+                    <span className="badge amber">Đang chỉnh sửa</span>
+                    <small title={plan?.name}>{plan?.name}</small>
+                  </>
+                )}
               </div>
             </div>
+
+            {/* Quick Presets when creating */}
+            {isCreating && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  marginBottom: 16,
+                  flexWrap: 'wrap'
+                }}
+              >
+                <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500 }}>
+                  Gợi ý thời hạn:
+                </span>
+                {[
+                  { label: '1 tháng', dur: 1, u: 'months' as const, name: 'Gói 1 tháng', p: 450000, c: 300000 },
+                  { label: '3 tháng', dur: 3, u: 'months' as const, name: 'Gói 3 tháng', p: 1250000, c: 850000 },
+                  { label: '6 tháng', dur: 6, u: 'months' as const, name: 'Gói 6 tháng', p: 2350000, c: 1600000 },
+                  { label: '1 năm', dur: 12, u: 'months' as const, name: 'Gói 1 năm', p: 4200000, c: 2900000 }
+                ].map(preset => {
+                  const alreadyExists = product.plans.some(
+                    p => p.duration === preset.dur && (p.unit || 'months') === preset.u
+                  );
+                  const isSelected = duration === preset.dur && unit === preset.u;
+                  return (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      className={`badge ${isSelected ? 'blue' : 'neutral'}`}
+                      style={{
+                        cursor: 'pointer',
+                        border: '1px solid var(--line)',
+                        background: isSelected ? 'var(--accent-soft)' : '#fff',
+                        opacity: alreadyExists && !isSelected ? 0.7 : 1,
+                        fontSize: 11.5,
+                        padding: '4px 9px',
+                        transition: 'all 0.15s'
+                      }}
+                      title={alreadyExists ? 'Đã có gói thời hạn này trong danh mục' : `Chọn ${preset.label}`}
+                      onClick={() => {
+                        setDuration(preset.dur);
+                        setUnit(preset.u);
+                        setName(preset.name);
+                        if (!alreadyExists) {
+                          setPrice(preset.p);
+                          setCost(preset.c);
+                        }
+                      }}
+                    >
+                      {preset.label} {alreadyExists && '✓'}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             <label className="field">
               <span>Tên gói dịch vụ</span>

@@ -17,7 +17,9 @@ Dùng .env.example làm mẫu. Không gửi mật khẩu SMTP vào chat hoặc l
 
 ## Database
 
-Sao lưu và kiểm tra staging trước. Với database mới: áp dụng supabase/schema.sql, sau đó supabase/migrations/20261007_backend_foundation.sql. Với DB cũ, schema tạo bảng bổ sung và gỡ policy Allow full access for anon; cần kiểm tra quyền ứng dụng khác trước khi áp dụng.
+Sao lưu và kiểm tra staging trước. Với database mới: áp dụng supabase/schema.sql, sau đó supabase/migrations/20261007_backend_foundation.sql. Với DB cũ: chỉ áp dụng migration một lần. Migration có transaction; nếu phát hiện mã refund trùng thì unique index sẽ thất bại và rollback. Không sửa/xóa dữ liệu cũ âm thầm. CHECK NOT VALID vẫn kiểm tra các lần ghi mới; audit rồi VALIDATE dữ liệu legacy riêng.
+
+Migration gỡ policy Allow full access for anon và thu hồi quyền anon/authenticated trên các bảng Tooldesk. Cần kiểm tra ứng dụng khác đang dùng các bảng này trước khi áp dụng. Mã server dùng connection được bảo vệ và kiểm tra quyền ở từng API. Chưa có kiểm thử SQL trên PostgreSQL thật trong phiên này.
 
 Thêm user được phép vào app_users với UUID tài khoản Supabase Auth và role. API kiểm tra token Auth rồi app_users. Viewer không ghi được; staff không thay bảng giá/cài đặt. Không có tenant/workspace.
 
@@ -28,6 +30,8 @@ Bảng email_outbox lưu pending/sending/sent/retry/failed/cancelled/unknown. Kh
 ## Lịch tự động
 
 Scheduler bên ngoài gọi POST /api/cron/reminders mỗi 15 phút với Authorization: Bearer CRON_SECRET. Không dùng setInterval trong trình duyệt. Chưa tự tạo cron hoặc deployment.
+
+Lệnh npm run reminders:run đọc APP_URL/CRON_SECRET từ môi trường rồi gọi worker. Gắn lệnh này vào scheduler của máy chủ luôn chạy. Không gắn lịch vào laptop nếu muốn chạy khi máy tắt. Cờ reminderSchedulerConfigured ở health chỉ xác nhận secret có đủ độ dài; không chứng minh lịch ngoài hệ thống đã được cài. Nhật ký email có trong Cài đặt và API /api/reminders/status.
 
 Worker chọn gói còn hạn trong cửa sổ reminderDays, đã bắt đầu, chưa dừng, email hợp lệ và opted_in. Trước khi gửi kiểm tra lại gói/consent. Gói gia hạn đổi cycle key, tác vụ cũ bị cancelled.
 
@@ -42,3 +46,5 @@ SMTP 4xx thử lại sau 15 phút, tối đa 3 lần; 5xx failed. Timeout hoặc
 5. Kiểm tra scheduler heartbeat/log và job unknown/failed, sau đó mới bật production.
 
 Phiên này chưa xác nhận migration, SMTP hoặc scheduler cloud đã chạy. SUPABASE_GUIDE cũ không đại diện cho trạng thái backend hiện tại.
+
+Kiểm chứng mã nguồn: 24/24 unit test pass (11 domain, 8 commands/eligibility, 5 worker mock), typecheck pass, Next build pass. Lint đang bị bỏ qua theo cấu hình workspace, không báo lint pass. Auth/database/SMTP chưa được nghiệm thu end-to-end. Session hiện chỉ dùng access token, hết hạn thì đăng nhập lại; chưa có refresh session. Chiến dịch gửi hàng loạt chưa bật, chỉ email nhắc hạn tự động khi cấu hình đầy đủ.
