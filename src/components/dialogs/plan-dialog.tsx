@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
+import { ProductLogo } from '../shared/product-logo';
 import { formatMoney } from '@/domain/money';
 
 export function PlanDialog({
@@ -148,12 +149,7 @@ export function PlanDialog({
             {/* Enhanced Product Header Banner */}
             <div className="product-dialog-banner">
               <div className="product-banner-main">
-                <span
-                  className={`product-logo large ${product.color || 'mint'}`}
-                  aria-hidden="true"
-                >
-                  {product.symbol || '◈'}
-                </span>
+                <ProductLogo name={product.name} color={product.color} size="large" />
                 <div className="product-banner-info">
                   <div className="product-banner-title">
                     <h3>{product.name}</h3>

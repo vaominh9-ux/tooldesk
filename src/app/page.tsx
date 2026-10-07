@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '@/components/shared/app-icon';
+import { ProductLogo } from '@/components/shared/product-logo';
 import { calculateTotals, formatMoney, orderFinancials, cashSummary } from '@/domain/money';
 import { formatDateLabel, remainingLabel, addDays } from '@/domain/dates';
 import { subStatus, isActive } from '@/domain/subscriptions';
@@ -233,9 +234,7 @@ export default function DashboardPage() {
                           </td>
                           <td>
                             <div className="product-cell">
-                              <span className={`product-logo ${prod?.color || 'mint'}`} aria-hidden="true">
-                                {prod?.symbol || '✦'}
-                              </span>
+                              <ProductLogo name={prod?.name || ''} color={prod?.color} size="normal" />
                               <div>
                                 <span className="strong">{prod?.name || 'Sản phẩm'}</span>
                                 <small>{plan?.name || ''}</small>
@@ -309,9 +308,7 @@ export default function DashboardPage() {
                         </td>
                         <td>
                           <div className="product-cell">
-                            <span className={`product-logo ${prod?.color || 'mint'}`} aria-hidden="true">
-                              {prod?.symbol || '✦'}
-                            </span>
+                            <ProductLogo name={prod?.name || ''} color={prod?.color} size="normal" />
                             <div>
                               <span className="strong">{prod?.name || 'Sản phẩm'}</span>
                               <small>{plan?.name || ''}</small>

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '@/components/shared/app-icon';
+import { ProductLogo } from '@/components/shared/product-logo';
 import { subStatus } from '@/domain/subscriptions';
 import { formatDateLabel, remainingLabel } from '@/domain/dates';
 import { paginate } from '@/domain/orders';
@@ -169,7 +170,7 @@ export default function SubscriptionsPage() {
                 onClick={() => setSearch('')}
                 aria-label="Xóa tìm kiếm"
               >
-                ×
+                <AppIcon name="close" size={13} />
               </button>
             )}
           </label>
@@ -244,9 +245,7 @@ export default function SubscriptionsPage() {
                         </td>
                         <td>
                           <div className="product-cell">
-                            <span className={`product-logo ${prod?.color || 'mint'}`} aria-hidden="true">
-                              {prod?.symbol || '✦'}
-                            </span>
+                            <ProductLogo name={prod?.name || ''} color={prod?.color} size="normal" />
                             <div>
                               <span className="strong">{prod?.name || 'Sản phẩm'}</span>
                               <small>{plan?.name || ''}</small>
@@ -320,9 +319,7 @@ export default function SubscriptionsPage() {
                   <article key={sub.id} className="record-card">
                     <div className="record-top">
                       <div className="product-cell">
-                        <span className={`product-logo ${prod?.color || 'mint'}`} aria-hidden="true">
-                          {prod?.symbol || '✦'}
-                        </span>
+                        <ProductLogo name={prod?.name || ''} color={prod?.color} size="normal" />
                         <div>
                           <span className="strong">{prod?.name || 'Sản phẩm'}</span>
                           <small>{plan?.name || ''}</small>
