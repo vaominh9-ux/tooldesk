@@ -1,0 +1,29 @@
+{
+  "project": "Tooldesk",
+  "version": "1.0.0-next",
+  "baseline": "tooldesk-v0.2",
+  "date": "2026-10-06",
+  "files": {
+    "reference": [
+      "reference/tooldesk-v0.2/tooldesk-v2-preview.html"
+    ],
+    "docs": [
+      "docs/ARCHITECTURE.md",
+      "docs/AGENTS.md",
+      "docs/BUSINESS-RULES.md",
+      "docs/UI-ACCEPTANCE.md",
+      "docs/IMPLEMENTATION-PLAN.md",
+      "docs/SOURCE-MANIFEST.json"
+    ]
+  },
+  "modules": [
+    "dashboard",
+    "orders",
+    "customers",
+    "subscriptions",
+    "products",
+    "campaigns",
+    "reports",
+    "settings"
+  ]
+}
