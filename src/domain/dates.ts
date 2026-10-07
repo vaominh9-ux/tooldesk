@@ -6,6 +6,11 @@
  */
 
 export const DEFAULT_APP_TODAY = '2026-10-06';
+export function runtimeToday(): string {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+  const get = (type: string) => parts.find(part => part.type === type)?.value;
+  return get('year') + '-' + get('month') + '-' + get('day');
+}
 
 export function parseDay(iso: string): Date {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(iso || '')) {

@@ -106,7 +106,7 @@ describe('Domain: Refund validation', () => {
   });
 
   it('rejects service rollback for a partially refunded latest order', () => {
-    const order = { id: 'order', price: 400000, cost: 200000, payment: 'paid', status: 'completed', date: '2026-10-01', subscriptionId: 'subscription', kind: 'new' };
+    const order = { id: 'order', price: 400000, cost: 200000, payment: 'paid' as const, status: 'completed', date: '2026-10-01', subscriptionId: 'subscription', kind: 'new' as const };
     const data = { orders: [order], refunds: [], subscriptions: [{ id: 'subscription', lastOrderId: 'order' }] };
     expect(() => validateRefundInput(data, { orderId: 'order', amount: 100000, date: '2026-10-02', reason: 'Partial refund', method: 'bank', serviceAction: 'end' })).toThrow(/Chỉ kết thúc kỳ/);
   });
@@ -119,7 +119,7 @@ describe('Domain: Refund validation', () => {
     }
   });
   it('rejects refund exceeding remaining amount', () => {
-    const order = { id: 'DH-1', price: 400000, cost: 200000, payment: 'paid', status: 'completed', date: '2026-10-01' };
+    const order = { id: 'DH-1', price: 400000, cost: 200000, payment: 'paid' as const, status: 'completed', date: '2026-10-01' };
     const data = { orders: [order], refunds: [], subscriptions: [] };
 
     expect(() => {
