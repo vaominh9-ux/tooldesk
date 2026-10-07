@@ -1,5 +1,10 @@
 import 'server-only';
+import dns from 'node:dns';
 import { Pool, type PoolClient } from 'pg';
+
+try {
+  dns.setDefaultResultOrder('ipv4first');
+} catch {}
 
 let pool: Pool | null = null;
 
@@ -10,10 +15,10 @@ export function getDbPool(): Pool {
 
     pool = new Pool({
       connectionString,
-      ssl: process.env.DATABASE_SSL === 'disable' ? false : { rejectUnauthorized: true, ...(process.env.DATABASE_CA_CERT ? { ca: process.env.DATABASE_CA_CERT.replaceAll('\\n', '\n') } : {}) },
+      ssl: process.env.DATABASE_SSL === 'disable' ? false : { rejectUnauthorized: process.env.DATABASE_SSL_REJECT_UNAUTHORIZED === 'true', ...(process.env.DATABASE_CA_CERT ? { ca: process.env.DATABASE_CA_CERT.replaceAll('\\n', '\n') } : {}) },
       max: 10,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000
+      connectionTimeoutMillis: 10000
     });
   }
   return pool;
