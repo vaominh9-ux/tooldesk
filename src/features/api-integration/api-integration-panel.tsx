@@ -9,7 +9,10 @@ export function ApiIntegrationPanel() {
   const { addToast } = useTooldesk();
   const [showKey, setShowKey] = useState(false);
   const [activeTab, setActiveTab] = useState<'curl' | 'chatgpt' | 'smax' | 'python'>('curl');
-  const [testResult, setTestResult] = useState<{ status: 'idle' | 'loading' | 'success' | 'error'; message?: string; latency?: number }>({ status: 'idle' });
+  const [testResult, setTestResult] = useState<{
+    status: 'idle' | 'loading' | 'success' | 'error';
+    message?: string;
+  }>({ status: 'idle' });
 
   const apiKey = DEFAULT_API_KEY;
   const baseUrl = typeof window !== 'undefined' ? `${window.location.origin}/api/v1` : 'https://tooldesk-plum.vercel.app/api/v1';
@@ -29,181 +32,144 @@ export function ApiIntegrationPanel() {
         const json = await res.json();
         setTestResult({
           status: 'success',
-          latency,
-          message: `Kết nối thành công! Phiên bản: ${json.version} · Thời gian phản hồi: ${latency}ms`
+          message: `Kết nối thành công! Phiên bản: ${json.version} · Thời gian phản hồi: ${latency}ms.`
         });
         addToast('Kiểm tra API thành công', `Hệ thống phản hồi trong ${latency}ms.`, 'success');
       } else {
-        setTestResult({ status: 'error', message: `Lỗi máy chủ: ${res.status}` });
+        setTestResult({ status: 'error', message: `Lỗi kết nối máy chủ: HTTP ${res.status}.` });
         addToast('Lỗi kiểm tra API', `Mã lỗi HTTP ${res.status}`, 'error');
       }
     } catch (err) {
-      setTestResult({ status: 'error', message: err instanceof Error ? err.message : 'Không thể kết nối.' });
+      setTestResult({ status: 'error', message: err instanceof Error ? err.message : 'Không thể kết nối API.' });
       addToast('Lỗi kết nối', 'Không thể gửi yêu cầu kiểm tra.', 'error');
     }
   };
 
   return (
-    <article className="panel" style={{ marginTop: '24px' }}>
+    <article id="api-integration" className="panel" style={{ marginTop: '22px' }}>
       <div className="section-heading">
         <div>
-          <h2>API & Kết nối AI Agent hai chiều</h2>
-          <p>Cho phép các hệ thống AI Agent bên ngoài (ChatGPT, Claude, Smax AI, n8n, Zalo/Messenger Bot) đọc và ghi dữ liệu tự động.</p>
+          <h2>API & Kết nối AI Agent</h2>
+          <p>Cung cấp giao diện đọc và ghi dữ liệu tự động cho ChatGPT, Claude, Smax AI, n8n, Zalo và Messenger Bot.</p>
         </div>
-        <div className="section-meta">
-          <span className="badge green">
-            <i></i>API v1 Đang hoạt động
-          </span>
-        </div>
+        <span className="badge green">API v1 Sẵn sàng</span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px', marginBottom: '20px' }}>
-        {/* API Key Box */}
-        <div style={{ background: '#f8f9fc', border: '1px solid #e2e6f0', borderRadius: '12px', padding: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '12px', fontWeight: 600, color: '#4d5568', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Secret API Key
-            </span>
-            <span className="badge green" style={{ fontSize: '11px', padding: '2px 8px' }}>Chính thức</span>
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <input
-              type={showKey ? 'text' : 'password'}
-              readOnly
-              value={apiKey}
-              style={{
-                fontFamily: 'monospace',
-                fontSize: '13px',
-                background: '#ffffff',
-                border: '1px solid #d2d7e5',
-                borderRadius: '8px',
-                padding: '8px 12px',
-                flex: 1,
-                color: '#1a2238'
-              }}
-            />
-            <button
-              type="button"
-              className="button small"
-              onClick={() => setShowKey(!showKey)}
-              title={showKey ? 'Ẩn khóa' : 'Hiện khóa'}
-              style={{ padding: '8px 12px' }}
-            >
-              <AppIcon name="eye" size={14} />
-            </button>
-            <button
-              type="button"
-              className="button small primary"
-              onClick={() => copyToClipboard(apiKey, 'API Key')}
-              title="Sao chép API Key"
-              style={{ padding: '8px 14px' }}
-            >
-              <AppIcon name="check" size={14} />
-              <span>Chép</span>
-            </button>
-          </div>
-          <small style={{ display: 'block', marginTop: '8px', color: '#778197', fontSize: '11.5px' }}>
-            Dùng trong Header: <code>Authorization: Bearer {apiKey.slice(0, 10)}...</code> hoặc <code>x-api-key</code>
-          </small>
-        </div>
-
-        {/* Base URL Box */}
-        <div style={{ background: '#f8f9fc', border: '1px solid #e2e6f0', borderRadius: '12px', padding: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '12px', fontWeight: 600, color: '#4d5568', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Base API Endpoint
-            </span>
-            <a
-              href="/api/v1/openapi.json"
-              target="_blank"
-              rel="noreferrer"
-              style={{ fontSize: '11.5px', color: '#4353e8', textDecoration: 'none', fontWeight: 500 }}
-            >
-              Xem OpenAPI 3.0 (JSON) ↗
-            </a>
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <input
-              type="text"
-              readOnly
-              value={baseUrl}
-              style={{
-                fontFamily: 'monospace',
-                fontSize: '13px',
-                background: '#ffffff',
-                border: '1px solid #d2d7e5',
-                borderRadius: '8px',
-                padding: '8px 12px',
-                flex: 1,
-                color: '#1a2238'
-              }}
-            />
-            <button
-              type="button"
-              className="button small"
-              onClick={() => copyToClipboard(baseUrl, 'Base URL')}
-              style={{ padding: '8px 14px' }}
-            >
-              <span>Chép</span>
-            </button>
-            <button
-              type="button"
-              className="button small"
-              onClick={handleTestPing}
-              disabled={testResult.status === 'loading'}
-              style={{ padding: '8px 12px' }}
-            >
-              <AppIcon name="refresh" size={14} />
-              <span>{testResult.status === 'loading' ? 'Đang test...' : 'Kiểm tra'}</span>
-            </button>
-          </div>
-
-          {testResult.status !== 'idle' && (
-            <div style={{ marginTop: '8px', fontSize: '12px', color: testResult.status === 'success' ? '#15775c' : '#c0392b' }}>
-              {testResult.message}
+      <div className="settings-form">
+        <div className="form-grid">
+          <label className="field">
+            <span>Secret API Key</span>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <input
+                type={showKey ? 'text' : 'password'}
+                readOnly
+                value={apiKey}
+                style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace' }}
+              />
+              <button
+                type="button"
+                className="button"
+                onClick={() => setShowKey(!showKey)}
+                title={showKey ? 'Ẩn khóa' : 'Hiện khóa'}
+                style={{ flexShrink: 0 }}
+              >
+                <AppIcon name="eye" size={15} />
+                <span>{showKey ? 'Ẩn' : 'Hiện'}</span>
+              </button>
+              <button
+                type="button"
+                className="button primary"
+                onClick={() => copyToClipboard(apiKey, 'API Key')}
+                style={{ flexShrink: 0 }}
+              >
+                <AppIcon name="check" size={15} />
+                <span>Chép</span>
+              </button>
             </div>
-          )}
-        </div>
-      </div>
+            <small>Xác thực qua Header: <code>Authorization: Bearer &lt;API_KEY&gt;</code> hoặc <code>x-api-key: &lt;API_KEY&gt;</code></small>
+          </label>
 
-      {/* Guide Tabs */}
-      <div style={{ borderTop: '1px solid #edf0f7', paddingTop: '16px' }}>
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
-          {[
-            { id: 'curl', label: 'cURL / HTTP Request' },
-            { id: 'chatgpt', label: 'OpenAI GPTs / Claude Action' },
-            { id: 'smax', label: 'Chatbot Smax / Webhook' },
-            { id: 'python', label: 'Python & Node.js' }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              type="button"
-              className={`button small ${activeTab === tab.id ? 'primary' : ''}`}
-              onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              style={{ fontSize: '12px', padding: '6px 14px' }}
-            >
-              {tab.label}
-            </button>
-          ))}
+          <label className="field">
+            <span>Base Endpoint URL</span>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <input
+                type="text"
+                readOnly
+                value={baseUrl}
+                style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace' }}
+              />
+              <button
+                type="button"
+                className="button"
+                onClick={() => copyToClipboard(baseUrl, 'Base URL')}
+                style={{ flexShrink: 0 }}
+              >
+                <span>Chép</span>
+              </button>
+            </div>
+            <small>Đường dẫn gốc cho tất cả yêu cầu đọc danh mục, kiểm tra hạn dùng và tạo đơn hàng.</small>
+          </label>
+        </div>
+
+        {testResult.status !== 'idle' && (
+          <div
+            className={`hint-banner ${testResult.status === 'success' ? 'blue' : 'amber'}`}
+            style={{ marginTop: '16px', marginBottom: '0' }}
+          >
+            <AppIcon name={testResult.status === 'success' ? 'circleCheck' : 'warning'} size={18} />
+            <span>{testResult.message}</span>
+          </div>
+        )}
+
+        <div className="form-section-title" style={{ marginTop: '24px' }}>
+          Tài liệu & Kịch bản tích hợp
+        </div>
+
+        <div className="tabs" style={{ padding: 0, marginBottom: '16px' }}>
+          <button
+            type="button"
+            className={`tab ${activeTab === 'curl' ? 'selected' : ''}`}
+            onClick={() => setActiveTab('curl')}
+          >
+            cURL / HTTP Request
+          </button>
+          <button
+            type="button"
+            className={`tab ${activeTab === 'chatgpt' ? 'selected' : ''}`}
+            onClick={() => setActiveTab('chatgpt')}
+          >
+            ChatGPT / Claude Action
+          </button>
+          <button
+            type="button"
+            className={`tab ${activeTab === 'smax' ? 'selected' : ''}`}
+            onClick={() => setActiveTab('smax')}
+          >
+            Chatbot Smax (Zalo/Messenger)
+          </button>
+          <button
+            type="button"
+            className={`tab ${activeTab === 'python' ? 'selected' : ''}`}
+            onClick={() => setActiveTab('python')}
+          >
+            Python & Node.js
+          </button>
         </div>
 
         {/* Tab 1: cURL */}
         {activeTab === 'curl' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <p style={{ margin: 0, fontSize: '13px', color: '#4d5568' }}>
-              <strong>1. Tra cứu bảng giá & sản phẩm (Đọc dữ liệu):</strong>
-            </p>
-            <pre style={{ margin: 0, padding: '12px', background: '#1c2237', color: '#e1e5f2', borderRadius: '8px', fontSize: '12px', overflowX: 'auto' }}>
+          <div style={{ display: 'grid', gap: '14px' }}>
+            <div>
+              <span className="strong" style={{ fontSize: '13px' }}>1. Tra cứu bảng giá & danh mục tool AI (Đọc dữ liệu):</span>
+              <pre className="draft-preview" style={{ padding: '12px 14px', margin: '8px 0 0', fontSize: '12px', lineHeight: 1.6 }}>
 {`curl -X GET "${baseUrl}/products" \\
   -H "Authorization: Bearer ${apiKey}"`}
-            </pre>
+              </pre>
+            </div>
 
-            <p style={{ margin: '8px 0 0', fontSize: '13px', color: '#4d5568' }}>
-              <strong>2. Tạo đơn hàng và tự động cấp gói cho khách (Ghi dữ liệu):</strong>
-            </p>
-            <pre style={{ margin: 0, padding: '12px', background: '#1c2237', color: '#e1e5f2', borderRadius: '8px', fontSize: '12px', overflowX: 'auto' }}>
+            <div>
+              <span className="strong" style={{ fontSize: '13px' }}>2. Tạo đơn hàng và tự động kích hoạt gói dịch vụ (Ghi dữ liệu):</span>
+              <pre className="draft-preview" style={{ padding: '12px 14px', margin: '8px 0 0', fontSize: '12px', lineHeight: 1.6 }}>
 {`curl -X POST "${baseUrl}/orders" \\
   -H "Authorization: Bearer ${apiKey}" \\
   -H "Content-Type: application/json" \\
@@ -218,42 +184,41 @@ export function ApiIntegrationPanel() {
     "payment": "paid",
     "note": "Tạo tự động bởi AI Agent"
   }'`}
-            </pre>
+              </pre>
+            </div>
 
-            <p style={{ margin: '8px 0 0', fontSize: '13px', color: '#4d5568' }}>
-              <strong>3. Tra cứu thời hạn gói của khách theo SĐT:</strong>
-            </p>
-            <pre style={{ margin: 0, padding: '12px', background: '#1c2237', color: '#e1e5f2', borderRadius: '8px', fontSize: '12px', overflowX: 'auto' }}>
+            <div>
+              <span className="strong" style={{ fontSize: '13px' }}>3. Tra cứu thời hạn gói của khách theo Số điện thoại:</span>
+              <pre className="draft-preview" style={{ padding: '12px 14px', margin: '8px 0 0', fontSize: '12px', lineHeight: 1.6 }}>
 {`curl -X GET "${baseUrl}/customers?query=0912345678" \\
   -H "Authorization: Bearer ${apiKey}"`}
-            </pre>
+              </pre>
+            </div>
           </div>
         )}
 
         {/* Tab 2: ChatGPT / Claude */}
         {activeTab === 'chatgpt' && (
-          <div style={{ fontSize: '13px', lineHeight: 1.7, color: '#334155' }}>
-            <p><strong>Cách kết nối Tooldesk vào Custom GPT hoặc Claude Projects:</strong></p>
-            <ol style={{ paddingLeft: '20px', margin: '8px 0' }}>
+          <div className="hint-banner neutral" style={{ display: 'block', margin: 0 }}>
+            <p className="strong" style={{ marginBottom: '8px', color: 'var(--ink)' }}>
+              Kết nối Tooldesk vào Custom GPT hoặc Claude Projects:
+            </p>
+            <ol style={{ paddingLeft: '18px', margin: 0, lineHeight: 1.8 }}>
               <li>
-                Truy cập <strong>ChatGPT &gt; My GPTs &gt; Create &gt; Configure &gt; Actions &gt; Create new action</strong>.
+                Trong phần thiết lập Custom GPT, chọn <strong>Configure &gt; Actions &gt; Create new action</strong>.
               </li>
               <li>
-                Trong mục <strong>Schema</strong>, chọn <strong>Import from URL</strong> và dán đường dẫn:
+                Ở mục <strong>Schema</strong>, chọn <strong>Import from URL</strong> và dán:
                 <br />
-                <code style={{ background: '#f1f4fa', padding: '3px 8px', borderRadius: '4px', display: 'inline-block', margin: '4px 0' }}>
+                <code style={{ background: 'var(--surface)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--line)', display: 'inline-block', margin: '4px 0' }}>
                   {baseUrl}/openapi.json
                 </code>
               </li>
               <li>
-                Trong mục <strong>Authentication</strong>, chọn <strong>API Key</strong> &gt; Auth Type: <strong>Bearer</strong> &gt; Dán API Key:
-                <br />
-                <code style={{ background: '#f1f4fa', padding: '3px 8px', borderRadius: '4px', display: 'inline-block', margin: '4px 0' }}>
-                  {apiKey}
-                </code>
+                Ở mục <strong>Authentication</strong>, chọn <strong>API Key</strong> &gt; Auth Type: <strong>Bearer</strong> &gt; Dán Secret Key của bạn.
               </li>
               <li>
-                Lưu GPT. Bây giờ Custom GPT hoặc Claude của bạn có thể tự động tra cứu gói tool, kiểm tra hạn dùng và tạo đơn hàng trực tiếp cho khách!
+                Bây giờ Custom GPT hoặc Claude có thể tự động tra cứu gói tool, kiểm tra hạn dùng và tạo đơn trực tiếp cho khách hàng.
               </li>
             </ol>
           </div>
@@ -261,17 +226,17 @@ export function ApiIntegrationPanel() {
 
         {/* Tab 3: Smax AI */}
         {activeTab === 'smax' && (
-          <div style={{ fontSize: '13px', lineHeight: 1.7, color: '#334155' }}>
-            <p><strong>Cấu hình Webhook trong kịch bản Chatbot Smax.ai (Messenger / Zalo):</strong></p>
-            <ul style={{ paddingLeft: '20px', margin: '8px 0' }}>
-              <li>
-                <strong>Thẻ HTTP Request</strong> trong Smax Bot Flow:
-                <ul>
-                  <li>Method: <code>POST</code></li>
-                  <li>URL: <code>{baseUrl}/orders</code></li>
-                  <li>Headers: <code>Authorization: Bearer {apiKey}</code>, <code>Content-Type: application/json</code></li>
-                  <li>Body (JSON):
-                    <pre style={{ margin: '6px 0', padding: '10px', background: '#1c2237', color: '#e1e5f2', borderRadius: '6px', fontSize: '12px' }}>
+          <div className="hint-banner neutral" style={{ display: 'block', margin: 0 }}>
+            <p className="strong" style={{ marginBottom: '8px', color: 'var(--ink)' }}>
+              Cấu hình Webhook trong kịch bản Chatbot Smax.ai (Zalo / Messenger Fanpage):
+            </p>
+            <ul style={{ paddingLeft: '18px', margin: 0, lineHeight: 1.8 }}>
+              <li>Thêm thẻ <strong>HTTP Request</strong> trong Bot Flow với thông số:</li>
+              <li>Method: <code>POST</code></li>
+              <li>URL: <code>{baseUrl}/orders</code></li>
+              <li>Headers: <code>Authorization: Bearer {apiKey}</code>, <code>Content-Type: application/json</code></li>
+              <li>Body (JSON):
+                <pre className="draft-preview" style={{ padding: '10px 12px', margin: '6px 0', fontSize: '12px', lineHeight: 1.5 }}>
 {`{
   "customer": {
     "name": "{{customer_name}}",
@@ -280,13 +245,11 @@ export function ApiIntegrationPanel() {
   "productId": "{{selected_product_id}}",
   "planId": "{{selected_plan_id}}",
   "payment": "unpaid",
-  "note": "Khách đặt từ Messenger Fanpage qua Smax"
+  "note": "Khách đặt qua Fanpage Smax"
 }`}
-                    </pre>
-                  </li>
-                </ul>
+                </pre>
               </li>
-              <li>Khi khách chuyển khoản, kịch bản tự động gọi <code>POST {baseUrl}/orders/DH-.../pay</code> để hoàn tất đơn và kích hoạt gói ngay lập tức!</li>
+              <li>Khi khách thanh toán chuyển khoản, bot gọi tiếp <code>POST {baseUrl}/orders/DH-.../pay</code> để kích hoạt gói dịch vụ.</li>
             </ul>
           </div>
         )}
@@ -294,16 +257,16 @@ export function ApiIntegrationPanel() {
         {/* Tab 4: Python */}
         {activeTab === 'python' && (
           <div>
-            <pre style={{ margin: 0, padding: '12px', background: '#1c2237', color: '#e1e5f2', borderRadius: '8px', fontSize: '12px', overflowX: 'auto' }}>
+            <pre className="draft-preview" style={{ padding: '12px 14px', margin: 0, fontSize: '12px', lineHeight: 1.6 }}>
 {`import requests
 
 API_KEY = "${apiKey}"
 BASE_URL = "${baseUrl}"
 headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
 
-# 1. Tra cứu các gói ChatGPT & Claude
-res = requests.get(f"{BASE_URL}/products", headers=headers)
-print("Sản phẩm:", res.json())
+# 1. Tra cứu các gói sản phẩm
+products = requests.get(f"{BASE_URL}/products", headers=headers).json()
+print("Sản phẩm:", products)
 
 # 2. Tạo đơn hàng tự động cho khách
 new_order = {
@@ -313,11 +276,32 @@ new_order = {
     "payment": "paid",
     "note": "Agent Python tự động cấp tài khoản"
 }
-order_res = requests.post(f"{BASE_URL}/orders", json=new_order, headers=headers)
-print("Kết quả tạo đơn:", order_res.json())`}
+res = requests.post(f"{BASE_URL}/orders", json=new_order, headers=headers)
+print("Kết quả:", res.json())`}
             </pre>
           </div>
         )}
+
+        <div className="settings-actions" style={{ gap: '10px' }}>
+          <a
+            href="/api/v1/openapi.json"
+            target="_blank"
+            rel="noreferrer"
+            className="button"
+          >
+            <AppIcon name="download" size={15} />
+            <span>Tải OpenAPI 3.0 (.json)</span>
+          </a>
+          <button
+            type="button"
+            className="button primary"
+            onClick={handleTestPing}
+            disabled={testResult.status === 'loading'}
+          >
+            <AppIcon name="refresh" size={15} />
+            <span>{testResult.status === 'loading' ? 'Đang kiểm tra…' : 'Kiểm tra kết nối API'}</span>
+          </button>
+        </div>
       </div>
     </article>
   );

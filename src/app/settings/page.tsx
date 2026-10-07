@@ -171,6 +171,17 @@ export default function SettingsPage() {
               </div>
               <span className="badge neutral">Chưa nối</span>
             </div>
+
+            <div className="integration-row">
+              <span className="integration-icon">
+                <AppIcon name="grid" size={19} />
+              </span>
+              <div>
+                <strong>AI Agent & API</strong>
+                <p>ChatGPT, Claude, Smax</p>
+              </div>
+              <span className="badge green">Sẵn sàng v1</span>
+            </div>
           </div>
         </aside>
       </div>
