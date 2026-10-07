@@ -22,7 +22,7 @@ export function CampaignDialog({
   segment?: string;
   onClose: () => void;
 }) {
-  const { data, saveCampaign, addToast } = useTooldesk();
+  const { data, saveCampaign, addToast, today } = useTooldesk();
 
   const existing = campaignId ? data.campaigns.find(item => item.id === campaignId) : null;
 
@@ -38,7 +38,7 @@ export function CampaignDialog({
   );
   const [error, setError] = useState<string>('');
 
-  const audience = audienceFor(data, selectedSegment);
+  const audience = audienceFor(data, selectedSegment, today);
   const firstEligible = audience.eligible[0];
 
   const previewBody = body

@@ -26,8 +26,6 @@ export function Topbar({ mobileOpen = false, onToggleMobile }: TopbarProps) {
   const { data, dataStatus, openDialog } = useTooldesk();
 
   const currentTitle = routeLabels[pathname] || 'Tooldesk';
-  const ownerName = data.settings.ownerName || 'Minh';
-  const initials = ownerName.split(/\s+/).slice(-2).map(s => s[0]).join('').toUpperCase() || 'M';
 
   return (
     <header className="topbar">
@@ -74,10 +72,6 @@ export function Topbar({ mobileOpen = false, onToggleMobile }: TopbarProps) {
         >
           <AppIcon name="bell" size={19} />
         </button>
-
-        <span className="avatar lavender small" aria-hidden="true">
-          {initials}
-        </span>
       </div>
     </header>
   );

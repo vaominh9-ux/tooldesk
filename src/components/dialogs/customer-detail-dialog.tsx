@@ -47,7 +47,7 @@ export function CustomerDetailDialog({
     );
   }
 
-  const stats = getCustomerStats(data, customer.id);
+  const stats = getCustomerStats(data, customer.id, today);
   const subs = data.subscriptions.filter(s => s.customerId === customer.id);
   const orders = data.orders.filter(o => o.customerId === customer.id);
 

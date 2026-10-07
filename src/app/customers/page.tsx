@@ -63,7 +63,7 @@ export default function CustomersPage() {
       );
     }
 
-    const stats = getCustomerStats(data, c.id);
+    const stats = getCustomerStats(data, c.id, today);
     const customerSubs = data.subscriptions.filter(s => s.customerId === c.id);
     const customerOrders = data.orders
       .filter(o => o.customerId === c.id)
@@ -331,11 +331,11 @@ export default function CustomersPage() {
   }
 
   // General Customers List
-  const activeCount = data.customers.filter(c => getCustomerStats(data, c.id).activeCount > 0).length;
+  const activeCount = data.customers.filter(c => getCustomerStats(data, c.id, today).activeCount > 0).length;
   const eligibleEmails = data.customers.filter(c => c.email && c.emailConsent === 'opted_in').length;
 
   let items = data.customers.filter(c => {
-    const stats = getCustomerStats(data, c.id);
+    const stats = getCustomerStats(data, c.id, today);
     if (tab === 'active') return stats.activeCount > 0;
     if (tab === 'vip') return stats.spend >= 2000000;
     return true;
@@ -481,7 +481,7 @@ export default function CustomersPage() {
                 </thead>
                 <tbody>
                   {paged.items.map(c => {
-                    const stats = getCustomerStats(data, c.id);
+                    const stats = getCustomerStats(data, c.id, today);
                     return (
                       <tr key={c.id}>
                         <td>
@@ -537,7 +537,7 @@ export default function CustomersPage() {
             {/* Mobile Cards */}
             <div className="mobile-records">
               {paged.items.map(customer => {
-                const stats = getCustomerStats(data, customer.id);
+                const stats = getCustomerStats(data, customer.id, today);
                 return (
                   <article key={customer.id} className="record-card">
                     <div className="record-top">

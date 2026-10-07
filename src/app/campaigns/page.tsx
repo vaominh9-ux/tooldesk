@@ -7,7 +7,7 @@ import { formatDateLabel } from '@/domain/dates';
 import { audienceFor } from '@/domain/orders';
 
 export default function CampaignsPage() {
-  const { data, openDialog } = useTooldesk();
+  const { data, openDialog, today } = useTooldesk();
   const [search, setSearch] = useState('');
 
   const segmentLabels: Record<string, string> = {
@@ -18,7 +18,7 @@ export default function CampaignsPage() {
     vip: 'Khách chi tiêu từ 2 triệu'
   };
 
-  const totalEligible = audienceFor(data).eligible.length;
+  const totalEligible = audienceFor(data, 'all', today).eligible.length;
 
   let filtered = data.campaigns;
   if (search.trim()) {
@@ -64,7 +64,7 @@ export default function CampaignsPage() {
       {/* Segments Grid */}
       <div className="segment-grid">
         {(['active', 'expiring', 'expired', 'vip'] as const).map(seg => {
-          const a = audienceFor(data, seg);
+          const a = audienceFor(data, seg, today);
           return (
             <button
               key={seg}
