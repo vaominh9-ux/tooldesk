@@ -24,7 +24,7 @@ interface TopbarProps {
 
 export function Topbar({ mobileOpen = false, onToggleMobile }: TopbarProps) {
   const pathname = usePathname();
-  const { data, dataStatus, openDialog } = useTooldesk();
+  const { data, dataStatus, isSyncing, syncWithSupabase, openDialog } = useTooldesk();
 
   const currentTitle = routeLabels[pathname] || 'Tooldesk';
   const ownerName = data.settings.ownerName || 'Minh';
@@ -50,10 +50,26 @@ export function Topbar({ mobileOpen = false, onToggleMobile }: TopbarProps) {
       </div>
 
       <div className="topbar-actions">
-        <span className="demo-pill" title="Trạng thái hệ thống">
-          <i style={{ background: dataStatus === 'error' ? '#e74c3c' : '#38cb89' }}></i>
-          {dataStatus === 'connected' ? 'Supabase trực tuyến' : dataStatus === 'loading' ? 'Đang kết nối' : dataStatus === 'error' ? 'Ngoại tuyến' : 'Hệ thống trực tuyến'}
-        </span>
+        <button
+          type="button"
+          className="realtime-pill"
+          onClick={() => void syncWithSupabase()}
+          title="Dữ liệu Realtime tự động cập nhật liên tục (2.5s) hoặc bấm vào đây để làm mới ngay lập tức"
+        >
+          <span
+            className="realtime-dot"
+            style={{
+              background: dataStatus === 'error' ? '#ef4444' : '#10b981'
+            }}
+          ></span>
+          <span>
+            {dataStatus === 'connected'
+              ? (isSyncing ? 'Đang đồng bộ…' : 'Realtime Cloud')
+              : dataStatus === 'loading'
+                ? 'Đang kết nối…'
+                : 'Ngoại tuyến'}
+          </span>
+        </button>
 
         <button
           type="button"

@@ -75,9 +75,9 @@ export function AppIcon({ name, size = 18, className = '', ...props }: AppIconPr
   );
 }
 
-export function BrandLogoMark({ className = '' }: { className?: string }) {
+export function BrandLogoMark({ className = '', size }: { className?: string; size?: number }) {
   return (
-    <svg viewBox="0 0 32 32" aria-hidden="true" className={className}>
+    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" className={className}>
       <path d="M16 5v22M5 16h22M8.2 8.2l15.6 15.6M8.2 23.8 23.8 8.2" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
     </svg>
   );

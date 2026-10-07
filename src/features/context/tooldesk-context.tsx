@@ -9,6 +9,7 @@ import { dataSchema } from '@/domain/data-schema';
 import { createShortId } from '@/domain/orders';
 import type { RefundInput } from '@/domain/refunds';
 import { LoginPanel } from '@/features/auth/login-panel';
+import { BrandLogoMark } from '@/components/shared/app-icon';
 
 interface ToastItem { id: string; title: string; message?: string; type?: 'info' | 'success' | 'warning' | 'error' }
 interface DialogState {
@@ -25,6 +26,7 @@ interface TooldeskContextType {
   data: TooldeskData;
   today: string;
   dataStatus: 'mock' | 'loading' | 'connected' | 'error';
+  isSyncing: boolean;
   pending: boolean;
   role: 'admin' | 'staff' | 'viewer';
   toasts: ToastItem[];
@@ -64,9 +66,11 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
   const currentData = useRef(data);
   const [dataStatus, setDataStatus] = useState<TooldeskContextType['dataStatus']>(dataSource === 'mock' ? 'mock' : 'loading');
   const [needsLogin, setNeedsLogin] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [role, setRole] = useState<TooldeskContextType['role']>('admin');
   const [pending, setPending] = useState(false);
   const busy = useRef(false);
+  const isFetching = useRef(false);
   const retryRequest = useRef<{ body: string; operationId: string } | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [dialog, setDialog] = useState<DialogState>({ type: null });
@@ -88,18 +92,32 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
     setTimeout(() => setToasts(previous => previous.filter(item => item.id !== id)), 6000);
   };
   const closeDialog = () => { if (!busy.current) setDialog({ type: null }); };
-  const load = async () => {
+  const load = async (silent = false) => {
     if (dataSource === 'mock') { return; }
-    setDataStatus('loading');
+    if (isFetching.current) return;
+    isFetching.current = true;
+    if (!silent) setDataStatus('loading');
+    setIsSyncing(true);
     try {
       const response = await fetch('/api/data', { cache: 'no-store' });
       if (response.status === 401) { setNeedsLogin(true); setDataStatus('error'); return; }
       const payload: unknown = await response.json();
       if (!response.ok || !payload || typeof payload !== 'object' || !('data' in payload)) throw new Error('Không tải được dữ liệu. Kiểm tra quyền và cấu hình backend.');
-      updateData(dataSchema.parse(payload.data));
+      const parsed = dataSchema.parse((payload as { data: unknown }).data);
+      if (JSON.stringify(currentData.current) !== JSON.stringify(parsed)) {
+        updateData(parsed);
+      }
       if ('role' in payload && ['admin','staff','viewer'].includes(String(payload.role))) setRole(payload.role as TooldeskContextType['role']);
       setNeedsLogin(false); setDataStatus('connected');
-    } catch (error) { setDataStatus('error'); addToast('Lỗi tải dữ liệu', error instanceof Error ? error.message : 'Dữ liệu không hợp lệ.', 'error'); }
+    } catch (error) {
+      if (!silent) {
+        setDataStatus('error');
+        addToast('Lỗi tải dữ liệu', error instanceof Error ? error.message : 'Dữ liệu không hợp lệ.', 'error');
+      }
+    } finally {
+      isFetching.current = false;
+      setIsSyncing(false);
+    }
   };
   useEffect(() => {
     if (dataSource === 'mock' && typeof window !== 'undefined') {
@@ -123,7 +141,32 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
       }
     }
   }, [dataSource]);
-  useEffect(() => { if (dataSource === 'supabase') void load(); }, [dataSource]);
+  // REALTIME BACKGROUND SYNC (2.5 seconds + on window focus/tab change)
+  useEffect(() => {
+    if (dataSource !== 'supabase') return;
+    void load();
+
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && !document.hidden && !busy.current) {
+        void load(true);
+      }
+    }, 2500);
+
+    const handleFocus = () => {
+      if (typeof document !== 'undefined' && !document.hidden && !busy.current) {
+        void load(true);
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
+    };
+  }, [dataSource]);
   useEffect(() => {
     const timer = setInterval(() => setToday(runtimeToday()), 60000);
     return () => clearInterval(timer);
@@ -157,7 +200,7 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
     finally { busy.current = false; setPending(false); }
   }
   const value: TooldeskContextType = {
-    data, today, dataStatus, pending, role, toasts, dialog, addToast,
+    data, today, dataStatus, isSyncing, pending, role, toasts, dialog, addToast,
     removeToast: id => setToasts(previous => previous.filter(item => item.id !== id)),
     openDialog: (type, payload) => { if (!busy.current) setDialog({ type, payload }); }, closeDialog,
     createOrder: async input => { const result = await run({ type: 'create_order', input }, 'Đã tạo đơn'); const order = result.data.orders.find(item => item.id === result.resultId); if (!order) throw new Error('Thiếu đơn trong phản hồi.'); return order; },
@@ -179,9 +222,51 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
     importData: input => { updateData(dataSchema.parse(input)); closeDialog(); addToast('Đã nhập dữ liệu thành công', undefined, 'success'); },
     resetData: () => { updateData(createEmptyProductionData()); closeDialog(); addToast('Đã làm sạch dữ liệu', 'Hệ thống đã sẵn sàng cho vận hành thực tế.', 'success'); },
     loadDemoData: () => { updateData(createInitialData()); closeDialog(); addToast('Đã nạp dữ liệu mẫu', 'Đã tải 36 khách hàng và 98 đơn hàng demo.', 'info'); },
-    syncWithSupabase: async () => { if (!busy.current) await load(); },
+    syncWithSupabase: async () => {
+      if (!busy.current) {
+        addToast('Đang làm mới Realtime…', undefined, 'info');
+        await load();
+        addToast('Đã đồng bộ Realtime', 'Dữ liệu mới nhất từ Supabase Cloud.', 'success');
+      }
+    },
     logout: async () => { const response = await fetch('/api/auth/logout', { method: 'POST' }); if (!response.ok) throw new Error('Không thể đăng xuất.'); setNeedsLogin(true); setDataStatus('error'); }
   };
-  return <TooldeskContext.Provider value={value}>{dataSource === 'supabase' && needsLogin ? <LoginPanel onSuccess={() => void load()} /> : dataSource === 'supabase' && dataStatus !== 'connected' ? <div className="panel" style={{ margin: 32, padding: 24 }} role="status"><h1>{dataStatus === 'loading' ? 'Đang tải Tooldesk…' : 'Không tải được dữ liệu'}</h1><p>Kiểm tra cấu hình, quyền tài khoản và migration database.</p>{dataStatus === 'error' && <button className="button" onClick={() => void load()}>Thử lại</button>}</div> : children}</TooldeskContext.Provider>;
+  return (
+    <TooldeskContext.Provider value={value}>
+      {dataSource === 'supabase' && needsLogin ? (
+        <LoginPanel onSuccess={() => void load()} />
+      ) : dataSource === 'supabase' && dataStatus !== 'connected' ? (
+        <div className="app-splash-wrap">
+          <div className="app-splash-card">
+            <div className="login-logo-box" style={{ width: 56, height: 56, margin: '0 auto 16px' }}>
+              <BrandLogoMark size={28} />
+            </div>
+            {dataStatus === 'loading' ? (
+              <>
+                <div className="app-splash-spinner"></div>
+                <h2 className="app-splash-title">Đang đồng bộ Realtime Tooldesk…</h2>
+                <p className="app-splash-subtitle">Đang kết nối cơ sở dữ liệu Supabase Cloud thời gian thực.</p>
+              </>
+            ) : (
+              <>
+                <div className="login-error-banner" style={{ marginBottom: 16 }}>
+                  Không thể kết nối máy chủ Supabase. Vui lòng kiểm tra đường truyền và thử lại.
+                </div>
+                <button
+                  type="button"
+                  className="login-submit"
+                  onClick={() => void load()}
+                >
+                  Thử kết nối lại
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      ) : (
+        children
+      )}
+    </TooldeskContext.Provider>
+  );
 }
 export function useTooldesk() { const value = useContext(TooldeskContext); if (!value) throw new Error('Thiếu TooldeskProvider.'); return value; }
