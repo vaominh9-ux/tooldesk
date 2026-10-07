@@ -134,7 +134,9 @@ export function executeCommand(original: AppData, command: Command, operation: O
       const updates = customerInput.parse({ name: customer.name, email: customer.email, phone: customer.phone, source: customer.source, notes: customer.notes, emailConsent: customer.emailConsent, consentSource: customer.consentSource, ...command.input.updates });
       const email = updates.email.toLowerCase();
       if (email && data.customers.some(other => other.id !== customer.id && other.email.toLowerCase() === email)) throw new Error('Email đã thuộc khách khác.');
-      Object.assign(customer, updates, { email, consentUpdatedAt: today });
+      const consentChanged = command.input.updates.emailConsent !== undefined && command.input.updates.emailConsent !== customer.emailConsent;
+      const consentUpdatedAt = consentChanged ? today : (customer.consentUpdatedAt || today);
+      Object.assign(customer, updates, { email, consentUpdatedAt });
       resultId = customer.id;
       if (updates.notes !== undefined && updates.notes !== oldNotes) {
         data.activity.unshift({
