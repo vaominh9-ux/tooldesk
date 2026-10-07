@@ -19,6 +19,10 @@ function getSeedData() {
     {id:'p-chatgpt', name:'ChatGPT', category:'Trợ lý AI', color:'mint', symbol:'◈', description:'Gói dịch vụ AI cho công việc hằng ngày.', plans:[
       {id:'pl-gpt-1', name:'Gói 1 tháng', duration:1, unit:'months', price:450000, cost:300000},
       {id:'pl-gpt-3', name:'Gói 3 tháng', duration:3, unit:'months', price:1250000, cost:850000}]},
+    {id:'p-chatgpt-business', name:'ChatGPT Business', category:'Trợ lý AI', color:'emerald', symbol:'◈', description:'Gói dịch vụ ChatGPT Business cho doanh nghiệp và đội nhóm.', plans:[
+      {id:'pl-gpt-biz-1', name:'Gói 1 tháng', duration:1, unit:'months', price:550000, cost:380000},
+      {id:'pl-gpt-biz-3', name:'Gói 3 tháng', duration:3, unit:'months', price:1590000, cost:1140000},
+      {id:'pl-gpt-biz-6', name:'Gói 6 tháng', duration:6, unit:'months', price:3000000, cost:2280000}]},
     {id:'p-claude', name:'Claude', category:'Trợ lý AI', color:'peach', symbol:'✳', description:'Viết, phân tích và làm việc với tài liệu.', plans:[
       {id:'pl-claude-1', name:'Gói 1 tháng', duration:1, unit:'months', price:490000, cost:350000},
       {id:'pl-claude-3', name:'Gói 3 tháng', duration:3, unit:'months', price:1390000, cost:990000}]},

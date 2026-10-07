@@ -168,6 +168,12 @@
   color: #3b7c5e !important;
 }
 
+/* Distinct emerald product logo color for ChatGPT Business */
+.product-logo.emerald {
+  background: #dcfce7 !important;
+  color: #15803d !important;
+}
+
 /* Enhanced Product Header Banner in Dialogs (Plan / Product management) */
 .product-dialog-banner {
   display: flex !important;

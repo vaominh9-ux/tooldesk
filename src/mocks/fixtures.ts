@@ -137,6 +137,19 @@ export function createInitialData(): TooldeskData {
       ]
     },
     {
+      id: 'p-chatgpt-business',
+      name: 'ChatGPT Business',
+      category: 'Trợ lý AI',
+      color: 'emerald',
+      symbol: '◈',
+      description: 'Gói dịch vụ ChatGPT Business cho doanh nghiệp và đội nhóm.',
+      plans: [
+        { id: 'pl-gpt-biz-1', name: 'Gói 1 tháng', duration: 1, unit: 'months', price: 550000, cost: 380000 },
+        { id: 'pl-gpt-biz-3', name: 'Gói 3 tháng', duration: 3, unit: 'months', price: 1590000, cost: 1140000 },
+        { id: 'pl-gpt-biz-6', name: 'Gói 6 tháng', duration: 6, unit: 'months', price: 3000000, cost: 2280000 }
+      ]
+    },
+    {
       id: 'p-claude',
       name: 'Claude',
       category: 'Trợ lý AI',
