@@ -21,7 +21,7 @@ export function CreateOrderDialog({
   const { data, createOrder, today } = useTooldesk();
   const backdropDismiss = useBackdropDismiss(onClose);
 
-  const [isNewCustomer, setIsNewCustomer] = useState(false);
+  const [isNewCustomer, setIsNewCustomer] = useState(!defaultCustomerId && data.customers.length === 0);
   const [selectedCustomerId, setSelectedCustomerId] = useState(
     defaultCustomerId || data.customers[0]?.id || ''
   );
@@ -43,6 +43,7 @@ export function CreateOrderDialog({
   const [accountEmail, setAccountEmail] = useState('');
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
+  const [pending, setPending] = useState(false);
 
   const handleProductChange = (prodId: string) => {
     setSelectedProductId(prodId);
@@ -75,19 +76,48 @@ export function CreateOrderDialog({
     setError('');
 
     try {
-      if (isNewCustomer && !newCustomerName.trim()) {
-        throw new Error('Vui lòng nhập họ tên khách hàng mới.');
+      if (isNewCustomer) {
+        if (!newCustomerName.trim()) {
+          throw new Error('Vui lòng nhập họ tên khách hàng mới.');
+        }
+        const trimmedEmail = newCustomerEmail.trim();
+        const trimmedPhone = newCustomerPhone.trim();
+        if (!trimmedEmail && !trimmedPhone) {
+          throw new Error('Vui lòng nhập ít nhất Email hoặc Số điện thoại để lưu khách hàng.');
+        }
+        if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+          throw new Error('Email khách hàng không đúng định dạng (ví dụ: khach@gmail.com).');
+        }
+      } else {
+        if (!selectedCustomerId) {
+          throw new Error('Vui lòng chọn một khách hàng trong danh sách.');
+        }
       }
+
+      if (!selectedProductId) {
+        throw new Error('Vui lòng chọn sản phẩm.');
+      }
+      if (!selectedPlanId) {
+        throw new Error('Vui lòng chọn gói dịch vụ.');
+      }
+
+      setPending(true);
+
       let finalNote = note.trim();
       if (accountEmail.trim()) {
         finalNote = finalNote
           ? `Tài khoản: ${accountEmail.trim()} | ${finalNote}`
           : `Tài khoản: ${accountEmail.trim()}`;
       }
+
       await createOrder({
         customerId: isNewCustomer ? undefined : selectedCustomerId,
         newCustomer: isNewCustomer
-          ? { name: newCustomerName, email: newCustomerEmail, phone: newCustomerPhone }
+          ? {
+              name: newCustomerName.trim(),
+              email: newCustomerEmail.trim() || undefined,
+              phone: newCustomerPhone.trim() || undefined
+            }
           : undefined,
         productId: selectedProductId,
         planId: selectedPlanId,
@@ -97,8 +127,12 @@ export function CreateOrderDialog({
         payment,
         note: finalNote
       });
+
+      onClose();
     } catch (err: any) {
       setError(err.message || 'Không thể tạo đơn hàng.');
+    } finally {
+      setPending(false);
     }
   };
 
@@ -365,15 +399,26 @@ export function CreateOrderDialog({
               type="button"
               className="button"
               onClick={onClose}
+              disabled={pending}
             >
               Hủy
             </button>
             <button
               type="submit"
               className="button primary"
+              disabled={pending}
             >
-              <AppIcon name="check" size={16} />
-              <span>Lưu đơn hàng</span>
+              {pending ? (
+                <>
+                  <AppIcon name="refresh" size={16} />
+                  <span>Đang lưu đơn…</span>
+                </>
+              ) : (
+                <>
+                  <AppIcon name="check" size={16} />
+                  <span>Lưu đơn hàng</span>
+                </>
+              )}
             </button>
           </footer>
         </form>
