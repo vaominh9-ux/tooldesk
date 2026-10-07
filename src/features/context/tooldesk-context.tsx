@@ -65,7 +65,18 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [dialog, setDialog] = useState<DialogState>({ type: null });
   const [today, setToday] = useState(() => runtimeToday());
-  const updateData = (value: TooldeskData) => { currentData.current = value; setData(value); };
+  const STORAGE_KEY = 'tooldesk_workspace_data';
+  const updateData = (value: TooldeskData) => {
+    currentData.current = value;
+    setData(value);
+    if (dataSource === 'mock' && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+      } catch (err) {
+        console.warn('LocalStorage save failed:', err);
+      }
+    }
+  };
   const addToast: TooldeskContextType['addToast'] = (title, message, type = 'info') => {
     const id = crypto.randomUUID(); setToasts(previous => [...previous, { id, title, message, type }]);
     setTimeout(() => setToasts(previous => previous.filter(item => item.id !== id)), 6000);
@@ -84,6 +95,42 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
       setNeedsLogin(false); setDataStatus('connected');
     } catch (error) { setDataStatus('error'); addToast('Lỗi tải dữ liệu', error instanceof Error ? error.message : 'Dữ liệu không hợp lệ.', 'error'); }
   };
+  useEffect(() => {
+    if (dataSource === 'mock' && typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const valid = dataSchema.safeParse(parsed);
+          if (valid.success) {
+            const freshInitial = createEmptyProductionData();
+            const mergedProducts = freshInitial.products.map(freshProd => {
+              const savedProd = valid.data.products.find(p => p.id === freshProd.id);
+              if (!savedProd) return freshProd;
+              const existingPlanIds = new Set(savedProd.plans.map(p => p.id));
+              const newPlans = freshProd.plans.filter(p => !existingPlanIds.has(p.id));
+              return {
+                ...savedProd,
+                plans: [...savedProd.plans, ...newPlans]
+              };
+            });
+            const savedCustomProducts = valid.data.products.filter(
+              p => !freshInitial.products.some(fp => fp.id === p.id)
+            );
+            const restored: TooldeskData = {
+              ...valid.data,
+              products: [...mergedProducts, ...savedCustomProducts]
+            };
+            currentData.current = restored;
+            setData(restored);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('LocalStorage load failed:', err);
+      }
+    }
+  }, [dataSource]);
   useEffect(() => { if (dataSource === 'supabase') void load(); }, [dataSource]);
   useEffect(() => {
     const timer = setInterval(() => setToday(runtimeToday()), 60000);
