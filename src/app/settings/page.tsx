@@ -10,8 +10,26 @@ import { ApiIntegrationPanel } from '@/features/api-integration/api-integration-
 export default function SettingsPage() {
   const { data, dataStatus, updateSettings, openDialog, addToast, syncWithSupabase, logout, importData, loadDemoData } = useTooldesk();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [emailStatus, setEmailStatus] = useState<{ emailConfigured: boolean; reminderSchedulerConfigured: boolean } | null>(null);
-  useEffect(() => { fetch('/api/health').then(response => response.json()).then((value: unknown) => { if (value && typeof value === 'object' && 'emailConfigured' in value && 'reminderSchedulerConfigured' in value) setEmailStatus({ emailConfigured: value.emailConfigured === true, reminderSchedulerConfigured: value.reminderSchedulerConfigured === true }); }).catch(() => setEmailStatus(null)); }, []);
+  const [systemHealth, setSystemHealth] = useState<{
+    databaseConfigured: boolean;
+    emailConfigured: boolean;
+    reminderSchedulerConfigured: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/health')
+      .then(response => response.json())
+      .then((value: any) => {
+        if (value && typeof value === 'object') {
+          setSystemHealth({
+            databaseConfigured: value.databaseConfigured === true,
+            emailConfigured: value.emailConfigured === true,
+            reminderSchedulerConfigured: value.reminderSchedulerConfigured === true
+          });
+        }
+      })
+      .catch(() => setSystemHealth(null));
+  }, []);
 
   const [shopName, setShopName] = useState(data.settings.shopName || 'Tooldesk');
   const [ownerName, setOwnerName] = useState(data.settings.ownerName || 'Minh');
@@ -145,9 +163,27 @@ export default function SettingsPage() {
               </span>
               <div>
                 <strong>Supabase</strong>
-                <p>{dataStatus === 'connected' ? 'Đã kết nối cơ sở dữ liệu PostgreSQL' : 'Chế độ lưu trữ trực tiếp / Ngoại tuyến'}</p>
+                <p>
+                  {systemHealth?.databaseConfigured || dataStatus === 'connected'
+                    ? 'Đã kết nối PostgreSQL (jqkezzjkcyulkrmtrwgj)'
+                    : 'Chế độ lưu trữ trực tiếp / Ngoại tuyến'}
+                </p>
               </div>
-              <span className={`badge ${dataStatus === 'connected' ? 'green' : dataStatus === 'error' ? 'red' : 'neutral'}`}>{dataStatus === 'connected' ? 'Đã kết nối' : dataStatus === 'loading' ? 'Đang kiểm tra' : dataStatus === 'error' ? 'Lỗi kết nối' : 'Trực tiếp'}</span>
+              <span
+                className={`badge ${
+                  systemHealth?.databaseConfigured || dataStatus === 'connected'
+                    ? 'green'
+                    : dataStatus === 'error'
+                    ? 'red'
+                    : 'neutral'
+                }`}
+              >
+                {systemHealth?.databaseConfigured || dataStatus === 'connected'
+                  ? 'Đã kết nối'
+                  : dataStatus === 'loading'
+                  ? 'Đang kiểm tra'
+                  : 'Trực tiếp'}
+              </span>
             </div>
 
             <div className="integration-row">
@@ -158,7 +194,9 @@ export default function SettingsPage() {
                 <strong>Email</strong>
                 <p>Gửi ưu đãi và nhắc gia hạn</p>
               </div>
-              <span className={emailStatus?.emailConfigured ? 'badge green' : 'badge neutral'}>{emailStatus?.emailConfigured ? 'Đã cấu hình SMTP' : 'Chưa bật SMTP'}</span>
+              <span className={systemHealth?.emailConfigured ? 'badge green' : 'badge neutral'}>
+                {systemHealth?.emailConfigured ? 'Đã cấu hình SMTP' : 'Chưa bật SMTP'}
+              </span>
             </div>
 
             <div className="integration-row">
