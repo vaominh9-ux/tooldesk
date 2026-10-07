@@ -44,9 +44,8 @@ export function PaymentConfirmDialog({
     );
   }
 
-  const handleConfirm = () => {
-    recordPayment(order.id);
-    onClose();
+  const handleConfirm = async () => {
+    try { await recordPayment(order.id); onClose(); } catch (error) { addToast('Không thể thu tiền', error instanceof Error ? error.message : 'Lỗi lưu giao dịch.', 'error'); }
   };
 
   return (

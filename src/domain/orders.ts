@@ -51,7 +51,8 @@ export interface CustomerStats {
 
 export function getCustomerStats(
   data: { orders: any[]; subscriptions: any[]; refunds?: any[] },
-  customerId: string
+  customerId: string,
+  today = DEFAULT_APP_TODAY
 ): CustomerStats {
   const orders = data.orders.filter(o => o.customerId === customerId && o.status !== 'cancelled');
   const subscriptions = data.subscriptions.filter(s => s.customerId === customerId);
@@ -59,23 +60,24 @@ export function getCustomerStats(
     orders,
     subscriptions,
     spend: totalPaid(orders, data.refunds || []),
-    activeCount: subscriptions.filter(s => isSubscriptionActive(s)).length
+    activeCount: subscriptions.filter(s => isSubscriptionActive(s, today)).length
   };
 }
 
 export function audienceFor(
   data: { customers: any[]; orders: any[]; subscriptions: any[]; refunds?: any[]; settings?: any },
-  segment = 'all'
+  segment = 'all',
+  today = DEFAULT_APP_TODAY
 ) {
   const reminderDays = data.settings?.reminderDays || 7;
   const selected = data.customers.filter(c => {
-    const stats = getCustomerStats(data, c.id);
+    const stats = getCustomerStats(data, c.id, today);
     if (segment === 'active') return stats.activeCount > 0;
     if (segment === 'expiring') {
-      return stats.subscriptions.some(s => subStatus(s, DEFAULT_APP_TODAY, reminderDays) === 'expiring');
+      return stats.subscriptions.some(s => subStatus(s, today, reminderDays) === 'expiring');
     }
     if (segment === 'expired') {
-      return stats.activeCount === 0 && stats.subscriptions.some(s => subStatus(s) === 'expired');
+      return stats.activeCount === 0 && stats.subscriptions.some(s => subStatus(s, today) === 'expired');
     }
     if (segment === 'vip') return stats.spend >= 2_000_000;
     return true;

@@ -73,3 +73,32 @@
   .work-footer>.text-button { white-space:normal; }
   .dialog-footer>.button { min-width:0; white-space:normal; }
 }
+
+/* Renew button and small button icon sizing & alignment */
+.renew-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  white-space: nowrap !important;
+  vertical-align: middle;
+  transition: background .15s, border-color .15s, color .15s;
+}
+
+.renew-button:hover {
+  background: #f5f6fe !important;
+  border-color: #d6daf7 !important;
+  color: #4f59c8 !important;
+}
+
+.renew-button .icon,
+.button.small .icon {
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px !important;
+  min-height: 14px !important;
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: middle;
+}
+

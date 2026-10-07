@@ -5,10 +5,9 @@ import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '@/components/shared/app-icon';
 import { formatMoney } from '@/domain/money';
 import { isActive } from '@/domain/subscriptions';
-import { DEFAULT_APP_TODAY } from '@/domain/dates';
 
 export default function ProductsPage() {
-  const { data, openDialog } = useTooldesk();
+  const { data, openDialog, today } = useTooldesk();
   const [search, setSearch] = useState('');
 
   let filtered = data.products;
@@ -79,7 +78,7 @@ export default function ProductsPage() {
       <section className="products-grid">
         {filtered.map(p => {
           const activeCount = data.subscriptions.filter(
-            s => s.productId === p.id && isActive(s, DEFAULT_APP_TODAY)
+            s => s.productId === p.id && isActive(s)
           ).length;
 
           return (

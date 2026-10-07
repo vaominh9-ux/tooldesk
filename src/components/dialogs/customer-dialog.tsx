@@ -25,7 +25,7 @@ export function CustomerDialog({
   const [notes, setNotes] = useState(existing?.notes || '');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       setError('Vui lòng nhập tên khách hàng.');
@@ -41,8 +41,9 @@ export function CustomerDialog({
     }
     setError('');
 
+    try {
     if (existing) {
-      updateCustomer(existing.id, {
+      await updateCustomer(existing.id, {
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim(),
@@ -52,7 +53,7 @@ export function CustomerDialog({
         consentSource: consentSource.trim()
       });
     } else {
-      addCustomer({
+      await addCustomer({
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim(),
@@ -63,6 +64,7 @@ export function CustomerDialog({
       });
     }
     onClose();
+    } catch (error) { setError(error instanceof Error ? error.message : 'Không thể lưu khách hàng.'); }
   };
 
   return (

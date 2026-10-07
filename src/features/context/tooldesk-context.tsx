@@ -65,7 +65,7 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
     const id = crypto.randomUUID(); setToasts(previous => [...previous, { id, title, message, type }]);
     setTimeout(() => setToasts(previous => previous.filter(item => item.id !== id)), 6000);
   };
-  const closeDialog = () => setDialog({ type: null });
+  const closeDialog = () => { if (!busy.current) setDialog({ type: null }); };
   const load = async () => {
     if (dataSource === 'mock') { addToast('Đang dùng dữ liệu mẫu', 'Không kết nối database thật trong bản demo.'); return; }
     setDataStatus('loading');
@@ -109,7 +109,7 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
         result = { data: dataSchema.parse(payload.data), resultId: 'resultId' in payload && typeof payload.resultId === 'string' ? payload.resultId : undefined };
         retryRequest.current = null;
       }
-      updateData(result.data); addToast(title, result.resultId, 'success'); if (close) closeDialog(); return result;
+      updateData(result.data); addToast(title, result.resultId, 'success'); if (close) setDialog({ type: null }); return result;
     } catch (error) { addToast('Không thể lưu', error instanceof Error ? error.message : 'Lỗi chưa xác định.', 'error'); throw error; }
     finally { busy.current = false; setPending(false); }
   }

@@ -4,7 +4,7 @@ import React from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
 import { formatMoney } from '@/domain/money';
-import { formatDateLabel, remainingLabel, DEFAULT_APP_TODAY } from '@/domain/dates';
+import { formatDateLabel, remainingLabel } from '@/domain/dates';
 import { subStatus } from '@/domain/subscriptions';
 
 export function SubscriptionDetailDialog({
@@ -14,7 +14,7 @@ export function SubscriptionDetailDialog({
   subscriptionId: string;
   onClose: () => void;
 }) {
-  const { data, openDialog, markContacted } = useTooldesk();
+  const { data, openDialog, markContacted, today } = useTooldesk();
   const sub = data.subscriptions.find(s => s.id === subscriptionId);
 
   if (!sub) {
@@ -49,7 +49,7 @@ export function SubscriptionDetailDialog({
   const customer = data.customers.find(c => c.id === sub.customerId);
   const product = data.products.find(p => p.id === sub.productId);
   const plan = product?.plans.find(pl => pl.id === sub.planId);
-  const status = subStatus(sub, DEFAULT_APP_TODAY, data.settings.reminderDays);
+  const status = subStatus(sub, data.settings.reminderDays);
 
   const relatedOrders = data.orders
     .filter(o => o.subscriptionId === sub.id)
@@ -139,7 +139,7 @@ export function SubscriptionDetailDialog({
             {/* Hint banner */}
             <div className="date-summary">
               <div className="date-flow">
-                <strong>{remainingLabel(sub, DEFAULT_APP_TODAY)}</strong>
+                <strong>{remainingLabel(sub)}</strong>
                 <small>{formatDateLabel(sub.expiresAt, true)}</small>
               </div>
               <small>Hết hạn tại 00:00 ngày hiển thị, giờ Việt Nam (UTC+7).</small>

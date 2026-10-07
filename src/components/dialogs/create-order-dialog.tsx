@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
-import { addDuration, formatDateLabel, DEFAULT_APP_TODAY } from '@/domain/dates';
+import { addDuration, formatDateLabel } from '@/domain/dates';
 import { formatMoney } from '@/domain/money';
 
 export function CreateOrderDialog({
@@ -15,7 +15,7 @@ export function CreateOrderDialog({
   defaultCustomerId?: string;
   defaultProductId?: string;
 }) {
-  const { data, createOrder } = useTooldesk();
+  const { data, createOrder, today } = useTooldesk();
 
   const [isNewCustomer, setIsNewCustomer] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState(
@@ -32,7 +32,7 @@ export function CreateOrderDialog({
   const currentPlan =
     currentProduct?.plans.find(pl => pl.id === selectedPlanId) || currentProduct?.plans[0];
 
-  const [startsAt, setStartsAt] = useState(DEFAULT_APP_TODAY);
+  const [startsAt, setStartsAt] = useState(today);
   const [price, setPrice] = useState(currentPlan?.price || 0);
   const [cost, setCost] = useState(currentPlan?.cost || 0);
   const [payment, setPayment] = useState<'paid' | 'unpaid'>('paid');
@@ -65,7 +65,7 @@ export function CreateOrderDialog({
     expiresAt = '';
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -73,7 +73,7 @@ export function CreateOrderDialog({
       if (isNewCustomer && !newCustomerName.trim()) {
         throw new Error('Vui lòng nhập họ tên khách hàng mới.');
       }
-      createOrder({
+      await createOrder({
         customerId: isNewCustomer ? undefined : selectedCustomerId,
         newCustomer: isNewCustomer
           ? { name: newCustomerName, email: newCustomerEmail, phone: newCustomerPhone }

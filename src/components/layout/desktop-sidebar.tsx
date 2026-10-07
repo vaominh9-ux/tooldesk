@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import { AppIcon, BrandLogoMark } from '../shared/app-icon';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { subStatus } from '@/domain/subscriptions';
-import { DEFAULT_APP_TODAY } from '@/domain/dates';
 
 interface DesktopSidebarProps {
   mobileOpen?: boolean;
@@ -15,10 +14,10 @@ interface DesktopSidebarProps {
 
 export function DesktopSidebar({ mobileOpen = false, onCloseMobile }: DesktopSidebarProps) {
   const pathname = usePathname();
-  const { data, openDialog } = useTooldesk();
+  const { data, today, openDialog } = useTooldesk();
 
   const expiringCount = data.subscriptions.filter(
-    s => subStatus(s, DEFAULT_APP_TODAY, data.settings.reminderDays) === 'expiring'
+    s => subStatus(s, today, data.settings.reminderDays) === 'expiring'
   ).length;
 
   const ownerName = data.settings.ownerName || 'Minh';

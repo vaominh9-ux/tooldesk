@@ -5,20 +5,22 @@ import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '@/components/shared/app-icon';
 
 export default function SettingsPage() {
-  const { data, dataStatus, updateSettings, openDialog, addToast, syncWithSupabase } = useTooldesk();
+  const { data, dataStatus, updateSettings, openDialog, addToast, syncWithSupabase, logout } = useTooldesk();
+  const [emailStatus, setEmailStatus] = useState<{ emailConfigured: boolean; reminderSchedulerConfigured: boolean } | null>(null);
+  useEffect(() => { fetch('/api/health').then(response => response.json()).then((value: unknown) => { if (value && typeof value === 'object' && 'emailConfigured' in value && 'reminderSchedulerConfigured' in value) setEmailStatus({ emailConfigured: value.emailConfigured === true, reminderSchedulerConfigured: value.reminderSchedulerConfigured === true }); }).catch(() => setEmailStatus(null)); }, []);
 
   const [shopName, setShopName] = useState(data.settings.shopName || 'Tooldesk');
   const [ownerName, setOwnerName] = useState(data.settings.ownerName || 'Minh');
   const [reminderDays, setReminderDays] = useState(data.settings.reminderDays || 7);
   useEffect(() => { setShopName(data.settings.shopName); setOwnerName(data.settings.ownerName); setReminderDays(data.settings.reminderDays); }, [data.settings.shopName, data.settings.ownerName, data.settings.reminderDays]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettings({
+    try { await updateSettings({
       shopName,
       ownerName,
       reminderDays: Number(reminderDays)
-    });
+    }); } catch (error) { addToast('Không thể lưu cài đặt', error instanceof Error ? error.message : 'Lỗi lưu dữ liệu.', 'error'); }
   };
 
   const handleExportData = () => {
@@ -88,7 +90,7 @@ export default function SettingsPage() {
                   <option value={14}>Trước 14 ngày</option>
                   <option value={30}>Trước 30 ngày</option>
                 </select>
-                <small>Chỉ đổi bộ lọc hiển thị, chưa tạo lịch nhắc tự động.</small>
+                <small>Mốc lọc hiển thị và chọn gói để nhắc. Tác vụ gửi chạy khi scheduler/SMTP được bật.</small>
               </label>
 
               <label className="field">
@@ -136,7 +138,7 @@ export default function SettingsPage() {
                 <strong>Email</strong>
                 <p>Gửi ưu đãi và nhắc gia hạn</p>
               </div>
-              <span className="badge neutral">Chưa nối</span>
+              <span className={emailStatus?.emailConfigured ? 'badge green' : 'badge neutral'}>{emailStatus?.emailConfigured ? 'Đã cấu hình SMTP' : 'Chưa bật SMTP'}</span>
             </div>
 
             <div className="integration-row">

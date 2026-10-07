@@ -5,7 +5,7 @@ import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
 import { getCustomerStats } from '@/domain/orders';
 import { formatMoney } from '@/domain/money';
-import { formatDateLabel, remainingLabel, DEFAULT_APP_TODAY } from '@/domain/dates';
+import { formatDateLabel, remainingLabel } from '@/domain/dates';
 import { subStatus } from '@/domain/subscriptions';
 
 export function CustomerDetailDialog({
@@ -15,7 +15,7 @@ export function CustomerDetailDialog({
   customerId: string;
   onClose: () => void;
 }) {
-  const { data, openDialog } = useTooldesk();
+  const { data, openDialog, today } = useTooldesk();
   const customer = data.customers.find(c => c.id === customerId);
 
   if (!customer) {
@@ -138,7 +138,7 @@ export function CustomerDetailDialog({
                   {subs.map(sub => {
                     const product = data.products.find(p => p.id === sub.productId);
                     const plan = product?.plans.find(pl => pl.id === sub.planId);
-                    const status = subStatus(sub, DEFAULT_APP_TODAY, data.settings.reminderDays);
+                    const status = subStatus(sub, data.settings.reminderDays);
 
                     return (
                       <div
@@ -160,7 +160,7 @@ export function CustomerDetailDialog({
                             <small style={{ color: '#778197' }}>({plan?.name})</small>
                           </div>
                           <span style={{ fontSize: '11.5px', color: '#778197', display: 'block', marginTop: '2px' }}>
-                            Hạn dùng: {formatDateLabel(sub.expiresAt, true)} ({remainingLabel(sub, DEFAULT_APP_TODAY)})
+                            Hạn dùng: {formatDateLabel(sub.expiresAt, true)} ({remainingLabel(sub)})
                           </span>
                         </div>
 

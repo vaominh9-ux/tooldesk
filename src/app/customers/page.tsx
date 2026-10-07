@@ -5,12 +5,12 @@ import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '@/components/shared/app-icon';
 import { formatMoney, orderFinancials } from '@/domain/money';
 import { getCustomerStats, paginate } from '@/domain/orders';
-import { formatDateLabel, remainingLabel, DEFAULT_APP_TODAY } from '@/domain/dates';
+import { formatDateLabel, remainingLabel } from '@/domain/dates';
 import { subStatus } from '@/domain/subscriptions';
 import Link from 'next/link';
 
 export default function CustomersPage() {
-  const { data, openDialog } = useTooldesk();
+  const { data, openDialog, today } = useTooldesk();
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [tab, setTab] = useState<'all' | 'active' | 'vip'>('all');
@@ -159,7 +159,7 @@ export default function CustomersPage() {
                   {customerSubs.map(s => {
                     const prod = data.products.find(p => p.id === s.productId);
                     const plan = prod?.plans.find(pl => pl.id === s.planId);
-                    const status = subStatus(s, DEFAULT_APP_TODAY, data.settings.reminderDays);
+                    const status = subStatus(s, data.settings.reminderDays);
 
                     return (
                       <div

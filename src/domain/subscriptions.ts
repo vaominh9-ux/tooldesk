@@ -27,14 +27,16 @@ export interface DomainSubscription {
 
 export function subStatus(
   sub: { cancelled?: boolean; startsAt: string; expiresAt: string },
-  today = DEFAULT_APP_TODAY,
+  todayOrWindow: string | number = DEFAULT_APP_TODAY,
   windowDays = 7
 ): SubscriptionStatus {
+  const today = typeof todayOrWindow === 'string' ? todayOrWindow : DEFAULT_APP_TODAY;
+  const window = typeof todayOrWindow === 'number' ? todayOrWindow : windowDays;
   if (sub.cancelled) return 'cancelled';
   if (sub.startsAt > today) return 'scheduled';
   const left = daysLeft(sub.expiresAt, today);
   if (left <= 0) return 'expired';
-  if (left <= windowDays) return 'expiring';
+  if (left <= window) return 'expiring';
   return 'active';
 }
 

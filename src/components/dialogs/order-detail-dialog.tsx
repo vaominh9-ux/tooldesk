@@ -13,7 +13,7 @@ export function OrderDetailDialog({
   orderId: string;
   onClose: () => void;
 }) {
-  const { data, openDialog, recordPayment } = useTooldesk();
+  const { data, openDialog, recordPayment, addToast } = useTooldesk();
   const order = data.orders.find(o => o.id === orderId);
 
   if (!order) {
@@ -299,9 +299,8 @@ export function OrderDetailDialog({
               <button
                 type="button"
                 className="button primary"
-                onClick={() => {
-                  recordPayment(order.id);
-                  onClose();
+                onClick={async () => {
+                  try { await recordPayment(order.id); onClose(); } catch (error) { addToast('Không thể thu tiền', error instanceof Error ? error.message : 'Lỗi lưu dữ liệu.', 'error'); }
                 }}
               >
                 <AppIcon name="wallet" size={15} />

@@ -5,7 +5,7 @@ import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
 import { orderFinancials, formatMoney } from '@/domain/money';
 import { refundServiceOption } from '@/domain/refunds';
-import { formatDateLabel, DEFAULT_APP_TODAY } from '@/domain/dates';
+import { formatDateLabel } from '@/domain/dates';
 
 export function RefundDialog({
   orderId,
@@ -16,7 +16,7 @@ export function RefundDialog({
   isRecovery?: boolean;
   onClose: () => void;
 }) {
-  const { data, processRefund, addToast, openDialog } = useTooldesk();
+  const { data, processRefund, addToast, openDialog, today } = useTooldesk();
 
   const order = data.orders.find(o => o.id === orderId);
   const customer = data.customers.find(c => c.id === order?.customerId);
@@ -28,7 +28,7 @@ export function RefundDialog({
   const [operationId] = useState(() => crypto.randomUUID());
   const [amount, setAmount] = useState<number>(f?.remainingRefund || 0);
   const [costRecovered, setCostRecovered] = useState<number>(recoveryMode ? f?.remainingCost || 0 : 0);
-  const [date, setDate] = useState(DEFAULT_APP_TODAY);
+  const [date, setDate] = useState(today);
   const [reason, setReason] = useState('');
   const [method, setMethod] = useState<'bank' | 'cash' | 'wallet' | 'other'>('bank');
   const [reference, setReference] = useState('');
@@ -103,7 +103,7 @@ export function RefundDialog({
     );
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!confirmed) {
       setError('Vui lòng đánh dấu xác nhận trước khi tiếp tục.');
@@ -112,7 +112,7 @@ export function RefundDialog({
     setError('');
 
     try {
-      processRefund({
+      await processRefund({
         operationId,
         orderId: order.id,
         amount: recoveryMode ? 0 : Number(amount),
@@ -247,7 +247,7 @@ export function RefundDialog({
                   name="date"
                   value={date}
                   min={(order.paidAt || order.date).slice(0, 10)}
-                  max={DEFAULT_APP_TODAY}
+                  max={today}
                   required
                   onChange={e => setDate(e.target.value)}
                 />

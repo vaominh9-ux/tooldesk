@@ -41,15 +41,15 @@ export function PlanDialog({ planId, onClose }: { planId: string; onClose: () =>
     );
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       setError('Vui lòng nhập tên gói.');
       return;
     }
     try {
-      updatePlan(planId, { name: name.trim(), price: Number(price), cost: Number(cost) });
-      addToast('Đã lưu giá mới', `${product.name} · ${name.trim()}`, 'success');
+      await updatePlan(planId, { name: name.trim(), price: Number(price), cost: Number(cost) });
+
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Không thể cập nhật gói.');

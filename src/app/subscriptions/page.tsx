@@ -5,11 +5,11 @@ import Link from 'next/link';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '@/components/shared/app-icon';
 import { subStatus } from '@/domain/subscriptions';
-import { formatDateLabel, remainingLabel, DEFAULT_APP_TODAY } from '@/domain/dates';
+import { formatDateLabel, remainingLabel } from '@/domain/dates';
 import { paginate } from '@/domain/orders';
 
 export default function SubscriptionsPage() {
-  const { data, openDialog, markContacted } = useTooldesk();
+  const { data, today, openDialog, markContacted } = useTooldesk();
 
   const [tab, setTab] = useState<'all' | 'expiring' | 'expired' | 'active' | 'scheduled' | 'cancelled'>('all');
   const [search, setSearch] = useState('');
@@ -20,10 +20,10 @@ export default function SubscriptionsPage() {
   const windowDays = data.settings?.reminderDays || 7;
 
   const countStatus = (key: string) =>
-    data.subscriptions.filter(s => subStatus(s, DEFAULT_APP_TODAY, windowDays) === key).length;
+    data.subscriptions.filter(s => subStatus(s, today, windowDays) === key).length;
 
   let items = data.subscriptions.filter(s => {
-    const status = subStatus(s, DEFAULT_APP_TODAY, windowDays);
+    const status = subStatus(s, today, windowDays);
     if (tab === 'all') return true;
     return status === tab;
   });
@@ -65,7 +65,7 @@ export default function SubscriptionsPage() {
   };
 
   const renderSubscriptionBadge = (sub: typeof data.subscriptions[0]) => {
-    const status = subStatus(sub, DEFAULT_APP_TODAY, windowDays);
+    const status = subStatus(sub, windowDays);
     const badges: Record<string, { label: string; tone: string }> = {
       active: { label: 'Đang hoạt động', tone: 'green' },
       expiring: { label: 'Sắp hết hạn', tone: 'amber' },
@@ -258,7 +258,7 @@ export default function SubscriptionsPage() {
                             {formatDateLabel(s.expiresAt, true)}
                           </strong>
                           <span className="sub-label">
-                            {remainingLabel(s, DEFAULT_APP_TODAY)}
+                            {remainingLabel(s)}
                           </span>
                         </td>
                         <td>{renderSubscriptionBadge(s)}</td>
@@ -288,7 +288,7 @@ export default function SubscriptionsPage() {
                               className="button small renew-button"
                               onClick={() => openDialog('renew-subscription', s.id)}
                             >
-                              <AppIcon name="refresh" size={13} />
+                              <AppIcon name="refresh" size={14} />
                               <span>{s.cancelled ? 'Mở lại' : 'Gia hạn'}</span>
                             </button>
                             <button
@@ -314,7 +314,7 @@ export default function SubscriptionsPage() {
                 const cust = findCustomer(sub.customerId);
                 const prod = findProduct(sub.productId);
                 const plan = findPlan(sub.productId, sub.planId);
-                const status = subStatus(sub, DEFAULT_APP_TODAY, windowDays);
+                const status = subStatus(sub, windowDays);
 
                 return (
                   <article key={sub.id} className="record-card">
@@ -351,7 +351,7 @@ export default function SubscriptionsPage() {
                         Hết hạn <strong>{formatDateLabel(sub.expiresAt, true)}</strong>
                       </span>
                       <strong className={status === 'expired' ? 'negative' : status === 'expiring' ? 'warning' : ''}>
-                        {remainingLabel(sub, DEFAULT_APP_TODAY)}
+                        {remainingLabel(sub)}
                       </strong>
                     </div>
 

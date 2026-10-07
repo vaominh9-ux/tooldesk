@@ -5,32 +5,32 @@ import Link from 'next/link';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '@/components/shared/app-icon';
 import { calculateTotals, formatMoney, orderFinancials, cashSummary } from '@/domain/money';
-import { formatDateLabel, remainingLabel, DEFAULT_APP_TODAY, addDays } from '@/domain/dates';
+import { formatDateLabel, remainingLabel, addDays } from '@/domain/dates';
 import { subStatus, isActive } from '@/domain/subscriptions';
 
 export default function DashboardPage() {
-  const { data, openDialog } = useTooldesk();
+  const { data, today, openDialog } = useTooldesk();
 
   const [dashTab, setDashTab] = useState<'renewal' | 'expired' | 'unpaid'>('renewal');
   const [chartDays, setChartDays] = useState<7 | 30>(7);
 
   const windowDays = data.settings.reminderDays || 7;
-  const currentMonth = DEFAULT_APP_TODAY.slice(0, 7);
+  const currentMonth = today.slice(0, 7);
   const current = calculateTotals(data, currentMonth);
 
   const expiring = data.subscriptions
-    .filter(s => subStatus(s, DEFAULT_APP_TODAY, windowDays) === 'expiring')
+    .filter(s => subStatus(s, today, windowDays) === 'expiring')
     .sort((a, b) => a.expiresAt.localeCompare(b.expiresAt));
 
   const expired = data.subscriptions
-    .filter(s => subStatus(s, DEFAULT_APP_TODAY, windowDays) === 'expired')
+    .filter(s => subStatus(s, today, windowDays) === 'expired')
     .sort((a, b) => b.expiresAt.localeCompare(a.expiresAt));
 
   const unpaid = data.orders
     .filter(o => o.payment === 'unpaid' && o.status !== 'cancelled')
     .sort((a, b) => b.date.localeCompare(a.date));
 
-  const activeCount = data.subscriptions.filter(s => isActive(s, DEFAULT_APP_TODAY)).length;
+  const activeCount = data.subscriptions.filter(s => isActive(s, today)).length;
   const taskCount = expiring.length + expired.length + unpaid.length;
 
   const potential = expiring.reduce((sum, s) => sum + s.price, 0);
@@ -49,7 +49,7 @@ export default function DashboardPage() {
   };
 
   // Chart data
-  const startDay = addDays(DEFAULT_APP_TODAY, -(chartDays - 1));
+  const startDay = addDays(today, -(chartDays - 1));
   const chartSeries = Array.from({ length: chartDays }, (_, i) => {
     const day = addDays(startDay, i);
     return { day, value: cashSummary(data, day, day).revenue };
@@ -94,7 +94,7 @@ export default function DashboardPage() {
         <div>
           <h1>Tổng quan</h1>
           <p>
-            Ngày vận hành mô phỏng: {formatDateLabel(DEFAULT_APP_TODAY, true)}
+            Ngày vận hành: {formatDateLabel(today, true)}
           </p>
         </div>
         <div className="page-actions">
@@ -295,7 +295,7 @@ export default function DashboardPage() {
                         </td>
                         <td>
                           <div className={`remaining ${dashTab === 'expired' ? 'danger' : 'warning'}`}>
-                            {remainingLabel(s, DEFAULT_APP_TODAY)}
+                            {remainingLabel(s)}
                             <small>{formatDateLabel(s.expiresAt, true)}</small>
                           </div>
                         </td>
@@ -306,7 +306,7 @@ export default function DashboardPage() {
                               className="button small renew-button"
                               onClick={() => openDialog('renew-subscription', s.id)}
                             >
-                              <AppIcon name="refresh" size={13} />
+                              <AppIcon name="refresh" size={14} />
                               <span>Gia hạn</span>
                             </button>
                             <button

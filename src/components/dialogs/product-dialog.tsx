@@ -20,11 +20,13 @@ export function ProductDialog({
   const [price, setPrice] = useState(350000);
   const [cost, setCost] = useState(250000);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [error, setError] = useState('');
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
-    addProduct({
+    try {
+    await addProduct({
       name: name.trim(),
       symbol: name.trim()[0].toUpperCase(),
       category,
@@ -39,6 +41,7 @@ export function ProductDialog({
         }
       ]
     });
+    } catch (error) { setError(error instanceof Error ? error.message : 'Không thể lưu sản phẩm.'); }
   };
 
   return (
@@ -69,7 +72,7 @@ export function ProductDialog({
 
           {/* Content */}
           <div className="dialog-content">
-            <div id="form-error" role="alert"></div>
+            {error && <div className="dialog-error" role="alert">{error}</div>}
 
             <label className="field">
               <span>Tên sản phẩm</span>

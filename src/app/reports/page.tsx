@@ -4,12 +4,12 @@ import React, { useState } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '@/components/shared/app-icon';
 import { calculateTotals, formatMoney, cashSummary } from '@/domain/money';
-import { formatDateLabel, DEFAULT_APP_TODAY } from '@/domain/dates';
+import { formatDateLabel } from '@/domain/dates';
 
 export default function ReportsPage() {
-  const { data } = useTooldesk();
-  const [month, setMonth] = useState(DEFAULT_APP_TODAY.slice(0, 7));
-  const months = Array.from(new Set([DEFAULT_APP_TODAY.slice(0, 7), ...data.orders.flatMap(order => [order.date.slice(0, 7), (order.paidAt || order.date).slice(0, 7)]), ...data.refunds.map(refund => refund.date.slice(0, 7))])).filter(value => /^\d{4}-\d{2}$/.test(value)).sort().reverse();
+  const { data, today } = useTooldesk();
+  const [month, setMonth] = useState(today.slice(0, 7));
+  const months = Array.from(new Set([today.slice(0, 7), ...data.orders.flatMap(order => [order.date.slice(0, 7), (order.paidAt || order.date).slice(0, 7)]), ...data.refunds.map(refund => refund.date.slice(0, 7))])).filter(value => /^\d{4}-\d{2}$/.test(value)).sort().reverse();
 
   const stats = calculateTotals(data, month);
 

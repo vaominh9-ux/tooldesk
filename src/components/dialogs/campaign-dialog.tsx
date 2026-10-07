@@ -45,21 +45,23 @@ export function CampaignDialog({
     .replaceAll('{ten_khach}', firstEligible?.name || 'Minh Anh')
     .replaceAll('{thuong_hieu}', data.settings.shopName);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !subject.trim() || !body.trim()) {
       setError('Vui lòng nhập đầy đủ tên chiến dịch, tiêu đề và nội dung.');
       return;
     }
-    saveCampaign({
+    try {
+    await saveCampaign({
       ...(existing ? { id: existing.id } : {}),
       name: name.trim(),
       segment: selectedSegment,
       subject: subject.trim(),
       body: body.trim()
     });
-    addToast('Đã lưu bản nháp', name.trim(), 'success');
+
     onClose();
+    } catch (error) { setError(error instanceof Error ? error.message : 'Không thể lưu chiến dịch.'); }
   };
 
   return (

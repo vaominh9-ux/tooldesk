@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
 import { renewalDates } from '@/domain/subscriptions';
-import { formatDateLabel, DEFAULT_APP_TODAY } from '@/domain/dates';
+import { formatDateLabel } from '@/domain/dates';
 import { formatMoney } from '@/domain/money';
 
 export function RenewDialog({
@@ -14,7 +14,7 @@ export function RenewDialog({
   subscriptionId: string;
   onClose: () => void;
 }) {
-  const { data, renewSubscription, addToast } = useTooldesk();
+  const { data, renewSubscription, addToast, today } = useTooldesk();
 
   const sub = data.subscriptions.find(s => s.id === subscriptionId);
   const customer = data.customers.find(c => c.id === sub?.customerId);
@@ -23,7 +23,7 @@ export function RenewDialog({
   const [selectedPlanId, setSelectedPlanId] = useState(sub?.planId || product?.plans[0]?.id || '');
   const plan = product?.plans.find(p => p.id === selectedPlanId) || product?.plans[0];
 
-  const dates = sub && plan ? renewalDates(sub, plan, DEFAULT_APP_TODAY) : { startsAt: DEFAULT_APP_TODAY, expiresAt: DEFAULT_APP_TODAY };
+  const dates = sub && plan ? renewalDates(sub, plan) : { startsAt: today, expiresAt: today };
 
   const [price, setPrice] = useState(plan?.price || 0);
   const [cost, setCost] = useState(plan?.cost || 0);
@@ -66,11 +66,11 @@ export function RenewDialog({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     try {
-      renewSubscription({
+      await renewSubscription({
         subscriptionId: sub.id,
         planId: selectedPlanId,
         startsAt: dates.startsAt,
@@ -84,7 +84,7 @@ export function RenewDialog({
     }
   };
 
-  const isStillActive = !sub.cancelled && sub.expiresAt > DEFAULT_APP_TODAY;
+  const isStillActive = !sub.cancelled && sub.expiresAt > today;
 
   return (
     <div className="dialog-overlay" onClick={onClose}>
@@ -161,7 +161,7 @@ export function RenewDialog({
               <small>
                 {isStillActive
                   ? 'Gia hạn từ hạn hiện tại, bảo toàn số ngày chưa sử dụng.'
-                  : `Gói đã hết hạn. Kỳ mới bắt đầu từ ngày đang mô phỏng: ${formatDateLabel(DEFAULT_APP_TODAY, true)}.`}
+                  : `Gói đã hết hạn. Kỳ mới bắt đầu từ ngày vận hành: ${formatDateLabel(today, true)}.`}
               </small>
             </div>
 

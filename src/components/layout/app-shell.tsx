@@ -11,7 +11,7 @@ import { useTooldesk } from '@/features/context/tooldesk-context';
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
-  const { dataStatus } = useTooldesk();
+  const { dataStatus, pending } = useTooldesk();
 
   // Route identifier for CSS page scoping (.page-dashboard, .page-orders, etc.)
   const routeName = pathname === '/' ? 'dashboard' : pathname.replace(/^\//, '').split('/')[0];
@@ -45,7 +45,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           <main id="main" className={`page-${routeName}`} tabIndex={-1}>
             <div className={`data-notice ${dataStatus === 'error' ? 'error' : ''}`} role="status">
-              <span>{dataStatus === 'mock' ? <><strong>Bản trải nghiệm · Dữ liệu mẫu.</strong> Thao tác chỉ giữ trong phiên này; bạn có thể xuất tệp ở Cài đặt.</> : dataStatus === 'loading' ? 'Đang tải dữ liệu. Các số liệu mẫu tạm thời chưa phải dữ liệu vận hành.' : dataStatus === 'error' ? 'Không tải được dữ liệu Supabase. Số liệu đang hiển thị là dữ liệu mẫu; hãy kiểm tra kết nối ở Cài đặt.' : 'Đã tải dữ liệu từ Supabase. Các thay đổi giao diện hiện chỉ giữ trong phiên này.'}</span>
+              <span>{pending ? 'Đang lưu dữ liệu… Vui lòng chờ.' : dataStatus === 'mock' ? <><strong>Bản trải nghiệm · Dữ liệu mẫu.</strong> Thao tác chỉ giữ trong phiên này; bạn có thể xuất tệp ở Cài đặt.</> : 'Dữ liệu vận hành · Thao tác được lưu vào database sau khi xác nhận thành công.'}</span>
             </div>
             {children}
             <footer className="app-footer">
