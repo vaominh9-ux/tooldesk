@@ -19,6 +19,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('update_plan'), input: z.object({ planId: id, name: z.string().trim().min(1).max(80), price: moneySchema, cost: moneySchema }).strict() }).strict(),
   z.object({ type: z.literal('add_plan'), input: z.object({ productId: id, name: z.string().trim().min(1).max(80), duration: z.number().int().min(1).max(1200), unit: z.enum(['months', 'days']), price: moneySchema, cost: moneySchema }).strict() }).strict(),
   z.object({ type: z.literal('add_product'), input: z.object({ name: z.string().trim().min(1).max(80), symbol: z.string().trim().max(4), category: z.string().trim().max(100), description: z.string().trim().max(1000), plans: z.array(z.object({ name: z.string().trim().min(1).max(80), duration: z.number().int().min(1).max(1200), unit: z.enum(['months', 'days']), price: moneySchema, cost: moneySchema }).strict()).min(1).max(20) }).strict() }).strict(),
+  z.object({ type: z.literal('update_product'), input: z.object({ productId: id, name: z.string().trim().min(1).max(80), category: z.string().trim().max(100).optional(), description: z.string().trim().max(1000).optional(), color: z.string().trim().max(30).optional(), symbol: z.string().trim().max(4).optional() }).strict() }).strict(),
   z.object({ type: z.literal('save_campaign'), input: z.object({ id: id.optional(), name: z.string().trim().min(1).max(120), subject: z.string().trim().min(1).max(180), body: z.string().trim().min(1).max(5000), segment: z.enum(['all', 'active', 'expiring', 'expired', 'vip']) }).strict() }).strict()
 ]);
 export type Command = z.infer<typeof commandSchema>;
@@ -123,6 +124,17 @@ export function executeCommand(original: AppData, command: Command, operation: O
     case 'add_product': {
       const productId = newId('p');
       data.products.push({ ...command.input, id: productId, color: 'indigo', plans: command.input.plans.map(plan => ({ ...plan, id: newId('pl') })) }); resultId = productId; break;
+    }
+    case 'update_product': {
+      const prod = data.products.find(product => product.id === command.input.productId);
+      if (!prod) throw new Error('Không tìm thấy sản phẩm.');
+      prod.name = command.input.name;
+      if (command.input.category !== undefined) prod.category = command.input.category;
+      if (command.input.description !== undefined) prod.description = command.input.description;
+      if (command.input.color !== undefined) prod.color = command.input.color;
+      if (command.input.symbol !== undefined) prod.symbol = command.input.symbol;
+      resultId = prod.id;
+      break;
     }
     case 'save_campaign': {
       const existing = data.campaigns.find(campaign => campaign.id === command.input.id);

@@ -66,6 +66,27 @@ describe('Backend commands', () => {
     expect(result.data.customers.find(item => item.id === customer.id)?.joinedAt).toBe(customer.joinedAt);
     expect(() => executeCommand(data, commandSchema.parse({ type: 'update_customer', input: { id: customer.id, updates: { emailConsent: 'opted_in', consentSource: '' } } }), operation)).toThrow();
   });
+  it('updates product details (name, category, description, symbol) accurately', () => {
+    const { data, operation } = setup();
+    const product = data.products[0];
+    const result = executeCommand(data, commandSchema.parse({
+      type: 'update_product',
+      input: {
+        productId: product.id,
+        name: 'ChatGPT Plus & Team',
+        category: 'Trợ lý AI Nâng cao',
+        description: 'Bản nâng cao hỗ trợ đa người dùng.',
+        symbol: '✦'
+      }
+    }), operation);
+    const updated = result.data.products.find(item => item.id === product.id)!;
+    expect(updated.name).toBe('ChatGPT Plus & Team');
+    expect(updated.category).toBe('Trợ lý AI Nâng cao');
+    expect(updated.description).toBe('Bản nâng cao hỗ trợ đa người dùng.');
+    expect(updated.symbol).toBe('✦');
+    // Plans should remain intact
+    expect(updated.plans.length).toBe(product.plans.length);
+  });
 });
 describe('Reminder eligibility', () => {
   it('excludes expired, cancelled, scheduled, invalid emails and non-consenting customers', () => {

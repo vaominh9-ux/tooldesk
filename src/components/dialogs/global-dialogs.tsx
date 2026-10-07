@@ -171,8 +171,10 @@ export function GlobalDialogs() {
         />
       )}
 
-      {dialog.type === 'product' && (
+      {(dialog.type === 'product' || dialog.type === 'edit-product') && (
         <ProductDialog
+          key={dialog.type === 'edit-product' ? (payloadStr || payloadObj?.productId || payloadObj?.id || 'edit') : 'new'}
+          productId={dialog.type === 'edit-product' ? (payloadStr || payloadObj?.productId || payloadObj?.id) : undefined}
           onClose={closeDialog}
         />
       )}

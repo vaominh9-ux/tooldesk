@@ -81,8 +81,29 @@ export default function ProductsPage() {
                 <span className={`product-logo large ${p.color || 'mint'}`} aria-hidden="true">
                   {p.symbol || '✦'}
                 </span>
-                <div>
-                  <h2>{p.name}</h2>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                    <h2 style={{ margin: 0 }}>
+                      <button
+                        type="button"
+                        className="text-button plan-name-button"
+                        onClick={() => openDialog('edit-product', p.id)}
+                        title="Chỉnh sửa tên và thông tin sản phẩm"
+                        aria-label={'Chỉnh sửa sản phẩm ' + p.name}
+                      >
+                        {p.name}
+                      </button>
+                    </h2>
+                    <button
+                      type="button"
+                      className="icon-button"
+                      onClick={() => openDialog('edit-product', p.id)}
+                      aria-label={`Sửa sản phẩm ${p.name}`}
+                      title="Chỉnh sửa tên và thông tin sản phẩm"
+                    >
+                      <AppIcon name="edit" size={14} />
+                    </button>
+                  </div>
                   <p>{p.category}</p>
                 </div>
               </div>
