@@ -167,7 +167,7 @@ export function CustomerDetailDialog({
                           </span>
                         </div>
 
-                        <div style={{ display: 'flex', gap: '6px' }}>
+                        <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto', flexShrink: 0 }}>
                           <button
                             type="button"
                             className="button small"

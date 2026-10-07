@@ -175,7 +175,7 @@ export default function CustomersPage() {
                           background: '#fff'
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
                           <span className={`product-logo large ${prod?.color || 'mint'}`}>
                             {prod?.symbol || '◈'}
                           </span>
@@ -200,7 +200,7 @@ export default function CustomersPage() {
                           </div>
                         </div>
 
-                        <div style={{ display: 'flex', gap: '8px' }}>
+                        <div className="customer-package-actions" style={{ display: 'flex', gap: '8px', marginLeft: 'auto', flexShrink: 0, flex: 'none' }}>
                           <button
                             type="button"
                             className="button small"
