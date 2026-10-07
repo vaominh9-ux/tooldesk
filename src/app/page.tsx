@@ -205,7 +205,7 @@ export default function DashboardPage() {
                 {dashTab === 'unpaid' ? (
                   unpaid.length === 0 ? (
                     <tr>
-                      <td colSpan={4} style={{ textAlign: 'center', padding: '36px 16px', color: '#778197' }}>
+                      <td colSpan={4} className="empty-work-cell">
                         <div style={{ display: 'inline-flex', marginBottom: '8px', color: '#38cb89' }}>
                           <AppIcon name="circleCheck" size={24} />
                         </div>
@@ -275,7 +275,7 @@ export default function DashboardPage() {
                 ) : (
                   (dashTab === 'expired' ? expired : expiring).length === 0 ? (
                     <tr>
-                      <td colSpan={4} style={{ textAlign: 'center', padding: '36px 16px', color: '#778197' }}>
+                      <td colSpan={4} className="empty-work-cell">
                         <div style={{ display: 'inline-flex', marginBottom: '8px', color: '#38cb89' }}>
                           <AppIcon name="circleCheck" size={24} />
                         </div>

@@ -361,3 +361,35 @@
     border-radius: 50% !important;
   }
 }
+
+/* Dashboard Work Panel & Footer bottom alignment */
+.dashboard-work > .panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-work > .panel > .table-scroll {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-work > .panel > .table-scroll > .work-table {
+  width: 100%;
+}
+
+.dashboard-work > .panel > .table-scroll > .work-table:has(.empty-work-cell) {
+  height: 100%;
+}
+
+.dashboard-work > .panel > .work-footer {
+  margin-top: auto;
+}
+
+.empty-work-cell {
+  text-align: center;
+  padding: 48px 16px;
+  color: #778197;
+  vertical-align: middle;
+}
+
