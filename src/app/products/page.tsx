@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '@/components/shared/app-icon';
-import { ProductLogo } from '@/components/shared/product-logo';
 import { formatMoney } from '@/domain/money';
 import { isActive } from '@/domain/subscriptions';
 
@@ -61,7 +60,7 @@ export default function ProductsPage() {
               onClick={() => setSearch('')}
               aria-label="Xóa tìm kiếm"
             >
-              <AppIcon name="close" size={13} />
+              ×
             </button>
           )}
         </label>
@@ -79,7 +78,9 @@ export default function ProductsPage() {
           return (
             <article key={p.id} className="product-card">
               <div className="product-card-head">
-                <ProductLogo name={p.name} color={p.color} size="large" />
+                <span className={`product-logo large ${p.color || 'mint'}`} aria-hidden="true">
+                  {p.symbol || '✦'}
+                </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                     <h2 style={{ margin: 0 }}>

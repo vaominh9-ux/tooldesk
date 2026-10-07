@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
-import { ProductLogo } from '../shared/product-logo';
 import { formatMoney } from '@/domain/money';
 
 interface PlanDraft {
@@ -190,30 +189,6 @@ export function ProductDialog({
           <div className="dialog-content">
             {error && <div className="dialog-error" role="alert">{error}</div>}
 
-            {/* Live Vector Logo Preview */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
-                padding: '12px 16px',
-                background: '#f8fafc',
-                border: '1px solid var(--line)',
-                borderRadius: '12px',
-                marginBottom: 16
-              }}
-            >
-              <ProductLogo name={name || 'Tool AI'} color={color} size="large" />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <strong style={{ fontSize: '13.5px', color: 'var(--foreground)', display: 'block' }}>
-                  {name.trim() || 'Tên sản phẩm'}
-                </strong>
-                <span style={{ fontSize: '11.5px', color: 'var(--muted)' }}>
-                  Logo hiển thị tự động chuẩn vector theo thương hiệu AI
-                </span>
-              </div>
-            </div>
-
             <label className="field">
               <span>Tên sản phẩm</span>
               <input
@@ -243,21 +218,14 @@ export function ProductDialog({
               </label>
 
               <label className="field" style={{ margin: 0 }}>
-                <span>Màu nhận diện</span>
-                <select
-                  name="color"
-                  value={color}
-                  onChange={e => setColor(e.target.value)}
-                >
-                  <option value="mint">Xanh ngọc (Mint)</option>
-                  <option value="emerald">Lục bảo (Emerald)</option>
-                  <option value="blue">Xanh dương (Blue)</option>
-                  <option value="peach">Cam san hô (Peach)</option>
-                  <option value="purple">Tím thạch anh (Purple)</option>
-                  <option value="aqua">Xanh biển (Aqua)</option>
-                  <option value="indigo">Chàm (Indigo)</option>
-                  <option value="rose">Hồng cánh sen (Rose)</option>
-                </select>
+                <span>Ký hiệu (Logo)</span>
+                <input
+                  name="symbol"
+                  maxLength={4}
+                  placeholder="◈, ✦, ✳, C..."
+                  value={symbol}
+                  onChange={e => setSymbol(e.target.value)}
+                />
               </label>
             </div>
 
@@ -288,10 +256,9 @@ export function ProductDialog({
                     </div>
                   ))}
                 </div>
-                <div style={{ margin: '10px 0 0', fontSize: '11.5px', color: 'var(--muted)', lineHeight: 1.4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <AppIcon name="info" size={13} style={{ color: 'var(--accent)', flexShrink: 0 }} />
-                  <span>Để sửa giá bán, giá vốn hoặc đổi tên từng gói, bạn có thể bấm trực tiếp vào tên gói hoặc nút sửa trên thẻ sản phẩm.</span>
-                </div>
+                <p style={{ margin: '10px 0 0', fontSize: '11.5px', color: 'var(--muted)', lineHeight: 1.4 }}>
+                  💡 Để sửa giá bán, giá vốn hoặc đổi tên từng gói, bạn có thể bấm trực tiếp vào tên gói hoặc biểu tượng ✏️ trên thẻ sản phẩm.
+                </p>
               </div>
             )}
 

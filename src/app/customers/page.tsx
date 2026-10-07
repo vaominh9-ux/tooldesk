@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '@/components/shared/app-icon';
-import { ProductLogo } from '@/components/shared/product-logo';
 import { formatMoney, orderFinancials } from '@/domain/money';
 import { getCustomerStats, paginate } from '@/domain/orders';
 import { formatDateLabel, remainingLabel } from '@/domain/dates';
@@ -177,7 +176,9 @@ export default function CustomersPage() {
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <ProductLogo name={prod?.name || ''} color={prod?.color} size="large" />
+                          <span className={`product-logo large ${prod?.color || 'mint'}`}>
+                            {prod?.symbol || '◈'}
+                          </span>
                           <div>
                             <h3 style={{ fontSize: '14px', fontWeight: 600 }}>
                               {prod?.name} <span className="muted" style={{ fontWeight: 400 }}>· {plan?.name}</span>
@@ -438,7 +439,7 @@ export default function CustomersPage() {
                 onClick={() => setSearch('')}
                 aria-label="Xóa tìm kiếm"
               >
-                <AppIcon name="close" size={13} />
+                ×
               </button>
             )}
           </label>

@@ -3,7 +3,6 @@
 import React from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
-import { ProductLogo } from '../shared/product-logo';
 import { orderFinancials, formatMoney } from '@/domain/money';
 import { formatDateLabel } from '@/domain/dates';
 
@@ -122,7 +121,9 @@ export function OrderDetailDialog({
 
             {/* Product detail */}
             <div className="detail-product">
-              <ProductLogo name={product?.name || ''} color={product?.color} size="large" />
+              <span className={`product-logo large ${product?.color || 'mint'}`} aria-hidden="true">
+                {product?.symbol || '◈'}
+              </span>
               <div>
                 <h3>{product?.name || 'Sản phẩm'}</h3>
                 <p>{plan?.name || 'Gói dịch vụ'}</p>

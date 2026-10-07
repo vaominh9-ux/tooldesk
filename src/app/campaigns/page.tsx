@@ -110,7 +110,7 @@ export default function CampaignsPage() {
                 onClick={() => setSearch('')}
                 aria-label="Xóa tìm kiếm"
               >
-                <AppIcon name="close" size={13} />
+                ×
               </button>
             )}
           </label>

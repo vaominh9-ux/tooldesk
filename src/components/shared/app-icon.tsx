@@ -73,10 +73,8 @@ export function AppIcon({ name, size = 18, className = '', ...props }: AppIconPr
 
 export function BrandLogoMark({ className = '' }: { className?: string }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" className={className}>
-      <path d="M12 2.5L20.5 7.4V16.6L12 21.5L3.5 16.6V7.4L12 2.5Z" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" />
-      <path d="M12 2.5V12M12 12L20.5 16.6M12 12L3.5 16.6" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" />
-      <circle cx="12" cy="12" r="2" fill="currentColor" />
+    <svg viewBox="0 0 32 32" aria-hidden="true" className={className}>
+      <path d="M16 5v22M5 16h22M8.2 8.2l15.6 15.6M8.2 23.8 23.8 8.2" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
     </svg>
   );
 }

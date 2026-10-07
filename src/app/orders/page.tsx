@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '@/components/shared/app-icon';
-import { ProductLogo } from '@/components/shared/product-logo';
 import { orderFinancials, formatMoney } from '@/domain/money';
 import { formatDateLabel } from '@/domain/dates';
 import { paginate } from '@/domain/orders';
@@ -159,7 +158,7 @@ export default function OrdersPage() {
                 onClick={() => setSearch('')}
                 aria-label="Xóa tìm kiếm"
               >
-                <AppIcon name="close" size={13} />
+                ×
               </button>
             )}
           </label>
@@ -263,7 +262,9 @@ export default function OrdersPage() {
                         </td>
                         <td>
                           <div className="product-cell">
-                            <ProductLogo name={prod?.name || ''} color={prod?.color} size="normal" />
+                            <span className={`product-logo ${prod?.color || 'mint'}`} aria-hidden="true">
+                              {prod?.symbol || '✦'}
+                            </span>
                             <div>
                               <span className="strong">{prod?.name || 'Sản phẩm'}</span>
                               <small>{plan?.name || ''}</small>
@@ -340,7 +341,9 @@ export default function OrdersPage() {
 
                     <div className="record-product">
                       <div className="product-cell">
-                        <ProductLogo name={prod?.name || ''} color={prod?.color} size="normal" />
+                        <span className={`product-logo ${prod?.color || 'mint'}`} aria-hidden="true">
+                          {prod?.symbol || '✦'}
+                        </span>
                         <div>
                           <span className="strong">{prod?.name || 'Sản phẩm'}</span>
                           <small>{plan?.name || ''}</small>
