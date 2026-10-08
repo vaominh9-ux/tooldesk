@@ -55,10 +55,6 @@ export function ReportsView() {
           {scope === 'month' && <input className="select-filter" type="month" aria-label="Tháng báo cáo" value={selectedMonth} max={today.slice(0, 7)} onChange={e => { if (/^\d{4}-(0[1-9]|1[0-2])$/.test(e.target.value)) setSelectedMonth(e.target.value); }} />}
         </div>
       </div>
-      <div className="hint-banner blue report-date-help">
-        <AppIcon name="info" size={18} />
-        <div><strong>{periodLabel}</strong><p>Doanh thu theo ngày nhận tiền, hoàn tiền theo ngày hoàn. Đơn cũ nhập lại cần ngày bán và nhận tiền thực tế; bạn có thể sửa ở mục “Đơn hàng & ngày ghi nhận” bên dưới.</p></div>
-      </div>
 
       {/* Metrics Grid */}
       <div className="metrics-grid">
