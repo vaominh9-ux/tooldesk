@@ -335,12 +335,12 @@ export default function SubscriptionsPage() {
                       </span>
                       <div>
                         <Link
-                          className="text-link strong"
+                          className="text-link subscription-customer-link"
                           href={`/customers?id=${cust?.id}`}
                         >
-                          {cust?.name || 'Khách đã xóa'}
+                          <span className="strong">{cust?.name || 'Khách đã xóa'}</span>
+                          <small>{cust?.phone || cust?.email || ''}</small>
                         </Link>
-                        <small>{cust?.phone || cust?.email || ''}</small>
                       </div>
                     </div>
 
