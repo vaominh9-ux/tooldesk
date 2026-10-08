@@ -682,7 +682,7 @@ export function OrderDetailDialog({
                 }}
               >
                 <AppIcon name="wallet" size={15} />
-                <span>Ghi nhận đã nhận tiền</span>
+                <span>Đã nhận tiền</span>
               </button>
             ) : (
               order.subscriptionId && (
