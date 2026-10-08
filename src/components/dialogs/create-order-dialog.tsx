@@ -33,8 +33,33 @@ export function CreateOrderDialog({
   const [newCustomerPhone, setNewCustomerPhone] = useState('');
   const [newCustomerSource, setNewCustomerSource] = useState('Zalo');
 
-  const [selectedProductId, setSelectedProductId] = useState(defaultProductId || data.products[0]?.id || '');
-  const currentProduct = data.products.find(p => p.id === selectedProductId) || data.products[0];
+  const productPopularity = React.useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const o of data.orders) {
+      if (o.status !== 'cancelled') {
+        counts.set(o.productId, (counts.get(o.productId) || 0) + 1);
+      }
+    }
+    return counts;
+  }, [data.orders]);
+
+  const sortedProducts = React.useMemo(() => {
+    return [...data.products].sort((a, b) => {
+      const countA = productPopularity.get(a.id) || 0;
+      const countB = productPopularity.get(b.id) || 0;
+      if (countB !== countA) return countB - countA;
+      return a.name.localeCompare(b.name);
+    });
+  }, [data.products, productPopularity]);
+
+  const topProducts = React.useMemo(() => {
+    return sortedProducts.filter(p => (productPopularity.get(p.id) || 0) > 0).slice(0, 5);
+  }, [sortedProducts, productPopularity]);
+
+  const [selectedProductId, setSelectedProductId] = useState(
+    defaultProductId || sortedProducts[0]?.id || data.products[0]?.id || ''
+  );
+  const currentProduct = data.products.find(p => p.id === selectedProductId) || sortedProducts[0] || data.products[0];
 
   const [selectedPlanId, setSelectedPlanId] = useState(currentProduct?.plans[0]?.id || '');
   const currentPlan =
@@ -322,6 +347,28 @@ export function CreateOrderDialog({
             {/* Package Info */}
             <div className="form-section-title">Thông tin gói dịch vụ</div>
 
+            {topProducts.length > 0 && (
+              <div className="popular-product-chips">
+                <span className="chips-label">🔥 Mua nhiều:</span>
+                <div className="chips-list">
+                  {topProducts.map(p => {
+                    const count = productPopularity.get(p.id) || 0;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        className={`chip-button ${p.id === selectedProductId ? 'active' : ''}`}
+                        onClick={() => handleProductChange(p.id)}
+                        title={`${p.name} (${count} đơn đã bán)`}
+                      >
+                        {p.name} <small>({count})</small>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="form-grid">
               <label className="field">
                 <span>Sản phẩm</span>
@@ -331,11 +378,15 @@ export function CreateOrderDialog({
                   value={selectedProductId}
                   onChange={e => handleProductChange(e.target.value)}
                 >
-                  {data.products.map(item => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
+                  {sortedProducts.map((item, idx) => {
+                    const count = productPopularity.get(item.id) || 0;
+                    const badge = idx === 0 && count > 0 ? `🔥 [Bán chạy nhất - ${count} đơn] ` : count > 0 ? `(${count} đơn) ` : '';
+                    return (
+                      <option key={item.id} value={item.id}>
+                        {badge}{item.name}
+                      </option>
+                    );
+                  })}
                 </select>
               </label>
 
@@ -353,6 +404,20 @@ export function CreateOrderDialog({
                     </option>
                   ))}
                 </select>
+                {currentProduct && currentProduct.plans.length > 1 && (
+                  <div className="popular-plan-chips">
+                    {currentProduct.plans.map(plan => (
+                      <button
+                        key={plan.id}
+                        type="button"
+                        className={`chip-button ${plan.id === selectedPlanId ? 'active' : ''}`}
+                        onClick={() => handlePlanChange(plan.id)}
+                      >
+                        {plan.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </label>
             </div>
 
