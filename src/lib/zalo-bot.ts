@@ -5,12 +5,18 @@ const envelopeSchema = z.object({ ok: z.boolean(), result: z.unknown().optional(
 export class ZaloApiError extends Error {
   constructor(public definiteRejection: boolean, message: string) { super(message); }
 }
-export function zaloTokenConfigured() { return /^\d+:[A-Za-z0-9_-]+$/.test(process.env.ZALO_BOT_TOKEN || ''); }
+export function getZaloBotToken(): string {
+  return (process.env.ZALO_BOT_TOKEN || '').trim().replace(/^["']|["']$/g, '');
+}
+export function zaloTokenConfigured() {
+  return /^\d+:[A-Za-z0-9_-]+$/.test(getZaloBotToken());
+}
 export async function callZalo(method: 'getMe' | 'sendMessage' | 'setWebhook' | 'getWebhookInfo', body: Record<string, unknown> = {}): Promise<unknown> {
+  const token = getZaloBotToken();
   if (!zaloTokenConfigured()) throw new ZaloApiError(true, 'Chưa cấu hình ZALO_BOT_TOKEN hợp lệ phía server.');
   let response: Response;
   try {
-    response = await fetch(`https://bot-api.zaloplatforms.com/bot${process.env.ZALO_BOT_TOKEN}/${method}`, {
+    response = await fetch(`https://bot-api.zaloplatforms.com/bot${token}/${method}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), cache: 'no-store', signal: AbortSignal.timeout(8000), redirect: 'error',
     });
   } catch {
