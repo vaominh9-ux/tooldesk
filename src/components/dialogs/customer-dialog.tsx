@@ -30,6 +30,21 @@ export function CustomerDialog({
   const [notes, setNotes] = useState(existing?.notes || '');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pastedField, setPastedField] = useState<string | null>(null);
+  const handlePaste = async (fieldKey: string, setter: (val: string) => void) => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.readText) {
+        const text = await navigator.clipboard.readText();
+        if (text && text.trim()) {
+          setter(text.trim());
+          setPastedField(fieldKey);
+          setTimeout(() => setPastedField(null), 1200);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  };
   const contentRef = React.useRef<HTMLDivElement>(null);
   const emailChanged = !existing || normalizeCustomerEmail(email) !== normalizeCustomerEmail(existing.email);
   const emailMatches = emailChanged ? customersWithEmail(data.customers, email, existing?.id) : [];
@@ -142,16 +157,27 @@ export function CustomerDialog({
 
             <label className="field">
               <span>Email</span>
-              <input
-                name="email"
-                type="email"
-                value={email}
-                maxLength={120}
-                placeholder="khach@example.com"
-                onChange={e => setEmail(e.target.value)}
-                aria-invalid={emailMatches.length > 0 || undefined}
-                aria-describedby={emailMatches.length ? 'customer-email-matches' : undefined}
-              />
+              <div className="input-paste-box">
+                <input
+                  name="email"
+                  type="email"
+                  value={email}
+                  maxLength={120}
+                  placeholder="khach@example.com"
+                  onChange={e => setEmail(e.target.value)}
+                  aria-invalid={emailMatches.length > 0 || undefined}
+                  aria-describedby={emailMatches.length ? 'customer-email-matches' : undefined}
+                />
+                <button
+                  type="button"
+                  className={`input-paste-btn ${pastedField === 'customerEmail' ? 'pasted' : ''}`}
+                  title="Dán email từ bộ nhớ tạm"
+                  aria-label="Dán email"
+                  onClick={() => handlePaste('customerEmail', setEmail)}
+                >
+                  <AppIcon name={pastedField === 'customerEmail' ? 'check' : 'paste'} size={15} />
+                </button>
+              </div>
             </label>
             <CustomerEmailMatches customers={emailMatches} />
 

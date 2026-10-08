@@ -51,6 +51,21 @@ export function CreateOrderDialog({
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
+  const [pastedField, setPastedField] = useState<string | null>(null);
+  const handlePaste = async (fieldKey: string, setter: (val: string) => void) => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.readText) {
+        const text = await navigator.clipboard.readText();
+        if (text && text.trim()) {
+          setter(text.trim());
+          setPastedField(fieldKey);
+          setTimeout(() => setPastedField(null), 1200);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  };
   const emailInName = isNewCustomer && !newCustomerEmail.trim() && isValidEmail(newCustomerName)
     ? newCustomerName.trim() : '';
   const emailMatches = isNewCustomer ? customersWithEmail(data.customers, newCustomerEmail.trim() || emailInName) : [];
@@ -252,16 +267,27 @@ export function CreateOrderDialog({
                 </>}
                 <label className="field">
                   <span>Email</span>
-                  <input
-                    name="newCustomerEmail"
-                    type="email"
-                    placeholder="khach@example.com"
-                    maxLength={120}
-                    value={newCustomerEmail}
-                    onChange={e => setNewCustomerEmail(e.target.value)}
-                    aria-invalid={!emailInName && emailMatches.length > 0 || undefined}
-                    aria-describedby={!emailInName && emailMatches.length ? 'customer-email-matches' : undefined}
-                  />
+                  <div className="input-paste-box">
+                    <input
+                      name="newCustomerEmail"
+                      type="email"
+                      placeholder="khach@example.com"
+                      maxLength={120}
+                      value={newCustomerEmail}
+                      onChange={e => setNewCustomerEmail(e.target.value)}
+                      aria-invalid={!emailInName && emailMatches.length > 0 || undefined}
+                      aria-describedby={!emailInName && emailMatches.length ? 'customer-email-matches' : undefined}
+                    />
+                    <button
+                      type="button"
+                      className={`input-paste-btn ${pastedField === 'newCustomerEmail' ? 'pasted' : ''}`}
+                      title="Dán email từ bộ nhớ tạm"
+                      aria-label="Dán email"
+                      onClick={() => handlePaste('newCustomerEmail', setNewCustomerEmail)}
+                    >
+                      <AppIcon name={pastedField === 'newCustomerEmail' ? 'check' : 'paste'} size={15} />
+                    </button>
+                  </div>
                 </label>
                 {!emailInName && <CustomerEmailMatches customers={emailMatches} onUse={useExistingCustomer} />}
                 <label className="field">
@@ -332,13 +358,24 @@ export function CreateOrderDialog({
 
             <label className="field">
               <span>Email / Tài khoản nhận tool (nếu khác email khách)</span>
-              <input
-                type="text"
-                name="accountEmail"
-                placeholder="Ví dụ: taikhoan-nhan-tool@gmail.com"
-                value={accountEmail}
-                onChange={e => setAccountEmail(e.target.value)}
-              />
+              <div className="input-paste-box">
+                <input
+                  type="text"
+                  name="accountEmail"
+                  placeholder="Ví dụ: taikhoan-nhan-tool@gmail.com"
+                  value={accountEmail}
+                  onChange={e => setAccountEmail(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className={`input-paste-btn ${pastedField === 'accountEmail' ? 'pasted' : ''}`}
+                  title="Dán tài khoản từ bộ nhớ tạm"
+                  aria-label="Dán tài khoản nhận tool"
+                  onClick={() => handlePaste('accountEmail', setAccountEmail)}
+                >
+                  <AppIcon name={pastedField === 'accountEmail' ? 'check' : 'paste'} size={15} />
+                </button>
+              </div>
               <small>Nhập email nhận gói để phân biệt khi khách mua nhiều đơn cho các email khác nhau (để trống nếu dùng email khách).</small>
             </label>
 

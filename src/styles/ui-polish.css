@@ -1129,3 +1129,43 @@
   .care-panel .section-heading > button { white-space:nowrap; }
   .reminder-panel-body { padding:16px; }
 }
+
+/* Quick paste button inside text/email inputs */
+.input-paste-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.input-paste-box input {
+  padding-right: 38px !important;
+  width: 100%;
+}
+.input-paste-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--muted, #65718a);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+.input-paste-btn:hover {
+  background: var(--surface-soft, #f0f4f9);
+  color: var(--accent, #1e40af);
+}
+.input-paste-btn:active {
+  transform: translateY(-50%) scale(0.92);
+}
+.input-paste-btn.pasted {
+  color: var(--positive, #16a34a);
+}
