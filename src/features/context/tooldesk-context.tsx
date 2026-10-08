@@ -7,6 +7,7 @@ import { commandSchema, executeCommand } from '@/domain/commands';
 import { dataSchema } from '@/domain/data-schema';
 import { createShortId } from '@/domain/orders';
 import type { CareAppointment } from '@/domain/care-scheduling';
+import type { ProductPlanUpdate } from '@/domain/products';
 import type { RefundInput } from '@/domain/refunds';
 import { LoginPanel } from '@/features/auth/login-panel';
 import { BrandLogoMark } from '@/components/shared/app-icon';
@@ -21,7 +22,7 @@ interface CreateOrderInput { customerId?: string; newCustomer?: { name: string; 
 export interface UpdateOrderInput { orderId: string; price?: number; cost?: number; startsAt?: string; expiresAt?: string; payment?: 'paid' | 'unpaid'; note?: string; planId?: string }
 interface RenewalInput { subscriptionId: string; planId: string; startsAt: string; price: number; cost: number; payment?: 'paid' | 'unpaid' }
 interface ProductInput { name: string; symbol: string; category: string; description: string; plans: { name: string; duration: number; unit: 'months' | 'days'; price: number; cost: number }[] }
-interface UpdateProductInput { name: string; category?: string; description?: string; color?: string; symbol?: string }
+interface UpdateProductInput { name: string; category?: string; description?: string; color?: string; symbol?: string; plans?: ProductPlanUpdate[]; expectedPlanIds?: string[] }
 interface CampaignInput { id?: string; name: string; subject: string; body: string; segment: string; scheduledAt?: string }
 interface TooldeskContextType {
   data: TooldeskData;

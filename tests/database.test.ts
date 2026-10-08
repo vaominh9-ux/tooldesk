@@ -25,6 +25,22 @@ beforeAll(async () => {
 afterAll(async () => { await db?.close(); });
 
 describe('PostgreSQL migration and repository (isolated PGlite)', () => {
+  it('persists product and plans atomically and rolls back on a plan constraint failure', async () => {
+    const before = await loadData(client), product = before.products[0];
+    let sequence = 0;
+    const result = executeCommand(before, commandSchema.parse({ type: 'update_product', input: { productId: product.id, name: product.name + ' mới', expectedPlanIds: product.plans.map(plan => plan.id), plans: [...product.plans.map((plan, index) => index === 0 ? { ...plan, price: 0, cost: 450001 } : plan), { name: 'Gói 15 ngày mới', duration: 15, unit: 'days', price: 123456, cost: 0 }] } }), { today: '2026-10-08', now: '2026-10-08T03:00:00Z', actor: 'test', newId: prefix => `${prefix}-catalog-${++sequence}` });
+    await db.exec('BEGIN'); await saveChanges(client, before, result.data); await db.exec('COMMIT');
+    const loaded = await loadData(client);
+    const saved = loaded.products.find(item => item.id === product.id)!, expected = result.data.products.find(item => item.id === product.id)!;
+    expect({ ...saved, plans: [...saved.plans].sort((a, b) => a.id.localeCompare(b.id)) }).toEqual({ ...expected, plans: [...expected.plans].sort((a, b) => a.id.localeCompare(b.id)) });
+    expect(loaded.orders).toEqual(before.orders);
+    const bad = structuredClone(loaded), changed = bad.products.find(item => item.id === product.id)!;
+    changed.name = 'Không được lưu một phần'; changed.plans.at(-1)!.cost = -1;
+    await db.exec('BEGIN');
+    await expect(saveChanges(client, loaded, bad)).rejects.toThrow();
+    await db.exec('ROLLBACK');
+    expect((await loadData(client)).products).toEqual(loaded.products);
+  });
   it('persists care appointments and campaign schedules with canonical UTC timestamps', async () => {
     const before = await loadData(client);
     let sequence = 0;

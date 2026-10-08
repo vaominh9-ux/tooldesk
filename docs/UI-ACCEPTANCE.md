@@ -30,6 +30,8 @@
 5. **Sản phẩm (Products)**:
    - Danh mục 5 tool AI (ChatGPT, Claude, Gemini, Perplexity, Canva).
    - Chi tiết các gói 1 tháng, 3 tháng, 1 năm với giá bán và giá vốn.
+   - Mobile: thu gọn gói mặc định, mở/đóng từng sản phẩm và tự mở các gói khi tìm theo tên gói. Desktop giữ danh sách gói mở sẵn.
+   - Sửa sản phẩm: sửa tên, giá bán và giá vốn của các gói trong cùng cửa sổ, lưu một lần; hủy không lưu một phần. Gói đã dùng không được xóa hoặc đổi thời hạn; tiền/ngày của đơn cũ giữ nguyên.
 6. **Chiến dịch (Campaigns)**:
    - Soạn thảo và xem trước danh sách người nhận (bản nháp/xem trước, KHÔNG gửi tin thật).
    - Lịch chăm sóc từng khách: tạo/sửa, lọc đến hạn, xác nhận hoàn tất/hủy; giờ Việt Nam, phản hồi lỗi rõ ràng và bảng desktop/thẻ mobile.

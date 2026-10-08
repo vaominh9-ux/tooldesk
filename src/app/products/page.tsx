@@ -9,6 +9,7 @@ import { isActive } from '@/domain/subscriptions';
 export default function ProductsPage() {
   const { data, openDialog, today } = useTooldesk();
   const [search, setSearch] = useState('');
+  const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({});
 
   let filtered = data.products;
   if (search.trim()) {
@@ -48,7 +49,7 @@ export default function ProductsPage() {
             id="product-search"
             type="search"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => { setSearch(e.target.value); setExpandedProducts({}); }}
             placeholder="Tìm sản phẩm hoặc gói dịch vụ..."
             aria-label="Tìm sản phẩm hoặc gói dịch vụ..."
             autoComplete="off"
@@ -57,7 +58,7 @@ export default function ProductsPage() {
             <button
               type="button"
               className="search-clear"
-              onClick={() => setSearch('')}
+              onClick={() => { setSearch(''); setExpandedProducts({}); }}
               aria-label="Xóa tìm kiếm"
             >
               ×
@@ -71,6 +72,8 @@ export default function ProductsPage() {
 
       <section className="products-grid">
         {filtered.map(p => {
+          const plansMatchSearch = Boolean(search.trim() && p.plans.some(plan => plan.name.toLowerCase().includes(search.trim().toLowerCase())));
+          const expanded = expandedProducts[p.id] ?? plansMatchSearch;
           const activeCount = data.subscriptions.filter(
             s => s.productId === p.id && isActive(s, today)
           ).length;
@@ -110,7 +113,17 @@ export default function ProductsPage() {
 
               <p className="product-card-description">{p.description}</p>
 
-              <div className="product-plans">
+              <button
+                type="button"
+                className="product-plans-toggle"
+                aria-expanded={expanded}
+                aria-controls={`product-plans-${p.id}`}
+                onClick={() => setExpandedProducts(current => ({ ...current, [p.id]: !expanded }))}
+              >
+                <span><strong>{expanded ? 'Thu gọn các gói' : 'Xem các gói dịch vụ'}</strong><small>{p.plans.length} gói{p.plans.length > 0 && ` · Từ ${formatMoney(Math.min(...p.plans.map(plan => plan.price)))}`}</small></span>
+                <AppIcon name="down" size={18} />
+              </button>
+              <div id={`product-plans-${p.id}`} className={`product-plans ${expanded ? 'is-expanded' : ''}`}>
                 {p.plans.map(pl => (
                   <div key={pl.id} className="product-plan">
                     <div>

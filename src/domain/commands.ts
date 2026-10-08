@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { daySchema, moneySchema, settingsSchema, type AppData } from './data-schema';
 import { addDuration } from './dates';
+import { updatedProductPlans } from './products';
 import { careChannels, instantSchema, requireFutureAppointment } from './care-scheduling';
 import { audienceFor } from './orders';
 import { renewalDates } from './subscriptions';
@@ -26,7 +27,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('add_plan'), input: z.object({ productId: id, name: z.string().trim().min(1).max(80), duration: z.number().int().min(1).max(1200), unit: z.enum(['months', 'days']), price: moneySchema, cost: moneySchema }).strict() }).strict(),
   z.object({ type: z.literal('delete_plan'), input: z.object({ planId: id }).strict() }).strict(),
   z.object({ type: z.literal('add_product'), input: z.object({ name: z.string().trim().min(1).max(80), symbol: z.string().trim().max(4), category: z.string().trim().max(100), description: z.string().trim().max(1000), plans: z.array(z.object({ name: z.string().trim().min(1).max(80), duration: z.number().int().min(1).max(1200), unit: z.enum(['months', 'days']), price: moneySchema, cost: moneySchema }).strict()).min(1).max(20) }).strict() }).strict(),
-  z.object({ type: z.literal('update_product'), input: z.object({ productId: id, name: z.string().trim().min(1).max(80), category: z.string().trim().max(100).optional(), description: z.string().trim().max(1000).optional(), color: z.string().trim().max(30).optional(), symbol: z.string().trim().max(4).optional() }).strict() }).strict(),
+  z.object({ type: z.literal('update_product'), input: z.object({ productId: id, name: z.string().trim().min(1).max(80), category: z.string().trim().max(100).optional(), description: z.string().trim().max(1000).optional(), color: z.string().trim().max(30).optional(), symbol: z.string().trim().max(4).optional(), plans: z.array(z.object({ id: id.optional(), name: z.string().trim().min(1).max(80), duration: z.number().int().min(1).max(1200), unit: z.enum(['months', 'days']), price: moneySchema, cost: moneySchema }).strict()).min(1).max(100).optional(), expectedPlanIds: z.array(id).max(100).optional() }).strict().refine(value => !value.plans || value.expectedPlanIds !== undefined, 'Cần danh sách gói trước khi chỉnh sửa.') }).strict(),
   z.object({ type: z.literal('delete_product'), input: z.object({ productId: id }).strict() }).strict(),
   z.object({ type: z.literal('save_campaign'), input: z.object({ id: id.optional(), name: z.string().trim().min(1).max(120), subject: z.string().trim().min(1).max(180), body: z.string().trim().min(1).max(5000), segment: z.enum(['all', 'active', 'expiring', 'expired', 'vip']), scheduledAt: instantSchema.optional() }).strict() }).strict(),
   z.object({ type: z.literal('cancel_campaign'), input: z.object({ id }).strict() }).strict(),
@@ -223,6 +224,7 @@ export function executeCommand(original: AppData, command: Command, operation: O
     case 'update_product': {
       const prod = data.products.find(product => product.id === command.input.productId);
       if (!prod) throw new Error('Không tìm thấy sản phẩm.');
+      if (command.input.plans) prod.plans = updatedProductPlans(data, prod, command.input.plans, command.input.expectedPlanIds || [], newId);
       prod.name = command.input.name;
       if (command.input.category !== undefined) prod.category = command.input.category;
       if (command.input.description !== undefined) prod.description = command.input.description;
