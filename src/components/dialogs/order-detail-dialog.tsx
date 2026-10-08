@@ -640,7 +640,7 @@ export function OrderDetailDialog({
           </div>
 
           {/* Footer */}
-          <footer className="dialog-footer">
+          <footer className="dialog-footer order-detail-footer">
             <button type="button" className="button" onClick={onClose}>
               Đóng
             </button>
@@ -648,11 +648,13 @@ export function OrderDetailDialog({
             <button
               type="button"
               className="button ghost"
+              aria-label="Sửa đơn hàng"
               onClick={() => setIsEditing(true)}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
               <AppIcon name="edit" size={15} />
-              <span>Sửa đơn hàng</span>
+              <span className="order-edit-label">Sửa đơn hàng</span>
+              <span className="order-edit-label-mobile">Sửa đơn</span>
             </button>
 
             {order.payment === 'unpaid' ? (
@@ -670,7 +672,7 @@ export function OrderDetailDialog({
               order.subscriptionId && (
                 <button
                   type="button"
-                  className="button primary"
+                  className="button primary order-service-action"
                   onClick={() => openDialog('subscription-detail', order.subscriptionId)}
                 >
                   <span>Xem gói dịch vụ</span>

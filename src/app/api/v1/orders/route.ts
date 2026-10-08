@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { authenticateAgent } from '@/lib/agent-auth';
 import { getOrdersService, getAgentData, executeAgentCommand } from '@/lib/agent-service';
 import { todayInHoChiMinh } from '@/lib/clock';
+import { customerEmailInputSchema, customersWithEmail } from '@/domain/customer-identity';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,7 +40,7 @@ const createOrderSchema = z.object({
   customer: z.object({
     name: z.string().trim().min(1, 'Tên khách hàng không được để trống.'),
     phone: z.string().trim().default(''),
-    email: z.union([z.literal(''), z.string().trim().email()]).default(''),
+    email: customerEmailInputSchema.default(''),
     source: z.string().trim().default('AI Agent')
   }).optional(),
   productId: z.string().trim().min(1, 'Thiếu mã sản phẩm (productId).'),
@@ -78,11 +79,12 @@ export async function POST(request: Request) {
     let newCustomerInput = undefined;
 
     if (!customerId && validated.customer) {
-      // Check if existing customer matches phone or email
-      const existing = data.customers.find(c =>
-        (validated.customer?.phone && c.phone === validated.customer.phone) ||
-        (validated.customer?.email && c.email && c.email.toLowerCase() === validated.customer.email.toLowerCase())
-      );
+      // Email identifies the customer; only use phone matching when no email is supplied.
+      const matches = validated.customer.email
+        ? customersWithEmail(data.customers, validated.customer.email)
+        : data.customers.filter(customer => customer.phone && customer.phone.trim() === validated.customer?.phone);
+      if (matches.length > 1) throw new Error('Thông tin liên hệ có nhiều hồ sơ. Hãy truyền customerId của khách cần tạo đơn.');
+      const existing = matches[0];
 
       if (existing) {
         customerId = existing.id;

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authenticateAgent } from '@/lib/agent-auth';
 import { getCustomersService, executeAgentCommand } from '@/lib/agent-service';
+import { customerEmailInputSchema } from '@/domain/customer-identity';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +32,7 @@ export async function GET(request: Request) {
 const createCustomerSchema = z.object({
   name: z.string().trim().min(1, 'Tên khách hàng không được để trống.').max(80),
   phone: z.string().trim().max(25).default(''),
-  email: z.union([z.literal(''), z.string().trim().email()]).default(''),
+  email: customerEmailInputSchema.default(''),
   source: z.string().trim().max(100).default('AI Agent'),
   notes: z.string().trim().max(50000).default('')
 }).refine(data => data.phone || data.email, {

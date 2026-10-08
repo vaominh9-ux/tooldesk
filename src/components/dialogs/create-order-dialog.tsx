@@ -418,7 +418,7 @@ export function CreateOrderDialog({
             <button
               type="submit"
               className="button primary"
-              disabled={pending}
+              disabled={pending || emailMatches.length > 0}
             >
               {pending ? (
                 <>

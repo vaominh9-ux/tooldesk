@@ -10,6 +10,8 @@ import { formatDateLabel, remainingLabel } from '@/domain/dates';
 import { subStatus } from '@/domain/subscriptions';
 import { CustomerNotes } from '@/components/shared/customer-notes';
 import { CustomerOrderHistory } from '@/features/customers/customer-order-history';
+import { CustomerDuplicateReview } from '@/features/customers/customer-duplicate-review';
+import { duplicateCustomerGroups } from '@/domain/customer-identity';
 import Link from 'next/link';
 
 export default function CustomersPage() {
@@ -22,7 +24,7 @@ function CustomersContent() {
   const params = useSearchParams();
   const selectedId = params.get('id');
   const selectCustomer = (customerId: string | null) => router.push(customerId ? `/customers?id=${encodeURIComponent(customerId)}` : '/customers');
-  const [tab, setTab] = useState<'all' | 'active' | 'vip'>('all');
+  const [tab, setTab] = useState<'all' | 'active' | 'vip' | 'duplicates'>('all');
   const [search, setSearch] = useState('');
   const [consentFilter, setConsentFilter] = useState('');
   const [page, setPage] = useState(1);
@@ -342,6 +344,7 @@ function CustomersContent() {
   // General Customers List
   const activeCount = data.customers.filter(c => getCustomerStats(data, c.id, today).activeCount > 0).length;
   const eligibleEmails = audienceFor(data, 'all', today).eligible.length;
+  const duplicateGroups = duplicateCustomerGroups(data.customers);
 
   let items = data.customers.filter(c => {
     const stats = getCustomerStats(data, c.id, today);
@@ -422,6 +425,9 @@ function CustomersContent() {
           >
             Chi tiêu từ 2 triệu
           </button>
+          <button type="button" className={`tab ${tab === 'duplicates' ? 'selected' : ''}`} onClick={() => { setTab('duplicates'); setPage(1); }} aria-pressed={tab === 'duplicates'}>
+            Hồ sơ nghi trùng{duplicateGroups.length ? ` (${duplicateGroups.length})` : ''}
+          </button>
         </div>
 
         {/* Toolbar */}
@@ -449,7 +455,7 @@ function CustomersContent() {
             )}
           </label>
 
-          <select
+          {tab !== 'duplicates' && <select
             className="select-filter"
             value={consentFilter}
             onChange={e => { setConsentFilter(e.target.value); setPage(1); }}
@@ -459,7 +465,7 @@ function CustomersContent() {
             <option value="opted_in">Đã đồng ý nhận</option>
             <option value="unknown">Chưa xác nhận</option>
             <option value="opted_out">Đã từ chối nhận</option>
-          </select>
+          </select>}
 
           <span className="toolbar-end">
             <AppIcon name="shield" size={12} />
@@ -468,7 +474,7 @@ function CustomersContent() {
         </div>
 
         {/* Records */}
-        {paged.items.length > 0 ? (
+        {tab === 'duplicates' ? <CustomerDuplicateReview data={data} today={today} search={search} onView={customerId => selectCustomer(customerId)} /> : paged.items.length > 0 ? (
           <>
             {/* Desktop Table */}
             <div className="table-scroll desktop-data">
@@ -621,7 +627,7 @@ function CustomersContent() {
         )}
 
         {/* Pagination */}
-        {paged.total > 0 && (
+        {tab !== 'duplicates' && paged.total > 0 && (
           <div className="table-footer">
             <span>
               Hiển thị <strong>{(paged.page - 1) * paged.pageSize + 1}–{Math.min(paged.page * paged.pageSize, paged.total)}</strong> trong {paged.total} kết quả

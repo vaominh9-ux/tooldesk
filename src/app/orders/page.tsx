@@ -6,6 +6,7 @@ import { AppIcon } from '@/components/shared/app-icon';
 import { orderFinancials, formatMoney } from '@/domain/money';
 import { formatDateLabel } from '@/domain/dates';
 import { paginate, formatOrderCode, searchFilter } from '@/domain/orders';
+import { OrderRecordCard } from '@/features/orders/order-record-card';
 import Link from 'next/link';
 
 export default function OrdersPage() {
@@ -308,73 +309,16 @@ export default function OrdersPage() {
                 const financials = orderFinancials(o, data.refunds);
 
                 return (
-                  <article key={o.id} className="record-card order-record">
-                    <div className="record-top">
-                      <button
-                        type="button"
-                        className="text-button order-number"
-                        onClick={() => openDialog('order-detail', o.id)}
-                        title={`Mã đơn: ${o.id}`}
-                      >
-                        {formatOrderCode(o.id)}
-                        <AppIcon name="chevron" size={14} />
-                      </button>
-                      {renderPaymentBadge(o)}
-                    </div>
-
-                    <div className="person-cell">
-                      <span className={`avatar ${cust?.color || 'lavender'}`} aria-hidden="true">
-                        {getInitials(cust?.name)}
-                      </span>
-                      <div>
-                        <Link
-                          className="text-link strong"
-                          href={`/customers?id=${cust?.id}`}
-                        >
-                          {cust?.name || 'Khách đã xóa'}
-                        </Link>
-                        <small>
-                          {o.kind === 'renewal' ? 'Đơn gia hạn' : 'Đơn mua mới'}
-                        </small>
-                      </div>
-                    </div>
-
-                    <div className="record-product">
-                      <div className="product-cell">
-                        <span className={`product-logo ${prod?.color || 'mint'}`} aria-hidden="true">
-                          {prod?.symbol || '✦'}
-                        </span>
-                        <div>
-                          <span className="strong">{prod?.name || 'Sản phẩm'}</span>
-                          <small>{plan?.name || ''}</small>
-                        </div>
-                      </div>
-                      <strong className="record-amount">
-                        {formatMoney(o.price)}
-                      </strong>
-                    </div>
-
-                    {financials.refunded > 0 && (
-                      <div className="record-refund">
-                        <span>Đã hoàn {formatMoney(financials.refunded)}</span>
-                        <strong>Còn thu {formatMoney(financials.net)}</strong>
-                      </div>
-                    )}
-
-                    <div className="record-bottom">
-                      <span>
-                        <AppIcon name="calendar" size={14} />
-                        {formatDateLabel(o.date, true)}
-                      </span>
-                      <button
-                        type="button"
-                        className="text-button"
-                        onClick={() => openDialog('order-detail', o.id)}
-                      >
-                        Chi tiết đơn <AppIcon name="arrow" size={14} />
-                      </button>
-                    </div>
-                  </article>
+                  <OrderRecordCard
+                    key={o.id}
+                    order={o}
+                    customer={cust}
+                    product={prod}
+                    plan={plan}
+                    financials={financials}
+                    paymentBadge={renderPaymentBadge(o)}
+                    onOpen={orderId => openDialog('order-detail', orderId)}
+                  />
                 );
               })}
             </div>
