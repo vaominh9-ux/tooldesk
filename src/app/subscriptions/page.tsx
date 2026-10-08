@@ -8,6 +8,7 @@ import { ProductLogo } from '@/components/shared/product-logo';
 import { subStatus } from '@/domain/subscriptions';
 import { formatDateLabel, remainingLabel } from '@/domain/dates';
 import { paginate, searchFilter } from '@/domain/orders';
+import { SubscriptionListFilters } from '@/features/subscriptions/subscription-list-filters';
 
 export default function SubscriptionsPage() {
   const { data, today, openDialog, markContacted } = useTooldesk();
@@ -149,57 +150,12 @@ export default function SubscriptionsPage() {
         </div>
 
         {/* Toolbar */}
-        <div className="list-toolbar">
-          <label className="search-field">
-            <AppIcon name="search" size={18} />
-            <input
-              id="list-search"
-              type="search"
-              value={search}
-              onChange={e => { setSearch(e.target.value); setPage(1); }}
-              placeholder="Tìm khách hàng, SĐT hoặc email..."
-              aria-label="Tìm khách hàng, SĐT hoặc email..."
-              autoComplete="off"
-            />
-            {search && (
-              <button
-                type="button"
-                className="search-clear"
-                onClick={() => setSearch('')}
-                aria-label="Xóa tìm kiếm"
-              >
-                ×
-              </button>
-            )}
-          </label>
-
-          <select
-            className="select-filter"
-            value={productFilter}
-            onChange={e => { setProductFilter(e.target.value); setPage(1); }}
-            aria-label="Lọc sản phẩm"
-          >
-            <option value="">Tất cả sản phẩm</option>
-            {data.products.map(p => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-
-          <select
-            className="select-filter"
-            value={contactFilter}
-            onChange={e => { setContactFilter(e.target.value); setPage(1); }}
-            aria-label="Tình trạng liên hệ"
-          >
-            <option value="">Tất cả liên hệ</option>
-            <option value="uncontacted">Chưa liên hệ</option>
-            <option value="contacted">Đã liên hệ</option>
-          </select>
-
-          <span className="toolbar-end">Nhắc trước {windowDays} ngày</span>
-        </div>
+        <SubscriptionListFilters
+          search={search} productFilter={productFilter} contactFilter={contactFilter} products={data.products} windowDays={windowDays}
+          onSearch={value => { setSearch(value); setPage(1); }}
+          onProduct={value => { setProductFilter(value); setPage(1); }}
+          onContact={value => { setContactFilter(value); setPage(1); }}
+        />
 
         {/* Records */}
         {paged.items.length > 0 ? (

@@ -30,6 +30,7 @@
    - Danh sách khách hàng, tìm kiếm theo tên, email, SĐT.
    - Chi tiết khách hàng: Tổng chi tiêu, các gói đang dùng, lịch sử đơn hàng.
 4. **Gói dịch vụ (Subscriptions)**:
+   - Mobile: gom lọc sản phẩm/liên hệ vào nút cạnh tìm kiếm giống Đơn hàng; hiển thị số điều kiện, giữ lựa chọn khi đóng/mở, hỗ trợ Xóa lọc/Escape/bấm ngoài. Desktop giữ nguyên hai ô lọc và dòng nhắc hạn.
    - Lọc: Đang chạy, Sắp hết hạn, Quá hạn, Đã dừng.
    - Nút Gia hạn trực tiếp: Mở form gia hạn tạo đơn mới, giữ nguyên chuỗi lịch sử.
 5. **Sản phẩm (Products)**:

@@ -9,7 +9,7 @@
 .order-filter-toggle, .order-filter-heading, .order-filter-label { display:none; }
 .order-filter-fields, .order-filter-field { display:contents; }
 @media (max-width:1023px) {
-  .page-orders .order-filter-toolbar { display:grid; grid-template-columns:minmax(0,1fr) var(--control-mobile); gap:10px; }
+  .page-orders .order-filter-toolbar, .page-subscriptions .subscription-filter-toolbar { display:grid; grid-template-columns:minmax(0,1fr) var(--control-mobile); gap:10px; }
   .order-filter-toolbar .search-field { width:100%; min-width:0; }
   .order-filter-toolbar .order-filter-toggle { display:inline-flex; align-items:center; justify-content:center; position:relative; width:var(--control-mobile); min-height:var(--control-mobile); border:1px solid var(--line); border-radius:9px; background:var(--surface); }
   .order-filter-toolbar .order-filter-toggle:is([aria-expanded=true],.has-filters) { color:var(--accent); background:var(--accent-soft); border-color:var(--accent); }
