@@ -158,7 +158,7 @@ export function CustomerNotes({
   };
 
   return (
-    <div style={{
+    <div className="customer-notes" style={{
       background: '#fff',
       border: '1px solid var(--line)',
       borderRadius: '10px',
@@ -194,7 +194,7 @@ export function CustomerNotes({
 
       <div style={{ padding: '12px 14px' }}>
         {/* Preset quick chips */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '8px' }}>
+        <div className="customer-note-presets" style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '8px' }}>
           {presets.map(p => (
             <button
               key={p}
@@ -251,7 +251,7 @@ export function CustomerNotes({
               }
             }}
           />
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div className="customer-note-submit" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '11px', color: '#94a3b8' }}>
               Nhấn Ctrl+Enter hoặc bấm nút để lưu
             </span>
@@ -317,7 +317,7 @@ export function CustomerNotes({
                 />
 
                 {/* Header of Note */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <div className="customer-note-heading" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
                   <span style={{
                     fontSize: '11px',
                     fontWeight: 650,
@@ -329,7 +329,7 @@ export function CustomerNotes({
                     {item.time ? item.time : 'Ghi chú ban đầu'}
                   </span>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <div className="customer-note-actions" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <button
                       type="button"
                       onClick={() => handleCopyNote(item)}

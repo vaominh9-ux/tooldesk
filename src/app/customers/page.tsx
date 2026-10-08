@@ -8,6 +8,7 @@ import { getCustomerStats, paginate, formatOrderCode } from '@/domain/orders';
 import { formatDateLabel, remainingLabel } from '@/domain/dates';
 import { subStatus } from '@/domain/subscriptions';
 import { CustomerNotes } from '@/components/shared/customer-notes';
+import { CustomerOrderHistory } from '@/features/customers/customer-order-history';
 import Link from 'next/link';
 
 export default function CustomersPage() {
@@ -88,9 +89,9 @@ export default function CustomersPage() {
         </button>
 
         {/* Customer Header Panel */}
-        <div className="panel" style={{ marginBottom: '24px' }}>
+        <div className="panel customer-summary" style={{ marginBottom: '24px' }}>
           <div className="customer-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', padding: '24px', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div className="customer-identity" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
               <span className={`avatar ${c.color || 'lavender'} large`} style={{ width: '48px', height: '48px', fontSize: '20px' }}>
                 {getInitials(c.name)}
               </span>
@@ -176,7 +177,7 @@ export default function CustomersPage() {
                           background: '#fff'
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                        <div className="customer-package-info" style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
                           <span className={`product-logo large ${prod?.color || 'mint'}`}>
                             {prod?.symbol || '◈'}
                           </span>
@@ -184,7 +185,7 @@ export default function CustomersPage() {
                             <h3 style={{ fontSize: '14px', fontWeight: 600 }}>
                               {prod?.name} <span className="muted" style={{ fontWeight: 400 }}>· {plan?.name}</span>
                             </h3>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                            <div className="customer-package-period" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
                               {s.cancelled ? (
                                 <span className="badge neutral"><i></i>Đã dừng</span>
                               ) : status === 'expired' ? (
@@ -199,7 +200,7 @@ export default function CustomersPage() {
                               </span>
                             </div>
                             {s.note && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '5px', fontSize: '12px' }}>
+                              <div className="customer-package-account" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '5px', fontSize: '12px' }}>
                                 <span style={{ color: '#4f46e5', fontWeight: 600 }}>Tài khoản:</span>
                                 <span style={{ background: '#f1f5f9', color: '#0f172a', padding: '1px 7px', borderRadius: '4px', fontWeight: 500 }}>
                                   {s.note.replace(/^Tài khoản:\s*/i, '')}
@@ -247,6 +248,7 @@ export default function CustomersPage() {
               </div>
 
               {customerOrders.length > 0 ? (
+                <>
                 <div className="table-scroll desktop-data">
                   <table className="data-table">
                     <thead>
@@ -283,6 +285,14 @@ export default function CustomersPage() {
                     </tbody>
                   </table>
                 </div>
+                <CustomerOrderHistory
+                  orders={customerOrders}
+                  products={data.products}
+                  refunds={data.refunds}
+                  renderPaymentBadge={renderPaymentBadge}
+                  onOpenOrder={orderId => openDialog('order-detail', orderId)}
+                />
+                </>
               ) : (
                 <div className="empty-state" style={{ padding: '28px 16px' }}>
                   <p>Chưa có đơn hàng nào.</p>
@@ -292,7 +302,7 @@ export default function CustomersPage() {
           </div>
 
           {/* Aside Information */}
-          <aside className="panel" style={{ padding: '20px' }}>
+          <aside className="panel customer-contact-panel" style={{ padding: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <h2 style={{ fontSize: '15px', fontWeight: 650 }}>Thông tin liên hệ</h2>
               <button
