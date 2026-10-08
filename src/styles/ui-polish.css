@@ -1169,3 +1169,20 @@
 .input-paste-btn.pasted {
   color: var(--positive, #16a34a);
 }
+
+/* Ẩn nút xóa (cancel/clear) mặc định của trình duyệt để không bị trùng 2 dấu X trong ô tìm kiếm */
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-results-button,
+input[type="search"]::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none !important;
+}
+
+input[type="search"]::-ms-clear,
+input[type="search"]::-ms-reveal {
+  display: none !important;
+  width: 0;
+  height: 0;
+}
