@@ -152,7 +152,7 @@
   .order-card-open:hover { background:var(--bg); }
   .order-card-open:active { background:var(--accent-soft); }
   .order-card-open:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
-  .order-card-heading { display:grid; grid-template-columns:minmax(0,1fr) max-content; align-items:start; gap:12px; }
+  .order-card-sale { display:grid; grid-template-columns:minmax(0,1fr) max-content; align-items:center; gap:12px; }
   .order-card-customer { min-width:0; font-size:15px; line-height:1.5; overflow-wrap:anywhere; }
   .order-card-value { display:grid; gap:4px; text-align:right; white-space:nowrap; }
   .order-card-value>span { color:var(--muted); font-size:11px; line-height:1.5; }

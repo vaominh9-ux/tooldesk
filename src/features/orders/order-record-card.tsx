@@ -33,21 +33,21 @@ export function OrderRecordCard({
         aria-label={`Chi tiết đơn ${orderCode} của ${customerName}`}
         aria-describedby={`${descriptionId}-value ${descriptionId}-status${financials.refunded > 0 ? ` ${descriptionId}-refund` : ''}`}
       >
-        <span className="order-card-heading">
-          <strong className="order-card-customer">{customerName}</strong>
+        <strong className="order-card-customer">{customerName}</strong>
+
+        <span className="order-card-sale">
+          <span className="order-card-product">
+            <span className={`product-logo ${product?.color || 'mint'}`} aria-hidden="true">
+              {product?.symbol || '✦'}
+            </span>
+            <span className="order-card-product-info">
+              <strong>{product?.name || 'Sản phẩm'}</strong>
+              {plan?.name && <span>{plan.name}</span>}
+            </span>
+          </span>
           <span className="order-card-value" id={`${descriptionId}-value`}>
             <span>Giá trị đơn</span>
             <strong>{formatMoney(order.price)}</strong>
-          </span>
-        </span>
-
-        <span className="order-card-product">
-          <span className={`product-logo ${product?.color || 'mint'}`} aria-hidden="true">
-            {product?.symbol || '✦'}
-          </span>
-          <span className="order-card-product-info">
-            <strong>{product?.name || 'Sản phẩm'}</strong>
-            {plan?.name && <span>{plan.name}</span>}
           </span>
         </span>
 

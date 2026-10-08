@@ -129,6 +129,29 @@ export function TooldeskProvider({ children, dataSource = 'mock', initialToday }
   };
   useEffect(() => {
     if (dataSource === 'mock' && typeof window !== 'undefined') {
+      const syncStoredData = () => {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (!saved) return;
+          const parsed: unknown = JSON.parse(saved);
+          const latest = dataSchema.parse(parsed);
+          if (JSON.stringify(currentData.current) === JSON.stringify(latest)) return;
+          dataVersion.current++;
+          currentData.current = latest;
+          setData(latest);
+        } catch (error) {
+          addToast('Không thể đồng bộ dữ liệu mẫu', error instanceof Error ? error.message : 'Dữ liệu không hợp lệ.', 'error');
+        }
+      };
+      const handleStorage = (event: StorageEvent) => {
+        if (event.storageArea === localStorage && event.key === STORAGE_KEY) syncStoredData();
+      };
+      const handleFocus = () => {
+        if (!document.hidden) syncStoredData();
+      };
+      window.addEventListener('storage', handleStorage);
+      window.addEventListener('focus', handleFocus);
+      document.addEventListener('visibilitychange', handleFocus);
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
@@ -137,16 +160,24 @@ export function TooldeskProvider({ children, dataSource = 'mock', initialToday }
           if (valid.success) {
             currentData.current = valid.data;
             setData(valid.data);
-            return;
+          } else {
+            throw new Error('Dữ liệu mẫu đã lưu không hợp lệ.');
           }
+        } else {
+          const initial = createInitialData();
+          currentData.current = initial;
+          setData(initial);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
         }
-        const initial = createInitialData();
-        currentData.current = initial;
-        setData(initial);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
       } catch (err) {
         console.warn('LocalStorage load failed:', err);
+        addToast('Không tải được dữ liệu mẫu đã lưu', err instanceof Error ? err.message : 'Dữ liệu không hợp lệ.', 'error');
       }
+      return () => {
+        window.removeEventListener('storage', handleStorage);
+        window.removeEventListener('focus', handleFocus);
+        document.removeEventListener('visibilitychange', handleFocus);
+      };
     }
   }, [dataSource]);
   // REALTIME BACKGROUND SYNC (6 seconds + instant on window focus/tab change)
@@ -189,7 +220,13 @@ export function TooldeskProvider({ children, dataSource = 'mock', initialToday }
       if (dataSource === 'supabase' && (role === 'viewer' || dataStatus !== 'connected')) throw new Error('Chưa có quyền hoặc chưa tải dữ liệu.');
       let result: { data: TooldeskData; resultId?: string };
       if (dataSource === 'mock') {
-        result = executeCommand(dataSchema.parse(currentData.current), command, { today: runtimeToday(), now: new Date().toISOString(), actor: currentData.current.settings.ownerName, newId: prefix => createShortId(prefix) });
+        // A storage event can arrive after submit; validate against the latest shared snapshot.
+        const saved = localStorage.getItem(STORAGE_KEY);
+        const parsed: unknown = saved ? JSON.parse(saved) : currentData.current;
+        const latest = dataSchema.parse(parsed);
+        currentData.current = latest;
+        setData(latest);
+        result = executeCommand(latest, command, { today: runtimeToday(), now: new Date().toISOString(), actor: latest.settings.ownerName, newId: prefix => createShortId(prefix) });
       } else {
         const body = JSON.stringify(command);
         const operationId = retryRequest.current?.body === body ? retryRequest.current.operationId : crypto.randomUUID();
