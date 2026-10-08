@@ -15,6 +15,8 @@ import { CustomerDetailDialog } from './customer-detail-dialog';
 import { SubscriptionDetailDialog } from './subscription-detail-dialog';
 import { ProductDialog } from './product-dialog';
 import { CampaignDialog } from './campaign-dialog';
+import { CareAppointmentDialog } from '@/features/communications/care-appointment-dialog';
+import { EmptyState } from '@/components/shared/feedback';
 import { PlanDialog } from './plan-dialog';
 import { PaymentConfirmDialog } from './payment-confirm-dialog';
 import { SearchDialog } from './search-dialog';
@@ -73,28 +75,19 @@ export function GlobalDialogs() {
         {toasts.map(t => (
           <div
             key={t.id}
-            className={`pointer-events-auto p-[12px_16px] rounded-[10px] shadow-lg border flex items-start gap-[10px] animate-slide-up bg-white text-[#202a43] ${
-              t.type === 'success'
-                ? 'border-[#c7eedd]'
-                : t.type === 'error'
-                ? 'border-[#fbd0d0]'
-                : 'border-[#e8ebf2]'
-            }`}
+            className={`ui-toast ui-toast-${t.type || 'info'}`}
+            role={t.type === 'error' ? 'alert' : undefined}
           >
-            <div className="mt-[2px]">
-              {t.type === 'success' && <AppIcon name="circleCheck" size={17} className="text-[#15775c]" />}
-              {t.type === 'error' && <AppIcon name="close" size={17} className="text-[#af4141]" />}
-              {(!t.type || t.type === 'info') && <AppIcon name="info" size={17} className="text-[#5963e8]" />}
-            </div>
-            <div className="flex-1 min-w-0">
-              <strong className="text-[12.5px] block leading-tight">{t.title}</strong>
-              {t.message && <p className="text-[11.5px] text-[#778197] mt-[2px] leading-snug">{t.message}</p>}
+            <AppIcon name={t.type === 'success' ? 'circleCheck' : t.type === 'warning' || t.type === 'error' ? 'warning' : 'info'} size={17} />
+            <div className="ui-toast-copy">
+              <strong>{t.title}</strong>
+              {t.message && <p>{t.message}</p>}
             </div>
             <button
               type="button"
               onClick={() => removeToast(t.id)}
               aria-label="Đóng thông báo"
-              className="text-[#9fa6b6] hover:text-[#202a43] p-[4px] -mr-[6px] -mt-[4px]"
+              className="ui-toast-close"
             >
               <AppIcon name="close" size={13} />
             </button>
@@ -185,6 +178,7 @@ export function GlobalDialogs() {
           onClose={closeDialog}
         />
       )}
+      {dialog.type === 'care-appointment' && <CareAppointmentDialog key={payloadObj?.id || 'new'} id={payloadObj?.id} customerId={payloadObj?.customerId} onClose={closeDialog} />}
       {dialog.type === 'search' && <SearchDialog onClose={closeDialog} />}
       {dialog.type === 'plan' && <PlanDialog key={payloadStr || payloadObj?.planId || ''} planId={payloadStr || payloadObj?.planId || ''} onClose={closeDialog} />}
       {dialog.type === 'add-plan' && <PlanDialog key={payloadStr || payloadObj?.productId || ''} productId={payloadStr || payloadObj?.productId || ''} onClose={closeDialog} />}
@@ -249,7 +243,7 @@ export function GlobalDialogs() {
 
       {dialog.type === 'activity' && (
         <div className="dialog-overlay" {...backdropDismiss}>
-          <dialog id="active-dialog" className="drawer" open onClick={e => e.stopPropagation()}>
+          <dialog id="active-dialog" className="drawer" open aria-modal="true" aria-labelledby="dialog-title" onClick={e => e.stopPropagation()}>
             <div className="dialog-shell">
               <header className="dialog-header">
                 <div>
@@ -261,8 +255,10 @@ export function GlobalDialogs() {
                 </button>
               </header>
               <div className="dialog-content">
+                <p className="dialog-note">{data.activity.length} hoạt động gần đây</p>
                 <div className="activity-list">
-                  {data.activity.slice(0, 30).map((a, i) => {
+                  {data.activity.length === 0 && <EmptyState title="Chưa có hoạt động" description="Các thao tác lưu thành công sẽ xuất hiện tại đây." />}
+                  {data.activity.map((a, i) => {
                     const icons: Record<string, string> = {
                       payment: 'wallet',
                       renewal: 'refresh',

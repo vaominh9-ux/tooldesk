@@ -13,6 +13,7 @@ import { CustomerOrderHistory } from '@/features/customers/customer-order-histor
 import { CustomerDuplicateReview } from '@/features/customers/customer-duplicate-review';
 import { duplicateCustomerGroups } from '@/domain/customer-identity';
 import Link from 'next/link';
+import { CareSchedulePanel } from '@/features/communications/care-schedule-panel';
 
 export default function CustomersPage() {
   return <Suspense fallback={<div className="data-notice" role="status">Đang tải khách hàng…</div>}><CustomersContent /></Suspense>;
@@ -337,6 +338,7 @@ function CustomersContent() {
             </div>
           </aside>
         </div>
+        <CareSchedulePanel customerId={c.id} />
       </>
     );
   }

@@ -68,6 +68,8 @@
 .customer-email-matches .button.primary { color:var(--surface); }
 .customer-email-matches .customer-email-match.has-use { grid-template-columns:minmax(0,1fr); }
 .customer-email-match.has-use .customer-email-match-actions { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.customer-email-placement { display:grid; gap:4px; margin-bottom:16px; color:var(--muted); font-size:12px; line-height:1.5; }
+.customer-email-placement>.text-button { justify-self:start; min-height:44px; }
 .customer-duplicate-group li { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding:12px 0; }
 .customer-duplicate-group li>div { min-width:0; flex:1 1 180px; }
 .customer-duplicate-group small { display:block; margin-top:6px; color:var(--muted); }
@@ -899,3 +901,70 @@
 
 
 
+
+/* Shared feedback, care scheduling and reminder monitoring use the same tokens. */
+.feedback { display:flex; align-items:flex-start; gap:10px; padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:var(--accent-soft); color:var(--ink); font-size:12px; line-height:1.65; overflow-wrap:anywhere; }
+.feedback > .icon { margin-top:2px; color:var(--accent); flex:none; }
+.feedback-success { background:var(--success-soft); }
+.feedback-success > .icon { color:var(--green); }
+.feedback-warning { background:var(--warning-soft); }
+.feedback-warning > .icon { color:var(--amber); }
+.feedback-error { background:var(--error-soft); }
+.feedback-error > .icon { color:var(--red); }
+.care-tabs { display:flex; gap:8px; margin-bottom:var(--space-section); border-bottom:1px solid var(--line); }
+.care-tabs button { display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:12px 16px; color:var(--muted); background:transparent; border:0; border-bottom:2px solid transparent; }
+.care-tabs button[aria-pressed=true] { color:var(--accent); border-bottom-color:var(--accent); }
+.care-dialog, .reminder-panel-body { display:grid; gap:16px; }
+.care-dialog .field { margin-bottom:0; }
+.care-field-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; min-width:0; }
+.care-actions { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:8px; font-size:12px; }
+.care-panel .data-table td:first-child { max-width:320px; overflow-wrap:anywhere; }
+.care-panel .data-table p { margin-top:6px; }
+.care-filter select { padding:11px 12px; border:1px solid var(--line); border-radius:9px; background:var(--surface); min-height:44px; }
+.care-card h3 { margin-top:12px; }
+.care-card .care-actions { margin-top:16px; padding-top:14px; border-top:1px solid var(--line); }
+.care-card .record-top { gap:10px; align-items:flex-start; }
+.care-card .record-top .text-link { min-width:0; overflow-wrap:anywhere; text-align:left; }
+.campaign-schedule-controls { display:grid; gap:14px; margin-bottom:20px; }
+.reminder-panel { margin-top:var(--space-section); }
+.reminder-panel-body { padding:20px; }
+.reminder-counts { display:flex; flex-wrap:wrap; gap:8px; }
+.reminder-run-list { display:grid; gap:10px; }
+.reminder-run { padding:14px; border:1px solid var(--line); border-radius:10px; font-size:12px; line-height:1.7; overflow-wrap:anywhere; }
+.reminder-run > div { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.reminder-run time { color:var(--muted); }
+.notification-button::after { content:none; }
+.care-due-notice { display:flex; align-items:center; gap:12px; margin-bottom:var(--space-section); padding:14px 16px; border:1px solid var(--line); border-radius:var(--radius); background:var(--warning-soft); font-size:12px; }
+.care-due-notice > span { flex:1; min-width:0; }
+.care-due-notice small { display:block; margin-top:4px; }
+.care-due-notice .button { white-space:nowrap; }
+.customer-care-shortcut { margin-top:16px; }
+.ui-toast { padding:12px 16px; border:1px solid var(--line); border-radius:10px; display:flex; align-items:flex-start; gap:10px; background:var(--surface); color:var(--ink); box-shadow:var(--shadow); }
+.ui-toast > .icon { margin-top:2px; color:var(--accent); }
+.ui-toast-success { border-color:color-mix(in srgb,var(--green) 25%,var(--surface)); }
+.ui-toast-success > .icon { color:var(--green); }
+.ui-toast-error { border-color:color-mix(in srgb,var(--red) 25%,var(--surface)); }
+.ui-toast-error > .icon { color:var(--red); }
+.ui-toast-warning > .icon { color:var(--amber); }
+.ui-toast-copy { flex:1; min-width:0; }
+.ui-toast-copy strong { display:block; font-size:12.5px; line-height:1.4; overflow-wrap:anywhere; }
+.ui-toast-copy p { margin-top:2px; font-size:11.5px; color:var(--muted); line-height:1.5; }
+.ui-toast-close { display:grid; place-items:center; background:transparent; border:0; color:var(--muted); padding:4px; margin-top:-4px; margin-right:-6px; }
+.ui-toast-close:hover { color:var(--ink); }
+@media(max-width:1023px) {
+  .notification-button { display:inline-flex; }
+  .ui-toast-stack button { min-width:var(--control-mobile); min-height:var(--control-mobile); }
+  .topbar-actions { gap:4px; }
+  .reminder-panel .detail-list-row { flex-wrap:wrap; gap:8px; }
+  .reminder-panel .detail-list-row > div { min-width:0; overflow-wrap:anywhere; }
+}
+@media(max-width:639px) {
+  .care-field-grid { grid-template-columns:1fr; }
+  .care-filter { width:100%; }
+  .care-filter select { width:100%; }
+  .care-tabs button { flex:1; justify-content:center; padding:12px 6px; font-size:12px; }
+  .care-panel .section-heading { align-items:flex-start; }
+  .care-panel .section-heading h2 { display:flex; flex-wrap:wrap; gap:6px; }
+  .care-panel .section-heading > button { white-space:nowrap; }
+  .reminder-panel-body { padding:16px; }
+}

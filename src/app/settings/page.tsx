@@ -227,7 +227,7 @@ export default function SettingsPage() {
       {/* Integrations */}
       <ApiIntegrationPanel />
       <SmtpSettingsPanel />
-      {dataStatus === 'connected' && <ReminderStatusPanel />}
+      {(dataStatus === 'connected' || dataStatus === 'mock') && <ReminderStatusPanel />}
       <div className="danger-zone">
         <h3>Quản lý dữ liệu hệ thống</h3>
         <p>

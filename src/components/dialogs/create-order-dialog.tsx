@@ -7,7 +7,7 @@ import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
 import { addDuration, formatDateLabel } from '@/domain/dates';
 import { formatMoney } from '@/domain/money';
-import { formatCustomerCode } from '@/domain/orders';
+import { formatCustomerCode, isValidEmail } from '@/domain/orders';
 import { customersWithEmail } from '@/domain/customer-identity';
 import { CustomerEmailMatches } from '@/features/customers/customer-email-matches';
 
@@ -28,6 +28,7 @@ export function CreateOrderDialog({
     defaultCustomerId || data.customers[0]?.id || ''
   );
   const [newCustomerName, setNewCustomerName] = useState('');
+  const nameInputRef = React.useRef<HTMLInputElement>(null);
   const [newCustomerEmail, setNewCustomerEmail] = useState('');
   const [newCustomerPhone, setNewCustomerPhone] = useState('');
 
@@ -46,7 +47,15 @@ export function CreateOrderDialog({
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
-  const emailMatches = isNewCustomer ? customersWithEmail(data.customers, newCustomerEmail) : [];
+  const emailInName = isNewCustomer && !newCustomerEmail.trim() && isValidEmail(newCustomerName)
+    ? newCustomerName.trim() : '';
+  const emailMatches = isNewCustomer ? customersWithEmail(data.customers, newCustomerEmail.trim() || emailInName) : [];
+  const moveEmailFromName = () => {
+    setNewCustomerEmail(emailInName);
+    setNewCustomerName('');
+    setError('');
+    nameInputRef.current?.focus();
+  };
   const useExistingCustomer = (customerId: string) => {
     setSelectedCustomerId(customerId);
     setIsNewCustomer(false);
@@ -86,6 +95,7 @@ export function CreateOrderDialog({
     try {
       if (isNewCustomer) {
         if (emailMatches.length) throw new Error('Email này đã có hồ sơ. Chọn “Dùng khách này” để tiếp tục tạo đơn.');
+        if (emailInName) throw new Error('Email đang ở ô tên khách. Hãy chuyển sang ô Email và nhập tên khách hàng.');
         if (!newCustomerName.trim()) {
           throw new Error('Vui lòng nhập họ tên khách hàng mới.');
         }
@@ -214,15 +224,25 @@ export function CreateOrderDialog({
                 <label className="field">
                   <span>Tên khách hàng</span>
                   <input
+                    ref={nameInputRef}
                     name="newCustomerName"
                     placeholder="Ví dụ: Nguyễn Minh Anh"
                     maxLength={80}
                     required
                     value={newCustomerName}
                     onChange={e => setNewCustomerName(e.target.value)}
+                    aria-invalid={emailInName ? true : undefined}
+                    aria-describedby={emailInName ? `order-email-placement${emailMatches.length ? ' customer-email-matches' : ''}` : undefined}
                     autoFocus
                   />
                 </label>
+                {emailInName && <>
+                  <div className="customer-email-placement" id="order-email-placement">
+                    <p>Bạn đang nhập email vào ô tên khách hàng.</p>
+                    <button type="button" className="text-button" onClick={moveEmailFromName}>Chuyển sang ô Email</button>
+                  </div>
+                  <CustomerEmailMatches customers={emailMatches} onUse={useExistingCustomer} />
+                </>}
                 <label className="field">
                   <span>Email</span>
                   <input
@@ -232,11 +252,11 @@ export function CreateOrderDialog({
                     maxLength={120}
                     value={newCustomerEmail}
                     onChange={e => setNewCustomerEmail(e.target.value)}
-                    aria-invalid={emailMatches.length > 0 || undefined}
-                    aria-describedby={emailMatches.length ? 'customer-email-matches' : undefined}
+                    aria-invalid={!emailInName && emailMatches.length > 0 || undefined}
+                    aria-describedby={!emailInName && emailMatches.length ? 'customer-email-matches' : undefined}
                   />
                 </label>
-                <CustomerEmailMatches customers={emailMatches} onUse={useExistingCustomer} />
+                {!emailInName && <CustomerEmailMatches customers={emailMatches} onUse={useExistingCustomer} />}
                 <label className="field">
                   <span>Số điện thoại</span>
                   <input
@@ -418,7 +438,7 @@ export function CreateOrderDialog({
             <button
               type="submit"
               className="button primary"
-              disabled={pending || emailMatches.length > 0}
+              disabled={pending || emailMatches.length > 0 || Boolean(emailInName)}
             >
               {pending ? (
                 <>

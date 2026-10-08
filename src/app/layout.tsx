@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Metadata } from 'next';
+import '@/styles/tokens.css';
 import './globals.css';
 import '@/styles/tooldesk-v02.css';
 import '@/styles/ui-polish.css';

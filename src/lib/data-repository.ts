@@ -19,6 +19,10 @@ function money(value: unknown): number {
   if (!Number.isSafeInteger(result) || result < 0) throw new Error('Dữ liệu tiền trong DB không hợp lệ.');
   return result;
 }
+function timestamp(value: unknown): string {
+  if (typeof value !== 'string' || !Number.isFinite(Date.parse(value))) throw new Error('Dữ liệu ngày giờ trong DB không hợp lệ.');
+  return new Date(value).toISOString();
+}
 async function rows(db: Db, query: string): Promise<Row[]> { return (await db.query<Row>(query)).rows.map(mapRow); }
 
 export async function loadData(db: Db = getDbPool()): Promise<AppData> {
@@ -31,6 +35,7 @@ export async function loadData(db: Db = getDbPool()): Promise<AppData> {
       'subscriptions', COALESCE((SELECT json_agg(sub) FROM (SELECT s.*, s.starts_at::text AS starts_at, s.expires_at::text AS expires_at, s.reminded_at::text AS reminded_at FROM subscriptions s ORDER BY s.expires_at) sub), '[]'::json),
       'orders', COALESCE((SELECT json_agg(ord) FROM (SELECT o.*, o.date::text AS date, o.starts_at::text AS starts_at, o.expires_at::text AS expires_at, o.paid_at::text AS paid_at FROM orders o ORDER BY o.date DESC, o.id DESC) ord), '[]'::json),
       'refunds', COALESCE((SELECT json_agg(r) FROM (SELECT *, date::text AS date FROM refunds ORDER BY created_at DESC) r), '[]'::json),
+      'care_appointments', COALESCE((SELECT json_agg(ca) FROM (SELECT * FROM care_appointments ORDER BY scheduled_at) ca), '[]'::json),
       'campaigns', COALESCE((SELECT json_agg(cmp) FROM (SELECT * FROM campaigns ORDER BY created_at DESC) cmp), '[]'::json),
       'activity', COALESCE((SELECT json_agg(act) FROM (SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT 100) act), '[]'::json)
     ) AS full_data;
@@ -97,11 +102,16 @@ export async function loadData(db: Db = getDbPool()): Promise<AppData> {
       actor: refund.actor || '',
       serviceAction: refund.serviceAction || 'keep'
     })),
+    careAppointments: (Array.isArray(raw.care_appointments) ? raw.care_appointments : []).map(row => {
+      const item = mapRow(row as Row);
+      return { ...item, scheduledAt: timestamp(item.scheduledAt), createdAt: timestamp(item.createdAt), updatedAt: timestamp(item.updatedAt), completedAt: item.completedAt ? timestamp(item.completedAt) : null };
+    }),
     campaigns: campaigns.map(campaign => ({
       ...campaign,
       name: campaign.title,
       body: campaign.content || '',
       subject: campaign.subject || '',
+      scheduledAt: campaign.scheduledAt ? timestamp(campaign.scheduledAt) : null,
       date: String(campaign.createdAt).slice(0, 10)
     })),
     activity: activity.map(entry => ({
@@ -142,7 +152,8 @@ export async function saveChanges(db: Db, before: AppData, after: AppData): Prom
   for (const s of changed(before.subscriptions, after.subscriptions)) await upsert(db, 'subscriptions', { id: s.id, customer_id: s.customerId, product_id: s.productId, plan_id: s.planId, starts_at: s.startsAt, expires_at: s.expiresAt, price: s.price, cost: s.cost, cancelled: s.cancelled, reminded_at: s.remindedAt || null, last_order_id: s.lastOrderId || null, note: s.note || '' });
   for (const o of changed(before.orders, after.orders)) await upsert(db, 'orders', { id: o.id, customer_id: o.customerId, product_id: o.productId, plan_id: o.planId, subscription_id: o.subscriptionId || null, date: o.date, starts_at: o.startsAt, expires_at: o.expiresAt, price: o.price, cost: o.cost, payment: o.payment, paid_at: o.paidAt || null, status: o.status, kind: o.kind, note: o.note || '', previous_subscription: o.previousSubscription ? JSON.stringify(o.previousSubscription) : null });
   for (const r of changed(before.refunds, after.refunds)) await upsert(db, 'refunds', { id: r.id, operation_id: r.operationId, order_id: r.orderId, amount: r.amount, cost_recovered: r.costRecovered, date: r.date, reason: r.reason, method: r.method || 'other', reference: r.reference || '', actor: r.actor || '', service_action: r.serviceAction || 'keep' });
-  for (const c of changed(before.campaigns, after.campaigns)) await upsert(db, 'campaigns', { id: c.id, title: c.name, subject: c.subject, content: c.body, segment: c.segment, status: c.status });
+  for (const c of changed(before.campaigns, after.campaigns)) await upsert(db, 'campaigns', { id: c.id, title: c.name, subject: c.subject, content: c.body, segment: c.segment, status: c.status, scheduled_at: c.scheduledAt || null });
+  for (const item of changed(before.careAppointments, after.careAppointments)) await upsert(db, 'care_appointments', { id: item.id, customer_id: item.customerId, title: item.title, channel: item.channel, scheduled_at: item.scheduledAt, notes: item.notes, status: item.status, created_at: item.createdAt, updated_at: item.updatedAt, completed_at: item.completedAt });
   for (const a of after.activity.filter(item => !before.activity.some(old => old.id === item.id))) await upsert(db, 'activity_logs', { id: a.id, type: a.type, title: a.title, description: a.description, created_at: a.at });
 }
 

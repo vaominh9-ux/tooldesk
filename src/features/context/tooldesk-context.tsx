@@ -6,13 +6,14 @@ import { runtimeToday } from '@/lib/app-clock';
 import { commandSchema, executeCommand } from '@/domain/commands';
 import { dataSchema } from '@/domain/data-schema';
 import { createShortId } from '@/domain/orders';
+import type { CareAppointment } from '@/domain/care-scheduling';
 import type { RefundInput } from '@/domain/refunds';
 import { LoginPanel } from '@/features/auth/login-panel';
 import { BrandLogoMark } from '@/components/shared/app-icon';
 
 interface ToastItem { id: string; title: string; message?: string; type?: 'info' | 'success' | 'warning' | 'error' }
 interface DialogState {
-  type: 'create-order' | 'renew' | 'renew-subscription' | 'refund' | 'recover-cost' | 'pay-confirm' | 'customer' | 'order-detail' | 'customer-detail' | 'subscription-detail' | 'product' | 'edit-product' | 'plan' | 'add-plan' | 'campaign' | 'search' | 'activity' | 'help' | 'reset' | null;
+  type: 'create-order' | 'renew' | 'renew-subscription' | 'refund' | 'recover-cost' | 'pay-confirm' | 'customer' | 'order-detail' | 'customer-detail' | 'subscription-detail' | 'product' | 'edit-product' | 'plan' | 'add-plan' | 'campaign' | 'care-appointment' | 'search' | 'activity' | 'help' | 'reset' | null;
   payload?: string | { id?: string; orderId?: string; customerId?: string; subscriptionId?: string; productId?: string; planId?: string; mode?: string; segment?: string };
 }
 interface CustomerInput { name: string; email?: string; phone?: string; source?: string; notes?: string; emailConsent?: Customer['emailConsent']; consentSource?: string }
@@ -21,7 +22,7 @@ export interface UpdateOrderInput { orderId: string; price?: number; cost?: numb
 interface RenewalInput { subscriptionId: string; planId: string; startsAt: string; price: number; cost: number; payment?: 'paid' | 'unpaid' }
 interface ProductInput { name: string; symbol: string; category: string; description: string; plans: { name: string; duration: number; unit: 'months' | 'days'; price: number; cost: number }[] }
 interface UpdateProductInput { name: string; category?: string; description?: string; color?: string; symbol?: string }
-interface CampaignInput { id?: string; name: string; subject: string; body: string; segment: string }
+interface CampaignInput { id?: string; name: string; subject: string; body: string; segment: string; scheduledAt?: string }
 interface TooldeskContextType {
   data: TooldeskData;
   today: string;
@@ -49,6 +50,9 @@ interface TooldeskContextType {
   addPlan: (productId: string, plan: { name: string; duration: number; unit: 'months' | 'days'; price: number; cost: number }) => Promise<void>;
   deletePlan: (planId: string) => Promise<void>;
   saveCampaign: (input: CampaignInput) => Promise<void>;
+  cancelCampaign: (id: string) => Promise<void>;
+  saveCareAppointment: (input: Pick<CareAppointment, 'customerId' | 'title' | 'channel' | 'scheduledAt' | 'notes'> & { id?: string }) => Promise<void>;
+  finishCareAppointment: (id: string, status: 'completed' | 'cancelled') => Promise<void>;
   updateSettings: (input: Partial<ShopSettings>) => Promise<void>;
   markContacted: (subscriptionId: string) => Promise<void>;
   updateSubscriptionNote: (subscriptionId: string, note: string) => Promise<void>;
@@ -262,7 +266,10 @@ export function TooldeskProvider({ children, dataSource = 'mock', initialToday }
     updatePlan: async (planId, updates) => { await run({ type: 'update_plan', input: { planId, ...updates } }, 'Đã cập nhật gói bán'); },
     addPlan: async (productId, plan) => { await run({ type: 'add_plan', input: { productId, ...plan } }, 'Đã thêm gói dịch vụ'); },
     deletePlan: async planId => { await run({ type: 'delete_plan', input: { planId } }, 'Đã xóa gói dịch vụ'); },
-    saveCampaign: async input => { await run({ type: 'save_campaign', input }, 'Đã lưu bản nháp'); },
+    saveCampaign: async input => { await run({ type: 'save_campaign', input }, input.scheduledAt ? 'Đã lưu lịch chiến dịch · gửi tự động chưa bật' : 'Đã lưu bản nháp'); },
+    cancelCampaign: async id => { await run({ type: 'cancel_campaign', input: { id } }, 'Đã hủy lịch chiến dịch', false); },
+    saveCareAppointment: async input => { await run({ type: 'save_care_appointment', input }, 'Đã lưu lịch chăm sóc'); },
+    finishCareAppointment: async (id, status) => { await run({ type: 'finish_care_appointment', input: { id, status } }, status === 'completed' ? 'Đã hoàn tất lịch chăm sóc' : 'Đã hủy lịch chăm sóc', false); },
     updateSettings: async input => { await run({ type: 'update_settings', input }, 'Đã lưu cài đặt', false); },
     markContacted: async subscriptionId => {
       try { await run({ type: 'mark_contacted', input: { subscriptionId } }, 'Đã ghi nhận liên hệ', false); }

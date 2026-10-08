@@ -1,5 +1,5 @@
 /* Tooldesk v0.2 stylesheet */
-:root{--bg:#f6f7fb;--surface:#fff;--ink:#202a43;--muted:#778197;--line:#e8ebf2;--accent:#5963e8;--accent-dark:#4651d6;--accent-soft:#eff0ff;--green:#15775c;--amber:#9d6817;--red:#b14949;--radius:14px;--shadow:0 3px 15px rgba(29,39,71,.035);--sidebar:224px;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;font-size:14px;color:var(--ink);font-synthesis:none}
+
 
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);-webkit-font-smoothing:antialiased}
@@ -452,11 +452,7 @@ to{transform:translateY(0);opacity:1}
 /* Tooldesk 0.2 - single-system responsive interface.
    1024+ px: tables; <1024 px: semantic record cards and bottom navigation.
    Controls never depend on hover alone. Phone input text stays >=16px. */
-:root {
-  --sidebar: 236px; --ink: #202b45; --muted: #64748b; --line: #e7ebf3;
-  --accent: #555fdb; --accent-dark: #434cc6; --red: #ad3e4b;
-  --green: #166b52; --amber: #8e621a; --radius: 16px;
-}
+
 html { scroll-padding-top: 88px; }
 body { line-height: 1.5; }
 button, a, input, select, textarea { touch-action: manipulation; }
@@ -691,7 +687,7 @@ dialog.drawer { width:540px; max-width:100%; }
 .toast strong { font-size:13px; }
 .toast p { font-size:12px; }
 @media (min-width:1600px) {
-  :root { --sidebar:252px; }
+
   main { padding:36px 42px 24px; }
   .topbar { padding-inline:42px; }
   .sidebar { padding-inline:22px; }
@@ -720,7 +716,7 @@ dialog.drawer { width:540px; max-width:100%; }
   .customer-layout { grid-template-columns:minmax(0,1fr) 275px; }
 }
 @media (min-width:1024px) and (max-width:1199px) {
-  :root { --sidebar:80px; }
+
   .sidebar { padding:24px 10px; align-items:center; overflow:visible; }
   .brand { padding:0; margin-bottom:34px; }
   .brand-name, .sidebar-caption, .nav-label, .nav-item>span, .sidebar-user>span, .sidebar-user>.icon { display:none; }
@@ -737,7 +733,7 @@ dialog.drawer { width:540px; max-width:100%; }
   .topbar { padding-inline:26px; }
 }
 @media (max-width:1023px) {
-  :root { --sidebar:280px; }
+
   .sidebar { transform:translateX(-100%); transition:transform .2s ease; z-index:60; width:min(320px,calc(100vw - 44px)); padding:26px 18px; }
   .sidebar.open { transform:translateX(0); }
   .sidebar-overlay.show { display:block; position:fixed; inset:0; z-index:55; background:#15234066; backdrop-filter:blur(3px); }

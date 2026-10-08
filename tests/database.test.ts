@@ -16,6 +16,7 @@ beforeAll(async () => {
   await db.exec('CREATE ROLE anon; CREATE ROLE authenticated;');
   await db.exec(readFileSync('supabase/schema.sql', 'utf8'));
   await db.exec(readFileSync('supabase/migrations/20261007_backend_foundation.sql', 'utf8'));
+  await db.exec(readFileSync('supabase/migrations/20261008_care_scheduling.sql', 'utf8'));
   client = { query: async (text: string, values?: unknown[]) => { const result = await db.query(text, values); return { ...result, rowCount: result.affectedRows ?? result.rows.length }; } } as unknown as Pick<PoolClient, 'query'>;
   const fixture = dataSchema.parse(createInitialData());
   const empty = { ...fixture, customers: [], products: [], subscriptions: [], orders: [], refunds: [], campaigns: [], activity: [] };
@@ -24,6 +25,27 @@ beforeAll(async () => {
 afterAll(async () => { await db?.close(); });
 
 describe('PostgreSQL migration and repository (isolated PGlite)', () => {
+  it('persists care appointments and campaign schedules with canonical UTC timestamps', async () => {
+    const before = await loadData(client);
+    let sequence = 0;
+    const operation = { today: '2026-10-07', now: '2026-10-07T03:00:00.000Z', actor: 'test', newId: (prefix: string) => `${prefix}-schedule-${++sequence}` };
+    const result = executeCommand(before, commandSchema.parse({ type: 'save_care_appointment', input: { customerId: before.customers[0].id, title: 'Theo dõi sử dụng', channel: 'zalo', notes: '', scheduledAt: '2026-10-07T17:30:00.000Z' } }), operation);
+    const campaign = executeCommand(result.data, commandSchema.parse({ type: 'save_campaign', input: { name: 'Chuẩn bị ưu đãi', subject: 'Gia hạn', body: 'Xin chào', segment: 'all', scheduledAt: '2026-10-08T02:00:00.000Z' } }), operation);
+    await db.exec('BEGIN'); await saveChanges(client, before, campaign.data); await db.exec('COMMIT');
+    const loaded = await loadData(client);
+    expect(loaded.careAppointments.find(item => item.id === result.resultId)).toMatchObject({ scheduledAt: '2026-10-07T17:30:00.000Z', completedAt: null });
+    expect(loaded.campaigns.find(item => item.id === campaign.resultId)?.scheduledAt).toBe('2026-10-08T02:00:00.000Z');
+    const completed = executeCommand(loaded, commandSchema.parse({ type: 'finish_care_appointment', input: { id: result.resultId, status: 'completed' } }), operation);
+    await saveChanges(client, loaded, completed.data);
+    expect((await loadData(client)).careAppointments.find(item => item.id === result.resultId)?.completedAt).toBe(operation.now);
+  });
+  it('restricts invalid care state and enables RLS on care and scheduler history', async () => {
+    const data = await loadData(client);
+    const item = data.careAppointments[0];
+    await expect(db.query("UPDATE care_appointments SET status='completed',completed_at=NULL WHERE id=$1", [item.id])).rejects.toThrow();
+    const rls = await db.query<{ relrowsecurity: boolean }>("SELECT relrowsecurity FROM pg_class WHERE relname IN ('care_appointments','reminder_runs')");
+    expect(rls.rows).toHaveLength(2); expect(rls.rows.every(row => row.relrowsecurity)).toBe(true);
+  });
   it('loads integer VND and date-only fields with no malformed DATE mapping', async () => {
     const data = await loadData(client);
     expect(data.orders.length).toBeGreaterThan(0);

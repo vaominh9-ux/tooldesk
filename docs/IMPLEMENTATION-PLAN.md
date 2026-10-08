@@ -41,3 +41,14 @@ Chuyển đổi giao diện nguyên bản Tooldesk v0.2 sang cấu trúc **Next.
 - [ ] Chạy Build hoàn chỉnh (`next build`).
 - [ ] Chạy E2E / kiểm tra hiển thị responsive qua browser subagent & chụp ảnh desktop/mobile.
 - [ ] Lập báo cáo bàn giao chi tiết.
+
+## Bàn giao nâng cấp 08/10/2026
+
+- [x] Lịch chăm sóc từng khách: tạo/sửa, lọc đến hạn, hoàn tất/hủy, nhắc trong ứng dụng và truy cập từ hồ sơ khách.
+- [x] Lưu/đổi/hủy lịch chuẩn bị chiến dịch; gửi tự động vẫn tắt.
+- [x] Theo dõi lịch sử chạy worker và hàng đợi, phân biệt đang tải/lỗi/chưa có dữ liệu.
+- [x] Một nguồn design token, phản hồi/toast dùng chung, nhật ký tiếng Việt và nút hoạt động trên mobile.
+- [x] Typecheck, 114 test, build và 45 lượt kiểm tra trang responsive; luồng lịch hẹn/chiến dịch kiểm tra ở 320/393/768/1440 px.
+- [ ] Áp dụng migration và xác nhận scheduler trên hệ thống thật khi được yêu cầu. Chưa kết nối gửi chiến dịch/chăm sóc tự động.
+
+Chi tiết luồng và giới hạn vận hành: [CARE-SCHEDULING.md](CARE-SCHEDULING.md).

@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { daySchema, moneySchema, settingsSchema, type AppData } from './data-schema';
 import { addDuration } from './dates';
+import { careChannels, instantSchema, requireFutureAppointment } from './care-scheduling';
+import { audienceFor } from './orders';
 import { renewalDates } from './subscriptions';
 import { validateRefundInput } from './refunds';
 import { orderEditPolicy } from './order-edit-policy';
@@ -26,7 +28,10 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('add_product'), input: z.object({ name: z.string().trim().min(1).max(80), symbol: z.string().trim().max(4), category: z.string().trim().max(100), description: z.string().trim().max(1000), plans: z.array(z.object({ name: z.string().trim().min(1).max(80), duration: z.number().int().min(1).max(1200), unit: z.enum(['months', 'days']), price: moneySchema, cost: moneySchema }).strict()).min(1).max(20) }).strict() }).strict(),
   z.object({ type: z.literal('update_product'), input: z.object({ productId: id, name: z.string().trim().min(1).max(80), category: z.string().trim().max(100).optional(), description: z.string().trim().max(1000).optional(), color: z.string().trim().max(30).optional(), symbol: z.string().trim().max(4).optional() }).strict() }).strict(),
   z.object({ type: z.literal('delete_product'), input: z.object({ productId: id }).strict() }).strict(),
-  z.object({ type: z.literal('save_campaign'), input: z.object({ id: id.optional(), name: z.string().trim().min(1).max(120), subject: z.string().trim().min(1).max(180), body: z.string().trim().min(1).max(5000), segment: z.enum(['all', 'active', 'expiring', 'expired', 'vip']) }).strict() }).strict()
+  z.object({ type: z.literal('save_campaign'), input: z.object({ id: id.optional(), name: z.string().trim().min(1).max(120), subject: z.string().trim().min(1).max(180), body: z.string().trim().min(1).max(5000), segment: z.enum(['all', 'active', 'expiring', 'expired', 'vip']), scheduledAt: instantSchema.optional() }).strict() }).strict(),
+  z.object({ type: z.literal('cancel_campaign'), input: z.object({ id }).strict() }).strict(),
+  z.object({ type: z.literal('save_care_appointment'), input: z.object({ id: id.optional(), customerId: id, title: z.string().trim().min(1).max(120), channel: z.enum(careChannels), scheduledAt: instantSchema, notes: z.string().trim().max(2000).default('') }).strict() }).strict(),
+  z.object({ type: z.literal('finish_care_appointment'), input: z.object({ id, status: z.enum(['completed', 'cancelled']) }).strict() }).strict()
 ]);
 export type Command = z.infer<typeof commandSchema>;
 export interface Operation { today: string; now: string; actor: string; newId: (prefix: string) => string }
@@ -242,12 +247,54 @@ export function executeCommand(original: AppData, command: Command, operation: O
     case 'save_campaign': {
       const existing = data.campaigns.find(campaign => campaign.id === command.input.id);
       if (command.input.id && !existing) throw new Error('Không tìm thấy chiến dịch.');
-      if (existing && existing.status !== 'draft') throw new Error('Chỉ sửa chiến dịch nháp.');
-      const campaign = { ...command.input, id: existing?.id || newId('cp'), date: today, status: 'draft' as const };
+      if (existing?.status === 'sent') throw new Error('Không thể sửa chiến dịch đã gửi.');
+      if (command.input.scheduledAt) {
+        requireFutureAppointment(command.input.scheduledAt, operation.now);
+        if (!audienceFor(data, command.input.segment, today).eligible.length) throw new Error('Chưa có email đủ điều kiện trong nhóm khách này.');
+      }
+      const campaign = { ...command.input, scheduledAt: command.input.scheduledAt || null, id: existing?.id || newId('cp'), date: today, status: command.input.scheduledAt ? 'scheduled' as const : 'draft' as const };
       if (existing) Object.assign(existing, campaign); else data.campaigns.unshift(campaign);
       resultId = campaign.id; break;
     }
+    case 'cancel_campaign': {
+      const campaign = data.campaigns.find(item => item.id === command.input.id);
+      if (!campaign || campaign.status !== 'scheduled') throw new Error('Chiến dịch không có lịch đang chờ.');
+      campaign.status = 'cancelled'; resultId = campaign.id; break;
+    }
+    case 'save_care_appointment': {
+      const input = command.input;
+      if (!data.customers.some(customer => customer.id === input.customerId)) throw new Error('Khách hàng không tồn tại.');
+      requireFutureAppointment(input.scheduledAt, operation.now);
+      const existing = data.careAppointments.find(item => item.id === input.id);
+      if (input.id && !existing) throw new Error('Không tìm thấy lịch hẹn.');
+      if (existing && existing.status !== 'scheduled') throw new Error('Lịch đã hoàn tất hoặc hủy. Hãy tạo lịch mới.');
+      const appointment = { ...input, id: existing?.id || newId('care'), status: 'scheduled' as const, createdAt: existing?.createdAt || operation.now, updatedAt: operation.now, completedAt: null };
+      if (existing) Object.assign(existing, appointment); else data.careAppointments.unshift(appointment);
+      resultId = appointment.id; break;
+    }
+    case 'finish_care_appointment': {
+      const item = data.careAppointments.find(item => item.id === command.input.id);
+      if (!item || item.status !== 'scheduled') throw new Error('Lịch này không còn chờ xử lý.');
+      item.status = command.input.status; item.updatedAt = operation.now;
+      item.completedAt = item.status === 'completed' ? operation.now : null;
+      resultId = item.id; break;
+    }
   }
-  data.activity.unshift({ id: newId('act'), type: command.type === 'record_payment' ? 'payment' : command.type === 'renew_subscription' ? 'renewal' : command.type === 'mark_contacted' ? 'reminder' : 'created', title: 'Đã cập nhật dữ liệu', description: operation.actor + ' · ' + command.type + ' · ' + (resultId || ''), at: operation.now });
+  data.activity.unshift({ id: newId('act'), ...commandActivity(command, resultId, operation.actor), at: operation.now });
   return { data, resultId };
+}
+
+function commandActivity(command: Command, resultId: string | undefined, actor: string): Pick<AppData['activity'][number], 'type' | 'title' | 'description'> {
+  const labels: Record<Command['type'], string> = {
+    create_order: 'Tạo đơn hàng', update_order: 'Sửa đơn hàng', record_payment: 'Ghi nhận thanh toán',
+    renew_subscription: 'Gia hạn gói dịch vụ', record_refund: command.type === 'record_refund' && command.input.amount === 0 ? 'Ghi nhận thu hồi giá vốn' : 'Ghi nhận hoàn tiền',
+    add_customer: 'Thêm khách hàng', update_customer: 'Cập nhật khách hàng', mark_contacted: 'Ghi nhận liên hệ',
+    update_subscription_note: 'Cập nhật ghi chú gói', update_settings: 'Cập nhật cài đặt',
+    update_plan: 'Cập nhật gói bán', add_plan: 'Thêm gói bán', delete_plan: 'Xóa gói bán',
+    add_product: 'Thêm sản phẩm', update_product: 'Cập nhật sản phẩm', delete_product: 'Xóa sản phẩm',
+    save_campaign: 'Lưu chiến dịch', cancel_campaign: 'Hủy lịch chiến dịch',
+    save_care_appointment: 'Lưu lịch chăm sóc', finish_care_appointment: command.type === 'finish_care_appointment' && command.input.status === 'completed' ? 'Hoàn tất lịch chăm sóc' : 'Hủy lịch chăm sóc'
+  };
+  const type: AppData['activity'][number]['type'] = command.type === 'record_payment' ? 'payment' : command.type === 'renew_subscription' ? 'renewal' : command.type === 'record_refund' ? (command.input.amount === 0 ? 'cost_recovery' : 'refund') : command.type === 'mark_contacted' ? 'reminder' : command.type.startsWith('add_') || command.type === 'create_order' ? 'created' : 'updated';
+  return { type, title: labels[command.type], description: actor + (resultId ? ' · ' + resultId : '') };
 }

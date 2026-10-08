@@ -1,3 +1,4 @@
+import type { CareAppointment } from '../domain/care-scheduling';
 import { addDays, DEFAULT_APP_TODAY } from '../domain/dates';
 
 export interface ProductPlan {
@@ -90,7 +91,8 @@ export interface Campaign {
   subject: string;
   segment: string;
   body: string;
-  status: 'draft' | 'scheduled' | 'sent';
+  status: 'draft' | 'scheduled' | 'sent' | 'cancelled';
+  scheduledAt?: string | null;
   date: string;
 }
 
@@ -118,6 +120,7 @@ export interface TooldeskData {
   orders: Order[];
   refunds: Refund[];
   campaigns: Campaign[];
+  careAppointments: CareAppointment[];
   activity: ActivityLog[];
   settings: ShopSettings;
 }
@@ -380,6 +383,7 @@ export function createInitialData(): TooldeskData {
     orders,
     refunds,
     campaigns,
+    careAppointments: [],
     activity,
     settings
   };
@@ -396,6 +400,7 @@ export function createEmptyProductionData(): TooldeskData {
     orders: [],
     refunds: [],
     campaigns: [],
+    careAppointments: [],
     activity: []
   };
 }

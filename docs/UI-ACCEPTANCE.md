@@ -32,7 +32,11 @@
    - Chi tiết các gói 1 tháng, 3 tháng, 1 năm với giá bán và giá vốn.
 6. **Chiến dịch (Campaigns)**:
    - Soạn thảo và xem trước danh sách người nhận (bản nháp/xem trước, KHÔNG gửi tin thật).
+   - Lịch chăm sóc từng khách: tạo/sửa, lọc đến hạn, xác nhận hoàn tất/hủy; giờ Việt Nam, phản hồi lỗi rõ ràng và bảng desktop/thẻ mobile.
+   - Lịch chuẩn bị chiến dịch hiển thị đúng trạng thái, ngày giờ; nói rõ gửi tự động chưa bật.
 7. **Báo cáo (Reports)**:
    - Chọn tháng báo cáo, tính dòng tiền thực thu, giá vốn, hoàn tiền, lãi gộp.
 8. **Cài đặt (Settings)**:
    - Cài đặt tên shop, người quản lý, số ngày nhắc hạn, trạng thái kết nối.
+   - Theo dõi lịch sử chạy thật, tác vụ nhắc lỗi/lâu chưa chạy và hàng đợi. Không coi có cấu hình là bằng chứng lịch hoạt động.
+   - Đang tải/lỗi/chưa có dữ liệu phân biệt rõ, phản hồi SMTP và toast dùng token chung.

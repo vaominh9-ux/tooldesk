@@ -6,6 +6,8 @@ import React, { useState } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
 import { audienceFor } from '@/domain/orders';
+import { fromHoChiMinhInput, toHoChiMinhInput } from '@/domain/care-scheduling';
+import { Feedback } from '@/components/shared/feedback';
 
 const segmentLabels: Record<string, string> = {
   all: 'Tất cả khách hàng',
@@ -24,12 +26,12 @@ export function CampaignDialog({
   segment?: string;
   onClose: () => void;
 }) {
-  const { data, saveCampaign, addToast, today } = useTooldesk();
+  const { data, saveCampaign, pending, role, today } = useTooldesk();
   const backdropDismiss = useBackdropDismiss(onClose);
 
   const existing = campaignId ? data.campaigns.find(item => item.id === campaignId) : null;
 
-  const [step, setStep] = useState<number>(1);
+  const [step, setStep] = useState<number>(existing?.status === 'sent' ? 3 : 1);
   const [selectedSegment, setSelectedSegment] = useState<string>(
     existing?.segment || (segment && segmentLabels[segment] ? segment : 'all')
   );
@@ -40,6 +42,9 @@ export function CampaignDialog({
       'Chào {ten_khach},\n\nGói dịch vụ của bạn tại {thuong_hieu} sắp đến hạn. Chúng tôi gửi bạn ưu đãi gia hạn sớm với mức giá tốt nhất.\n\nLiên hệ lại để được hỗ trợ kích hoạt ngay nhé!'
   );
   const [error, setError] = useState<string>('');
+  const [schedule, setSchedule] = useState(existing?.status === 'scheduled');
+  const [when, setWhen] = useState(existing?.scheduledAt ? toHoChiMinhInput(existing.scheduledAt) : '');
+  const readOnly = existing?.status === 'sent' || role === 'viewer';
 
   const audience = audienceFor(data, selectedSegment, today);
   const firstEligible = audience.eligible[0];
@@ -50,6 +55,7 @@ export function CampaignDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (readOnly) return;
     if (!name.trim() || !subject.trim() || !body.trim()) {
       setError('Vui lòng nhập đầy đủ tên chiến dịch, tiêu đề và nội dung.');
       return;
@@ -60,7 +66,8 @@ export function CampaignDialog({
       name: name.trim(),
       segment: selectedSegment,
       subject: subject.trim(),
-      body: body.trim()
+      body: body.trim(),
+      ...(schedule ? { scheduledAt: fromHoChiMinhInput(when) } : {})
     });
 
     onClose();
@@ -153,7 +160,7 @@ export function CampaignDialog({
                   <div className="hint-banner neutral" style={{ marginTop: '20px' }}>
                     <AppIcon name="lock" size={18} />
                     <span>
-                      Bạn đang thiết kế chiến dịch, chưa gửi bất kỳ email nào. Dữ liệu hiện tại chỉ để thử giao diện.
+                      Bạn đang chuẩn bị nội dung. Việc lưu nháp hoặc hẹn lịch không gửi bất kỳ email nào.
                     </span>
                   </div>
                 </div>
@@ -198,7 +205,7 @@ export function CampaignDialog({
                     <input
                       name="name"
                       value={name}
-                      maxLength={100}
+                      maxLength={120}
                       required
                       placeholder="Ví dụ: Ưu đãi khách hàng tháng 10"
                       onChange={e => setName(e.target.value)}
@@ -210,7 +217,7 @@ export function CampaignDialog({
                     <input
                       name="subject"
                       value={subject}
-                      maxLength={150}
+                      maxLength={180}
                       required
                       placeholder="Một ưu đãi dành riêng cho bạn"
                       onChange={e => setSubject(e.target.value)}
@@ -222,7 +229,7 @@ export function CampaignDialog({
                     <textarea
                       name="body"
                       required
-                      maxLength={10000}
+                      maxLength={5000}
                       rows={7}
                       value={body}
                       onChange={e => setBody(e.target.value)}
@@ -271,6 +278,8 @@ export function CampaignDialog({
                   </span>
                 </div>
 
+                {!readOnly && <div className="campaign-schedule-controls"><label className="confirm-check"><input type="checkbox" checked={schedule} onChange={event => setSchedule(event.target.checked)} /><span>Hẹn lịch chuẩn bị chiến dịch</span></label>{schedule && <><label className="field"><span>Ngày giờ hẹn (giờ Việt Nam)</span><input type="datetime-local" required value={when} onChange={event => setWhen(event.target.value)} /></label><Feedback tone="warning">Lịch được lưu để theo dõi. Gửi tự động chưa bật; email không được gửi khi đến giờ hẹn.</Feedback></>}</div>}
+                {readOnly && <Feedback>Chiến dịch chỉ được xem ở trạng thái này.</Feedback>}
                 <div className="review-grid">
                   <div>
                     <div className="review-card">
@@ -408,17 +417,9 @@ export function CampaignDialog({
                   <AppIcon name="left" size={14} />
                   <span>Quay lại</span>
                 </button>
-                <button
-                  type="button"
-                  className="button"
-                  disabled
-                  title="Chưa kết nối dịch vụ gửi"
-                >
-                  Gửi chiến dịch
-                </button>
-                <button type="submit" className="button primary">
+<button type="submit" className="button primary" disabled={pending || readOnly || (schedule && !audience.eligible.length)}>
                   <AppIcon name="check" size={15} />
-                  <span>Lưu bản nháp</span>
+                  <span>{schedule ? 'Lưu lịch chuẩn bị' : 'Lưu bản nháp'}</span>
                 </button>
               </>
             )}

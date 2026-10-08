@@ -26,6 +26,24 @@ beforeEach(() => {
 });
 afterEach(() => { vi.useRealTimers(); });
 describe('Reminder worker safety', () => {
+  it('records successful scheduler runs and explicit waiting before the send hour', async () => {
+    vi.setSystemTime(new Date('2026-10-07T00:00:00Z'));
+    expect(await runReminderWorker()).toMatchObject({ waitingForSendHour: true, sent: 0 });
+    expect(mocks.send).not.toHaveBeenCalled();
+    expect(mocks.query.mock.calls.some(call => String(call[0]).startsWith('INSERT INTO reminder_runs'))).toBe(true);
+    expect(mocks.query.mock.calls.some(call => Array.isArray(call[1]) && call[1][1] === 'waiting')).toBe(true);
+  });
+  it('records worker failure rather than reporting an empty successful run', async () => {
+    mocks.load.mockRejectedValue(new Error('Database unavailable'));
+    await expect(runReminderWorker()).rejects.toThrow('Database unavailable');
+    expect(mocks.query.mock.calls.some(call => String(call[0]).includes("status='failed',error=$2"))).toBe(true);
+    expect(mocks.send).not.toHaveBeenCalled();
+  });
+  it('marks runs requiring reconciliation when SMTP times out', async () => {
+    mocks.send.mockRejectedValue(new Error('Timeout'));
+    await runReminderWorker();
+    expect(mocks.query.mock.calls.some(call => Array.isArray(call[1]) && call[1][1] === 'attention' && call[1][5] === 1)).toBe(true);
+  });
   it('does not touch database while email sending is disabled', async () => {
     mocks.configured.mockReturnValue(false);
     expect(await runReminderWorker()).toMatchObject({ enabled: false, sent: 0 });

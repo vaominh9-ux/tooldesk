@@ -7,6 +7,7 @@ import { Topbar } from './topbar';
 import { MobileNavigation } from './mobile-navigation';
 import { GlobalDialogs } from '../dialogs/global-dialogs';
 import { useTooldesk } from '@/features/context/tooldesk-context';
+import { CareDueNotice } from '@/features/communications/care-due-notice';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -60,6 +61,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           />
 
           <main id="main" className={`page-${routeName}`} tabIndex={-1}>
+            {dataStatus !== 'loading' && dataStatus !== 'error' && <CareDueNotice />}
             {(pending || dataStatus === 'error') && (
               <div className={`data-notice ${dataStatus === 'error' ? 'error' : ''}`} role="status">
                 <span>{pending ? 'Đang lưu dữ liệu… Vui lòng chờ.' : 'Mất kết nối máy chủ. Đang hiển thị dữ liệu đã tải; thao tác lưu tạm khóa đến khi kết nối lại.'}</span>

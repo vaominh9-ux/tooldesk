@@ -126,6 +126,7 @@ export function CustomerDetailDialog({
 
             {/* Note History */}
             <CustomerNotes customer={customer} title="Lịch sử ghi chú chăm sóc" />
+            <div className="customer-care-shortcut"><button type="button" className="button" onClick={() => openDialog('care-appointment', { customerId: customer.id })}><AppIcon name="calendar" size={16} />Hẹn lịch chăm sóc</button></div>
 
             {/* Active Subscriptions */}
             <div style={{ marginBottom: '22px' }}>

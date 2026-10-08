@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { AppIcon } from '@/components/shared/app-icon';
+import { Feedback } from '@/components/shared/feedback';
 
 const viewSchema = z.object({ host: z.string(), port: z.union([z.literal(465), z.literal(587)]), user: z.string(), fromEmail: z.string(), fromName: z.string(), enabled: z.boolean(), sendHour: z.number(), hasPassword: z.boolean(), source: z.string(), canEdit: z.boolean(), demo: z.boolean(), storageReady: z.boolean() });
 type View = z.infer<typeof viewSchema>;
@@ -13,21 +14,22 @@ async function readResponse(response: Response): Promise<unknown> {
 }
 export function SmtpSettingsPanel() {
   const [view, setView] = useState(empty), [saved, setSaved] = useState<View | null>(null);
+  const [tone, setTone] = useState<'info' | 'success' | 'error'>('info');
   const [password, setPassword] = useState(''), [message, setMessage] = useState(''), [busy, setBusy] = useState(false);
-  useEffect(() => { let mounted = true; fetch('/api/settings/email', { cache: 'no-store' }).then(readResponse).then(value => { if (mounted) { const parsed = viewSchema.parse(value); setView(parsed); setSaved(parsed); } }).catch(error => { if (mounted) setMessage(error instanceof Error ? error.message : 'Không tải được SMTP.'); }); return () => { mounted = false; }; }, []);
+  useEffect(() => { let mounted = true; fetch('/api/settings/email', { cache: 'no-store' }).then(readResponse).then(value => { if (mounted) { const parsed = viewSchema.parse(value); setView(parsed); setSaved(parsed); } }).catch(error => { if (mounted) { setTone('error'); setMessage(error instanceof Error ? error.message : 'Không tải được SMTP.'); } }); return () => { mounted = false; }; }, []);
   const change = <K extends keyof View>(key: K, value: View[K]) => setView(previous => ({ ...previous, [key]: value }));
   const save = async (event: React.FormEvent) => {
     event.preventDefault(); setBusy(true); setMessage('');
     try {
       const { host, port, user, fromEmail, fromName, enabled, sendHour } = view;
       const response = await fetch('/api/settings/email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ host, port, user, fromEmail, fromName, enabled, sendHour, password: password || undefined }) });
-      const parsed = viewSchema.parse(await readResponse(response)); setSaved(parsed); setView(parsed); setPassword(''); setMessage('Đã lưu cấu hình SMTP mã hóa phía server.');
-    } catch (error) { setMessage(error instanceof Error ? error.message : 'Không lưu được SMTP.'); } finally { setBusy(false); }
+      const parsed = viewSchema.parse(await readResponse(response)); setSaved(parsed); setView(parsed); setPassword(''); setTone('success'); setMessage('Đã lưu cấu hình SMTP mã hóa phía server.');
+    } catch (error) { setTone('error'); setMessage(error instanceof Error ? error.message : 'Không lưu được SMTP.'); } finally { setBusy(false); }
   };
   const verify = async () => {
-    setBusy(true); setMessage('Đang kiểm tra TLS và tài khoản SMTP…');
-    try { const result = z.object({ message: z.string() }).parse(await readResponse(await fetch('/api/settings/email/verify', { method: 'POST' }))); setMessage(result.message); }
-    catch (error) { setMessage(error instanceof Error ? error.message : 'Kiểm tra SMTP thất bại.'); } finally { setBusy(false); }
+    setBusy(true); setTone('info'); setMessage('Đang kiểm tra TLS và tài khoản SMTP…');
+    try { const result = z.object({ message: z.string() }).parse(await readResponse(await fetch('/api/settings/email/verify', { method: 'POST' }))); setTone('success'); setMessage(result.message); }
+    catch (error) { setTone('error'); setMessage(error instanceof Error ? error.message : 'Kiểm tra SMTP thất bại.'); } finally { setBusy(false); }
   };
   return <article id="smtp-settings" className="panel smtp-settings-panel">
     <div className="section-heading"><div><h2>Cấu hình email SMTP</h2><p>Thiết lập máy chủ gửi email và thời gian nhắc gia hạn.</p></div><span className={saved?.enabled ? 'badge green' : 'badge neutral'}>{saved?.enabled ? 'Đang bật gửi' : 'Đang tắt gửi'}</span></div>
@@ -48,7 +50,7 @@ export function SmtpSettingsPanel() {
       </fieldset>
       <div className="settings-actions"><button type="submit" className="button primary" disabled={busy || !saved?.canEdit || !saved.storageReady}><AppIcon name="check" />Lưu cấu hình SMTP</button><button type="button" className="button" disabled={busy || !saved?.canEdit || !saved.hasPassword} onClick={() => void verify()}><AppIcon name="shield" />Kiểm tra kết nối đã lưu</button></div>
       <p className="dialog-note">Kiểm tra kết nối chỉ xác thực SMTP, không gửi email. {busy ? 'Đang xử lý…' : ''}</p>
-      {message && <p className="dialog-note" role="status">{message}</p>}
+      {message && <Feedback tone={tone}>{message}</Feedback>}
     </form>
   </article>;
 }

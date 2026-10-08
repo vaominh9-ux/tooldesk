@@ -11,11 +11,24 @@ export async function runReminderWorker() {
   // Disabled mode never marks a reminder or consumes its delivery attempt.
   const { config } = await readSmtpConfig();
   if (!config?.enabled) return { enabled: false, sent: 0, failed: 0, cancelled: 0, unknown: 0 };
+  const runId = randomUUID();
+  await getDbPool().query("INSERT INTO reminder_runs (id,status) VALUES ($1,'running')", [runId]);
+  try {
+    const result = await processReminders(config.sendHour);
+    const status = result.waitingForSendHour ? 'waiting' : result.failed || result.unknown ? 'attention' : 'completed';
+    await getDbPool().query('UPDATE reminder_runs SET finished_at=NOW(),status=$2,sent_count=$3,failed_count=$4,cancelled_count=$5,unknown_count=$6 WHERE id=$1', [runId, status, result.sent, result.failed, result.cancelled, result.unknown]);
+    return result;
+  } catch (error) {
+    await getDbPool().query("UPDATE reminder_runs SET finished_at=NOW(),status='failed',error=$2 WHERE id=$1", [runId, (error instanceof Error ? error.message : 'Tác vụ nhắc thất bại.').slice(0, 500)]);
+    throw error;
+  }
+}
+
+async function processReminders(sendHour: number) {
   const today = todayInHoChiMinh();
-  const sendHour = config.sendHour;
   if (!Number.isInteger(sendHour) || sendHour < 0 || sendHour > 23) throw new Error('REMINDER_SEND_HOUR phải từ 0 đến 23.');
   const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', hourCycle: 'h23' }).format(new Date()));
-  if (hour < sendHour) return { enabled: true, waitingForSendHour: true };
+  if (hour < sendHour) return { enabled: true, waitingForSendHour: true, sent: 0, failed: 0, cancelled: 0, unknown: 0 };
   await transaction(async client => {
     await client.query('SELECT pg_advisory_xact_lock(718326)');
     for (const item of reminderCandidates(await loadData(client), today)) {
@@ -57,5 +70,5 @@ export async function runReminderWorker() {
       await getDbPool().query("UPDATE email_outbox SET status=CASE WHEN attempts>=3 AND $2='retry' THEN 'failed' ELSE $2 END,last_error=$3,next_attempt_at=NOW()+INTERVAL '15 minutes' WHERE id=$1 AND status='sending'", [job.id, state, message.slice(0, 500)]);
     }
   }
-  return { enabled: true, sent, failed, cancelled, unknown };
+  return { enabled: true, waitingForSendHour: false, sent, failed, cancelled, unknown };
 }
