@@ -48,15 +48,29 @@ export function zaloNotificationCandidates(data: TooldeskData, today: string, no
   return items;
 }
 
-const pairingUpdateSchema = z.object({ ok: z.literal(true), result: z.object({
+const rawEventSchema = z.object({
   event_name: z.literal('message.text.received'),
-  message: z.object({ from: z.object({ id: z.string().min(1).max(200), display_name: z.string().max(200).optional(), is_bot: z.literal(false) }), chat: z.object({ id: z.string().min(1).max(200), chat_type: z.literal('PRIVATE') }), text: z.string().max(2000) }),
-}) });
+  message: z.object({
+    from: z.object({ id: z.string().min(1).max(200), display_name: z.string().max(200).optional(), is_bot: z.boolean().optional() }),
+    chat: z.object({ id: z.string().min(1).max(200), chat_type: z.string().optional() }),
+    text: z.string().max(2000)
+  }),
+});
+
+const wrappedEventSchema = z.object({
+  ok: z.literal(true),
+  result: rawEventSchema
+});
+
 export function zaloPairingMessage(input: unknown) {
-  const parsed = pairingUpdateSchema.safeParse(input);
-  if (!parsed.success) return null;
-  const message = parsed.data.result.message;
-  const match = message.text.trim().match(/^\/tooldesk ([a-f0-9]{24})$/i);
-  if (!match || message.chat.id !== message.from.id) return null;
+  const direct = rawEventSchema.safeParse(input);
+  const event = direct.success ? direct.data : wrappedEventSchema.safeParse(input).data?.result;
+  if (!event) return null;
+  const message = event.message;
+  if (message.from.is_bot === true) return null;
+  if (message.chat.chat_type && message.chat.chat_type !== 'PRIVATE') return null;
+  const match = message.text.trim().match(/^\/tooldesk\s+([a-f0-9]{24})$/i);
+  if (!match) return null;
   return { code: match[1].toLowerCase(), chatId: message.chat.id, name: message.from.display_name || 'Người nhận Zalo' };
 }
+
