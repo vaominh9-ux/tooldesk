@@ -40,6 +40,7 @@ interface TooldeskContextType {
   createOrder: (input: CreateOrderInput) => Promise<Order>;
   updateOrder: (input: UpdateOrderInput) => Promise<void>;
   renewSubscription: (input: RenewalInput) => Promise<Order>;
+  stopSubscriptionTracking: (subscriptionId: string, expectedExpiresAt: string, reason: string) => Promise<void>;
   recordPayment: (orderId: string, paidAt?: string) => Promise<void>;
   processRefund: (input: RefundInput) => Promise<void>;
   addCustomer: (input: CustomerInput) => Promise<Customer>;
@@ -257,6 +258,7 @@ export function TooldeskProvider({ children, dataSource = 'mock', initialToday }
     createOrder: async input => { const result = await run({ type: 'create_order', input }, 'Đã tạo đơn'); const order = result.data.orders.find(item => item.id === result.resultId); if (!order) throw new Error('Thiếu đơn trong phản hồi.'); return order; },
     updateOrder: async input => { await run({ type: 'update_order', input }, 'Đã cập nhật đơn hàng', false); },
     renewSubscription: async ({ startsAt: _startsAt, ...input }) => { const result = await run({ type: 'renew_subscription', input }, 'Đã gia hạn'); const order = result.data.orders.find(item => item.id === result.resultId); if (!order) throw new Error('Thiếu đơn gia hạn.'); return order; },
+    stopSubscriptionTracking: async (subscriptionId, expectedExpiresAt, reason) => { await run({ type: 'stop_subscription_tracking', input: { subscriptionId, expectedExpiresAt, reason } }, 'Đã dừng theo dõi gói', false); },
     recordPayment: async (orderId, paidAt) => { await run({ type: 'record_payment', input: { orderId, paidAt } }, 'Đã ghi nhận thanh toán'); },
     processRefund: async ({ actor: _actor, ...input }) => { await run({ type: 'record_refund', input: { ...input, operationId: input.operationId || crypto.randomUUID() } }, 'Đã ghi nhận hoàn/thu hồi vốn'); },
     addCustomer: async input => { const result = await run({ type: 'add_customer', input }, 'Đã thêm khách'); const customer = result.data.customers.find(item => item.id === result.resultId); if (!customer) throw new Error('Thiếu khách trong phản hồi.'); return customer; },

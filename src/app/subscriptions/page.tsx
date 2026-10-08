@@ -405,7 +405,7 @@ export default function SubscriptionsPage() {
       </div>
 
       <p className="report-note">
-        “Ghi nhận đã nhắc” chỉ lưu việc bạn đã liên hệ khách, không tự gửi tin nhắn. Gói hết hạn lúc 00:00 ngày hiển thị, theo giờ Việt Nam.
+        “Ghi nhận đã nhắc” chỉ lưu việc bạn đã liên hệ khách. Khách không gia hạn: mở Chi tiết → Không gia hạn / Dừng theo dõi. Gói đã dừng vẫn có trong Tất cả và Đã dừng. Hết hạn lúc 00:00 ngày hiển thị, theo giờ Việt Nam.
       </p>
     </>
   );

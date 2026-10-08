@@ -11,12 +11,13 @@ vi.mock('@/lib/db', () => ({ getDbPool: () => client, transaction: async (fn: (v
   await db.exec('BEGIN'); try { const result = await fn(client); await db.exec('COMMIT'); return result; } catch (error) { await db.exec('ROLLBACK'); throw error; }
 } }));
 vi.mock('@/lib/data-repository', () => ({ loadData: vi.fn() }));
-vi.mock('@/lib/clock', () => ({ todayInHoChiMinh: () => '2026-10-08' }));
+vi.mock('@/lib/clock', () => ({ todayInHoChiMinh: vi.fn(() => '2026-10-08') }));
 vi.mock('@/lib/auth', () => ({
   AccessError: class AccessError extends Error { constructor(public status: number, message: string) { super(message); } },
   requireSameOrigin: vi.fn(), requireUser: vi.fn(),
 }));
 import { loadData } from '@/lib/data-repository';
+import { todayInHoChiMinh } from '@/lib/clock';
 import { requireUser } from '@/lib/auth';
 import { readZaloSettings, createZaloPairing, consumeZaloPairing, saveZaloPreferences } from '@/lib/zalo-settings-store';
 import { callZalo, sendZaloMessage, ZaloApiError } from '@/lib/zalo-bot';
@@ -52,6 +53,7 @@ beforeAll(async () => {
 afterAll(async () => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); await db?.close(); });
 beforeEach(async () => {
   vi.clearAllMocks();
+  vi.mocked(todayInHoChiMinh).mockReturnValue('2026-10-08');
   vi.stubEnv('APP_DATA_SOURCE', 'supabase'); vi.stubEnv('APP_URL', 'https://example.com');
   vi.stubEnv('ZALO_BOT_TOKEN', token); vi.stubEnv('ZALO_WEBHOOK_SECRET', secret); vi.stubEnv('CRON_SECRET', secret);
   vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ ok: true, result: { message_id: 'provider-message' } }), { status: 200 })));
@@ -66,11 +68,12 @@ describe('Zalo candidates and private identity', () => {
     const result = zaloNotificationCandidates(data, '2026-10-08', '2026-10-08T02:00:00Z', 'https://example.com', { ...prefs, sendHour: 9 });
     expect(result).toHaveLength(1); expect(result[0].text).toContain('Gói sắp hết hạn'); expect(result[0].text).toContain('00:00 giờ Việt Nam');
   });
-  it('expires at the exclusive boundary and keys each daily/cycle event', () => {
+  it('expires at the exclusive boundary and keys overdue follow-up milestones per service cycle', () => {
     const data = fixture(); data.subscriptions[0].expiresAt = '2026-10-08';
     const first = zaloNotificationCandidates(data, '2026-10-08', '2026-10-08T02:00:00Z', 'https://example.com', prefs);
     expect(first[0].text).toContain('Gói đã hết hạn');
-    expect(zaloNotificationCandidates(data, '2026-10-09', '2026-10-09T02:00:00Z', 'https://example.com', prefs)[0].eventKey).not.toBe(first[0].eventKey);
+    expect(zaloNotificationCandidates(data, '2026-10-09', '2026-10-09T02:00:00Z', 'https://example.com', prefs)[0].eventKey).toBe(first[0].eventKey);
+    expect(zaloNotificationCandidates(data, '2026-10-11', '2026-10-11T02:00:00Z', 'https://example.com', prefs)[0].eventKey).not.toBe(first[0].eventKey);
     data.subscriptions[0].expiresAt = '2026-11-08';
     expect(zaloNotificationCandidates(data, '2026-10-08', '2026-10-08T02:00:00Z', 'https://example.com', prefs)).toHaveLength(0);
   });
@@ -175,6 +178,24 @@ describe('Zalo pairing, permissions and safe transport', () => {
   });
 });
 describe('Persisted Zalo dispatch', () => {
+  it('sends only three overdue follow-ups across daily cron runs and stops at day 14', async () => {
+    const data = fixture(); data.subscriptions[0].expiresAt = '2026-10-08';
+    vi.mocked(loadData).mockResolvedValue(data);
+    for (const [day, sent] of [['2026-10-08', 1], ['2026-10-09', 0], ['2026-10-11', 1], ['2026-10-12', 0], ['2026-10-15', 1], ['2026-10-21', 0], ['2026-10-22', 0]] as const) {
+      vi.mocked(todayInHoChiMinh).mockReturnValue(day);
+      expect(await runZaloNotificationWorker()).toMatchObject({ sent });
+    }
+    expect(fetch).toHaveBeenCalledTimes(3);
+    expect((await db.query('SELECT id FROM zalo_notification_jobs')).rows).toHaveLength(3);
+  });
+  it('cancels a queued overdue reminder when the manager stops tracking before dispatch', async () => {
+    const waiting = fixture(); waiting.subscriptions[0].expiresAt = '2026-10-05';
+    const stopped = structuredClone(waiting); stopped.subscriptions[0].cancelled = true;
+    vi.mocked(loadData).mockResolvedValueOnce(waiting).mockResolvedValue(stopped);
+    expect(await runZaloNotificationWorker()).toMatchObject({ cancelled: 1, sent: 0 });
+    expect(fetch).not.toHaveBeenCalled();
+    expect((await db.query<{ status: string }>('SELECT status FROM zalo_notification_jobs')).rows).toEqual([{ status: 'cancelled' }]);
+  });
   it('a repeated cron sends only once and records a completed run', async () => {
     expect(await runZaloNotificationWorker()).toMatchObject({ sent: 1 });
     expect(await runZaloNotificationWorker()).toMatchObject({ sent: 0 });

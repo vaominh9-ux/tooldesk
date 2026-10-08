@@ -119,7 +119,7 @@ export function ZaloSettingsPanel({ onConnectionChange }: { onConnectionChange?:
         <label className="zalo-hour"><span>Giờ bắt đầu nhắc hạn hằng ngày</span><select aria-label="Giờ nhắc hạn Zalo" value={preferences.sendHour} onChange={event => change('sendHour', Number(event.target.value))}>{Array.from({ length: 24 }, (_, hour) => <option key={hour} value={hour}>{String(hour).padStart(2, '0')}:00</option>)}</select></label>
         <label><input type="checkbox" checked={preferences.enabled} disabled={!status?.settings.chatId || !status.tokenConfigured} onChange={event => change('enabled', event.target.checked)} />Bật thông báo Zalo</label>
       </fieldset>
-      <p className="zalo-explanation">Giờ Việt Nam (UTC+7). Nhắc hạn tối đa một lần mỗi gói mỗi ngày; lịch chăm sóc một lần mỗi thời điểm hẹn. Lịch chạy server quyết định độ trễ thông báo.</p>
+      <p className="zalo-explanation">Giờ Việt Nam (UTC+7). Sắp hết hạn: tối đa một lần mỗi gói mỗi ngày. Quá hạn: một lần ở mỗi mốc ngày 0, 3, 7; dừng nhắc từ ngày 14. Gói đã dừng không được nhắc hạn. Lịch chăm sóc một lần mỗi thời điểm hẹn; lịch chạy server quyết định độ trễ.</p>
       <div className="zalo-settings-actions"><button type="button" className="button primary" disabled={disabled} onClick={() => void act('save')}><AppIcon name="check" size={16} />{pending ? 'Đang xử lý…' : 'Lưu tùy chọn'}</button></div>
       {status && !status.demo && <div className="zalo-run-status">
         <strong>Trạng thái chạy</strong>

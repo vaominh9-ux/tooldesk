@@ -19,6 +19,17 @@ beforeEach(() => { vi.clearAllMocks(); vi.stubEnv('APP_DATA_SOURCE', 'supabase')
 afterEach(() => vi.unstubAllEnvs());
 
 describe('Configuration access and demo isolation', () => {
+  it('allows staff to stop tracking with server validation, while viewers cannot write', async () => {
+    const command = { type: 'stop_subscription_tracking', input: { subscriptionId: 'sub', expectedExpiresAt: '2026-10-05', reason: 'Khách không gia hạn' } };
+    const request = () => new Request('http://localhost:3000/api/commands', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ operationId: '00000000-0000-4000-8000-000000000078', command }) });
+    mocks.user.mockResolvedValue({ id: 'viewer', email: 'viewer@example.com', role: 'viewer' });
+    expect((await postCommand(request())).status).toBe(403);
+    expect(mocks.command).not.toHaveBeenCalled();
+    mocks.user.mockResolvedValue({ id: 'staff', email: 'staff@example.com', role: 'staff' });
+    mocks.command.mockResolvedValue({ data: {}, resultId: 'sub' });
+    expect((await postCommand(request())).status).toBe(200);
+    expect(mocks.command).toHaveBeenCalledWith(command, '00000000-0000-4000-8000-000000000078', expect.objectContaining({ role: 'staff' }));
+  });
   it('does not read server email settings or return a key in demo mode', async () => {
     vi.stubEnv('APP_DATA_SOURCE', 'mock');
     expect(await (await readAgentSettings()).json()).toEqual({ apiKey: '' });

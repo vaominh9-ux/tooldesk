@@ -44,6 +44,18 @@ Trạng thái thanh toán của đơn hàng (`payment / financial status`):
 - `expiring`: Sắp hết hạn (`daysLeft <= window`, mặc định 7 ngày)
 - `active`: Đang hoạt động bình thường
 
+### Khách không gia hạn
+- Gói hết hạn vẫn chờ người quản lý xác nhận, không tự dừng sau một số ngày.
+- Lệnh `stop_subscription_tracking` chỉ áp dụng gói hết hạn, đối chiếu hạn
+  hiện tại với `expectedExpiresAt` để tránh dừng nhầm kỳ đã gia hạn.
+- Dừng theo dõi đặt `cancelled=true`, lưu người thao tác/thời điểm/lý do vào
+  nhật ký. Giữ nguyên đơn, thanh toán, phiếu hoàn, tiền và ngày dịch vụ.
+- Gói đã dừng không tính vào việc sắp hạn/quá hạn và không nhắc hạn Zalo/Email;
+  vẫn xem được ở Tất cả/Đã dừng. Các lịch chăm sóc riêng giữ nguyên.
+- Khách quay lại: Mở lại/Gia hạn tạo đơn mới, kỳ mới tính từ ngày vận hành.
+- Nhắc quá hạn Zalo theo mốc ngày 0, 3, 7, mỗi mốc một lần/kỳ; không nhắc từ
+  ngày 14. Chỉ gửi bù mốc đang còn cửa sổ 0–2/3–6/7–13 ngày khi cron chạy muộn.
+
 ## 3. Hoàn tiền & Dịch vụ liên kết (Refund Service Actions)
 - Mặc định giữ nguyên gói dịch vụ (`keep`).
 - Chỉ cho phép dừng gói hoặc khôi phục kỳ trước (`end`) khi:

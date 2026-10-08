@@ -49,6 +49,14 @@ export function isSubscriptionActive(
 
 export const isActive = isSubscriptionActive;
 
+// Each overdue follow-up has a bounded catch-up window. Keep the service
+// expired after the last window; only the manager decides to stop tracking.
+export function expiredReminderMilestone(expiresAt: string, today: string): number | null {
+  const overdue = -daysLeft(expiresAt, today);
+  if (overdue < 0 || overdue >= 14) return null;
+  return overdue >= 7 ? 7 : overdue >= 3 ? 3 : 0;
+}
+
 export function renewalDates(
   sub: { cancelled?: boolean; expiresAt: string },
   plan: PlanDuration,

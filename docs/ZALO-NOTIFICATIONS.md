@@ -66,8 +66,15 @@ không phù hợp cho lịch hẹn sát giờ hoặc danh sách cần nhắc l�
 
 ## Quy tắc gửi và đối chiếu
 
-- Gói sắp hết hạn và quá hạn: một tin mỗi gói/kỳ dịch vụ/trạng thái/ngày, bắt đầu
-  từ giờ đã chọn. Cửa sổ sắp hạn dùng `settings.reminderDays`.
+- Gói sắp hết hạn: một tin mỗi gói/kỳ dịch vụ/ngày, bắt đầu từ giờ đã chọn.
+  Cửa sổ sắp hạn dùng `settings.reminderDays`.
+- Gói quá hạn: một tin cho mỗi mốc ngày 0, 3, 7 trong kỳ dịch vụ, không nhắc
+  từ ngày 14. Nếu cron gián đoạn, chỉ nhắc mốc hiện tại: cửa sổ 0–2, 3–6,
+  7–13 ngày; không gửi bù cả ba mốc. Key dùng ngày hết hạn + mốc để chống lặp
+  qua các ngày và giữ tương thích các tin cũ đã gửi đúng ngày mốc.
+- Khách không gia hạn: Chi tiết gói → Không gia hạn / Dừng theo dõi. Lệnh lưu
+  `cancelled=true`, ghi lý do vào activity log, giữ nguyên tiền và kỳ dịch vụ.
+  Không xóa lịch chăm sóc riêng; muốn ngừng lịch đó phải hoàn tất/hủy lịch.
 - Gói chưa bắt đầu hoặc đã dừng không được nhắc. Hạn dịch vụ là mốc exclusive
   lúc 00:00 theo giờ Việt Nam.
 - Lịch chăm sóc: một tin mỗi lịch/thời điểm hẹn, khi đến hạn và còn đang chờ.

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { TooldeskData } from '@/mocks/fixtures';
-import { formatDateLabel } from './dates';
-import { subStatus } from './subscriptions';
+import { addDays, formatDateLabel, remainingLabel } from './dates';
+import { expiredReminderMilestone, subStatus } from './subscriptions';
 import { appointmentState, careChannelLabels, formatAppointment } from './care-scheduling';
 
 export const zaloPreferencesSchema = z.object({
@@ -28,12 +28,14 @@ export function zaloNotificationCandidates(data: TooldeskData, today: string, no
   if (hour >= preferences.sendHour) for (const sub of data.subscriptions) {
     const state = subStatus(sub, today, data.settings.reminderDays);
     if (!(state === 'expiring' && preferences.expiring || state === 'expired' && preferences.expired)) continue;
+    const milestone = state === 'expired' ? expiredReminderMilestone(sub.expiresAt, today) : null;
+    if (state === 'expired' && milestone === null) continue;
     const customer = data.customers.find(item => item.id === sub.customerId);
     const product = data.products.find(item => item.id === sub.productId);
     const link = new URL('/customers', url); link.searchParams.set('id', sub.customerId);
     items.push({
-      eventKey: `subscription:${sub.id}:${sub.startsAt}:${sub.expiresAt}:${state}:${today}`,
-      text: `TOOLDESK · ${state === 'expired' ? 'Gói đã hết hạn' : 'Gói sắp hết hạn'}\nKhách: ${customer?.name || 'Khách không còn tồn tại'}\nSản phẩm: ${product?.name || 'Sản phẩm'}\nHạn dịch vụ: ${formatDateLabel(sub.expiresAt, true)} (00:00 giờ Việt Nam)\n${link.href}`,
+      eventKey: `subscription:${sub.id}:${sub.startsAt}:${sub.expiresAt}:${state}:${state === 'expired' ? addDays(sub.expiresAt, milestone!) : today}`,
+      text: `TOOLDESK · ${state === 'expired' ? 'Gói đã hết hạn' : 'Gói sắp hết hạn'}\nKhách: ${customer?.name || 'Khách không còn tồn tại'}\nSản phẩm: ${product?.name || 'Sản phẩm'}\nHạn dịch vụ: ${formatDateLabel(sub.expiresAt, true)} (00:00 giờ Việt Nam)\n${remainingLabel(sub, today)}${state === 'expired' ? '\nKhách không gia hạn: mở Chi tiết gói và chọn Không gia hạn để dừng theo dõi.' : ''}\n${link.href}`,
     });
   }
   if (preferences.care) for (const appointment of data.careAppointments) {

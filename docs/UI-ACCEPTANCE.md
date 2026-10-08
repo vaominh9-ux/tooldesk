@@ -19,6 +19,9 @@
    - Danh sách công việc cần xử lý (Sắp hết hạn, Chờ thu tiền) và Lịch sử hoạt động.
    - Mobile: tiêu đề công việc nằm trên bộ lọc ba cột bằng nhau; nhãn ngắn và badge số lượng cùng hàng, nút tối thiểu 44px. Desktop giữ bố cục hiện có.
    - Mặc định chọn nhóm có việc theo thứ tự sắp hạn, hết hạn, chờ thu; giữ lựa chọn thủ công khi dữ liệu cập nhật.
+   - Biểu đồ Nhịp kinh doanh trên điện thoại dùng cỡ chữ trục ổn định, có lề
+     cho nhãn tiền âm/dương và nhãn ngày đầu/cuối không bị cắt. Chế độ 30 ngày
+     giảm số nhãn ngày để tránh chồng chữ; SVG desktop giữ nguyên.
 2. **Đơn hàng (Orders)**:
    - Mobile: nút bộ lọc cạnh ô tìm kiếm mở/đóng lựa chọn sản phẩm và loại đơn; có số điều kiện đang lọc, xóa lọc và hỗ trợ Escape. Desktop giữ bộ lọc mở sẵn.
    - Lọc theo trạng thái (Tất cả, Đã thu, Chưa thu, Hoàn tiền).
@@ -33,6 +36,9 @@
    - Mobile: gom lọc sản phẩm/liên hệ vào nút cạnh tìm kiếm giống Đơn hàng; hiển thị số điều kiện, giữ lựa chọn khi đóng/mở, hỗ trợ Xóa lọc/Escape/bấm ngoài. Desktop giữ nguyên hai ô lọc và dòng nhắc hạn.
    - Lọc: Đang chạy, Sắp hết hạn, Quá hạn, Đã dừng.
    - Nút Gia hạn trực tiếp: Mở form gia hạn tạo đơn mới, giữ nguyên chuỗi lịch sử.
+   - Chi tiết gói hết hạn: Không gia hạn / Dừng theo dõi mở xác nhận và lý do;
+     lỗi hiển thị rõ, nút khóa trong lúc lưu và tài khoản viewer không có thao tác.
+     Sau lưu hiện Đã dừng, có hướng dẫn Mở lại; giữ lịch sử và báo cáo tài chính.
 5. **Sản phẩm (Products)**:
    - Biểu tượng dùng chữ cái đầu của tên, nền màu nhẹ và chữ đậm; cùng một component trên danh sách, đơn, hồ sơ, gói dịch vụ và cửa sổ chi tiết. Khi sửa tên, xem trước biểu tượng tự cập nhật.
    - Danh mục 5 tool AI (ChatGPT, Claude, Gemini, Perplexity, Canva).

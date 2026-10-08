@@ -32,6 +32,19 @@ beforeAll(async () => {
 afterAll(async () => { await db?.close(); });
 
 describe('PostgreSQL migration and repository (isolated PGlite)', () => {
+  it('persists non-renewal tracking and its reason without changing money or service dates', async () => {
+    const before = await loadData(client), sub = before.subscriptions.find(item => !item.cancelled && item.expiresAt <= '2026-10-08')!;
+    const result = executeCommand(before, commandSchema.parse({ type: 'stop_subscription_tracking', input: { subscriptionId: sub.id, expectedExpiresAt: sub.expiresAt, reason: 'Khách xác nhận không gia hạn' } }), { today: '2026-10-08', now: '2026-10-08T03:00:00Z', actor: 'staff@example.com', newId: prefix => `${prefix}-stop-tracking` });
+    await db.exec('BEGIN');
+    try {
+      await saveChanges(client, before, result.data);
+      const loaded = await loadData(client);
+      expect(loaded.subscriptions.find(item => item.id === sub.id)).toEqual({ ...sub, cancelled: true });
+      expect(loaded.orders).toEqual(before.orders);
+      expect(loaded.refunds).toEqual(before.refunds);
+      expect(loaded.activity.find(item => item.id === 'act-stop-tracking')?.description).toContain('Khách xác nhận không gia hạn');
+    } finally { await db.exec('ROLLBACK'); }
+  });
   it('persists corrected sale and receipt dates without rewriting insertion time or service period', async () => {
     const before = await loadData(client), order = before.orders.find(item => item.payment === 'paid' && !before.refunds.some(refund => refund.orderId === item.id))!;
     const createdAt = (await db.query<{ created_at: Date }>('SELECT created_at FROM orders WHERE id=$1', [order.id])).rows[0].created_at;

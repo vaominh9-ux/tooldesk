@@ -10,6 +10,7 @@ import { formatMoney } from '@/domain/money';
 import { formatDateLabel, remainingLabel } from '@/domain/dates';
 import { subStatus } from '@/domain/subscriptions';
 import { formatOrderCode } from '@/domain/orders';
+import { SubscriptionTrackingActions } from '@/features/subscriptions/subscription-tracking-actions';
 
 export function SubscriptionDetailDialog({
   subscriptionId,
@@ -277,6 +278,7 @@ export function SubscriptionDetailDialog({
                 ))}
               </div>
             </div>
+            <SubscriptionTrackingActions subscriptionId={sub.id} />
           </div>
 
           {/* Footer */}

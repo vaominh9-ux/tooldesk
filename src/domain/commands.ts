@@ -4,7 +4,7 @@ import { addDuration } from './dates';
 import { updatedProductPlans } from './products';
 import { careChannels, instantSchema, requireFutureAppointment } from './care-scheduling';
 import { audienceFor } from './orders';
-import { renewalDates } from './subscriptions';
+import { renewalDates, subStatus } from './subscriptions';
 import { validateRefundInput } from './refunds';
 import { orderEditPolicy } from './order-edit-policy';
 import { customerEmailInputSchema, customersWithEmail, normalizeCustomerEmail } from './customer-identity';
@@ -18,6 +18,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('update_order'), input: z.object({ orderId: id, date: daySchema.optional(), paidAt: daySchema.optional(), price: moneySchema.optional(), cost: moneySchema.optional(), startsAt: daySchema.optional(), expiresAt: daySchema.optional(), payment: z.enum(['paid', 'unpaid']).optional(), note: z.string().trim().max(5000).optional(), planId: id.optional() }).strict() }).strict(),
   z.object({ type: z.literal('record_payment'), input: z.object({ orderId: id, paidAt: daySchema.optional() }).strict() }).strict(),
   z.object({ type: z.literal('renew_subscription'), input: z.object({ subscriptionId: id, planId: id, price: moneySchema, cost: moneySchema, payment: z.enum(['paid', 'unpaid']).default('unpaid') }).strict() }).strict(),
+  z.object({ type: z.literal('stop_subscription_tracking'), input: z.object({ subscriptionId: id, expectedExpiresAt: daySchema, reason: z.string().trim().min(3).max(500) }).strict() }).strict(),
   z.object({ type: z.literal('record_refund'), input: z.object({ operationId: z.uuid(), orderId: id, amount: moneySchema, costRecovered: moneySchema.default(0), date: daySchema, reason: z.string().trim().min(3).max(500), method: z.enum(['bank', 'cash', 'wallet', 'other']), reference: z.string().trim().max(120).default(''), serviceAction: z.enum(['keep', 'end']).default('keep') }).strict() }).strict(),
   z.object({ type: z.literal('add_customer'), input: customerInput }).strict(),
   z.object({ type: z.literal('update_customer'), input: z.object({ id, updates: z.object({ name: z.string().trim().min(1).max(80).optional(), email: customerEmailInputSchema.optional(), phone: z.string().trim().max(25).optional(), source: z.string().trim().max(100).optional(), notes: z.string().trim().max(50000).optional(), emailConsent: z.enum(['unknown','opted_in','opted_out']).optional(), consentSource: z.string().trim().max(200).optional() }).strict() }).strict() }).strict(),
@@ -135,6 +136,16 @@ export function executeCommand(original: AppData, command: Command, operation: O
       }
       resultId = order.id;
       break;
+    }
+    case 'stop_subscription_tracking': {
+      const { subscriptionId, expectedExpiresAt } = command.input;
+      const sub = data.subscriptions.find(item => item.id === subscriptionId);
+      if (!sub) throw new Error('Không tìm thấy gói dịch vụ.');
+      if (sub.expiresAt !== expectedExpiresAt) throw new Error('Kỳ dịch vụ đã thay đổi. Hãy tải lại gói trước khi dừng theo dõi.');
+      if (sub.cancelled) return { data: original, resultId: sub.id };
+      if (subStatus(sub, today) !== 'expired') throw new Error('Chỉ đánh dấu không gia hạn cho gói đã hết hạn.');
+      sub.cancelled = true;
+      resultId = sub.id; break;
     }
     case 'record_payment': {
       const order = data.orders.find(order => order.id === command.input.orderId);
@@ -321,7 +332,7 @@ export function executeCommand(original: AppData, command: Command, operation: O
 function commandActivity(command: Command, resultId: string | undefined, actor: string): Pick<AppData['activity'][number], 'type' | 'title' | 'description'> {
   const labels: Record<Command['type'], string> = {
     create_order: 'Tạo đơn hàng', update_order: 'Sửa đơn hàng', record_payment: 'Ghi nhận thanh toán',
-    renew_subscription: 'Gia hạn gói dịch vụ', record_refund: command.type === 'record_refund' && command.input.amount === 0 ? 'Ghi nhận thu hồi giá vốn' : 'Ghi nhận hoàn tiền',
+    renew_subscription: 'Gia hạn gói dịch vụ', stop_subscription_tracking: 'Dừng theo dõi gói · Không gia hạn', record_refund: command.type === 'record_refund' && command.input.amount === 0 ? 'Ghi nhận thu hồi giá vốn' : 'Ghi nhận hoàn tiền',
     add_customer: 'Thêm khách hàng', update_customer: 'Cập nhật khách hàng', mark_contacted: 'Ghi nhận liên hệ',
     update_subscription_note: 'Cập nhật ghi chú gói', update_settings: 'Cập nhật cài đặt',
     update_plan: 'Cập nhật gói bán', add_plan: 'Thêm gói bán', delete_plan: 'Xóa gói bán',
@@ -330,5 +341,5 @@ function commandActivity(command: Command, resultId: string | undefined, actor: 
     save_care_appointment: 'Lưu lịch chăm sóc', finish_care_appointment: command.type === 'finish_care_appointment' && command.input.status === 'completed' ? 'Hoàn tất lịch chăm sóc' : 'Hủy lịch chăm sóc'
   };
   const type: AppData['activity'][number]['type'] = command.type === 'record_payment' ? 'payment' : command.type === 'renew_subscription' ? 'renewal' : command.type === 'record_refund' ? (command.input.amount === 0 ? 'cost_recovery' : 'refund') : command.type === 'mark_contacted' ? 'reminder' : command.type.startsWith('add_') || command.type === 'create_order' ? 'created' : 'updated';
-  return { type, title: labels[command.type], description: actor + (resultId ? ' · ' + resultId : '') };
+  return { type, title: labels[command.type], description: actor + (resultId ? ' · ' + resultId : '') + (command.type === 'stop_subscription_tracking' ? ' · Lý do: ' + command.input.reason : '') };
 }

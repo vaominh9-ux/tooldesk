@@ -62,3 +62,26 @@ Chi tiết luồng và giới hạn vận hành: [CARE-SCHEDULING.md](CARE-SCHED
 - [x] 177 kiểm thử đạt; kiểm tra báo cáo, sửa ngày, thu tiền và nhập đơn cũ trên màn hình 320/393/768/1440/1920 px.
 - [ ] Người quản lý đối chiếu và sửa ngày thực tế của các đơn cũ đang ghi nhận vào tháng nhập. Không tự suy ra ngày thu tiền từ ngày dịch vụ.
 - [ ] Agent phụ trách triển khai đưa mã nguồn lên Vercel. Đợt sửa này không tự thay đổi dữ liệu production.
+
+## Bàn giao không gia hạn và nhắc quá hạn 08/10/2026
+
+- [x] Chi tiết gói hết hạn có xác nhận Không gia hạn / Dừng theo dõi và lý do.
+- [x] Dùng trạng thái đã dừng sẵn có, không thêm migration. Đối chiếu kỳ trước khi lưu,
+  giữ nguyên đơn/tiền/kỳ dịch vụ/lịch chăm sóc; nhật ký có lý do và người thao tác.
+- [x] Gói đã dừng khỏi việc cần xử lý và nhắc hạn; khách quay lại tạo đơn gia hạn mới.
+- [x] Nhắc Zalo quá hạn theo mốc 0/3/7, ngừng từ ngày 14; chống gửi lặp giữa các ngày
+  trong cùng mốc, kiểm tra lại gói trước khi gửi, chỉ gửi bù mốc hiện tại.
+- [x] 195 kiểm thử đạt, TypeScript/build đạt; luồng xác nhận/hủy/dừng/mở lại kiểm tra
+  bằng mock ở 320/393/768/1440 px, không gửi tin hoặc sửa database production.
+- [ ] Agent triển khai đưa bản mới lên Vercel và nghiệm thu cron/Zalo thực tế theo
+  [ZALO-NOTIFICATIONS.md](ZALO-NOTIFICATIONS.md). Không tự dừng các gói cũ thay người quản lý.
+
+## Bàn giao biểu đồ điện thoại 08/10/2026
+
+- [x] Nhịp kinh doanh đo chiều rộng thực tế trên điện thoại, giữ chữ trục dễ đọc,
+  chừa lề cho nhãn tiền và ngày đầu/cuối; chế độ 30 ngày giảm nhãn tránh chồng chữ.
+- [x] Giữ nguyên dữ liệu tính thực thu, SVG và giao diện máy tính.
+- [x] Build/TypeScript đạt; 34 lượt kiểm tra với dữ liệu giả dương/0/âm,
+  7/30 ngày ở 320/360/393/430/640 px; ảnh desktop 768/1440 px khớp trước/sau.
+- [ ] Agent triển khai đưa bản sửa lên Vercel. Đợt sửa này không thay đổi database
+  hoặc cấu hình gửi thông báo.

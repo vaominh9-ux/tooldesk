@@ -10,6 +10,7 @@ import { formatDateLabel, remainingLabel, addDays } from '@/domain/dates';
 import { subStatus, isActive } from '@/domain/subscriptions';
 import { formatOrderCode } from '@/domain/orders';
 import { DashboardWorkFilters, useDashboardWorkTab } from '@/features/dashboard/dashboard-work-filters';
+import { MobileRevenueChart } from '@/features/dashboard/mobile-revenue-chart';
 
 export default function DashboardPage() {
   const { data, today, openDialog } = useTooldesk();
@@ -415,7 +416,7 @@ export default function DashboardPage() {
             <small>thực thu sau hoàn</small>
           </div>
 
-          <div className="chart-wrap">
+          <div className="chart-wrap desktop-revenue-chart">
             <svg
               viewBox={`0 0 ${chartW} ${chartH}`}
               role="img"
@@ -480,6 +481,8 @@ export default function DashboardPage() {
               ))}
             </svg>
           </div>
+
+          <MobileRevenueChart series={chartSeries} />
 
           <div className="chart-legend">
             <span>
