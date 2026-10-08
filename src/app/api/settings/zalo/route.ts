@@ -20,7 +20,7 @@ async function status() {
   const run = await getDbPool().query<{ started_at: Date | string; finished_at: Date | string | null; status: string; sent_count: number; failed_count: number; unknown_count: number }>("SELECT started_at,finished_at,status,sent_count,failed_count,unknown_count FROM zalo_notification_runs ORDER BY started_at DESC LIMIT 1");
   const jobs = await getDbPool().query<{ pending: string; failed: string; unknown: string }>("SELECT COUNT(*) FILTER (WHERE status='pending')::text AS pending,COUNT(*) FILTER (WHERE status='failed')::text AS failed,COUNT(*) FILTER (WHERE status='unknown')::text AS unknown FROM zalo_notification_jobs");
   const row = run.rows[0], count = jobs.rows[0];
-  return zaloStatusSchema.parse({ settings, tokenConfigured: zaloTokenConfigured(), webhookSecretConfigured: (process.env.ZALO_WEBHOOK_SECRET?.length || 0) >= 32, cronSecretConfigured: (process.env.CRON_SECRET?.length || 0) >= 32, lastRun: row ? { startedAt: new Date(row.started_at).toISOString(), finishedAt: row.finished_at ? new Date(row.finished_at).toISOString() : null, status: row.status, sent: row.sent_count, failed: row.failed_count, unknown: row.unknown_count } : null, jobs: { pending: Number(count.pending), failed: Number(count.failed), unknown: Number(count.unknown) }, demo: false });
+  return zaloStatusSchema.parse({ settings, tokenConfigured: zaloTokenConfigured(), webhookSecretConfigured: (process.env.ZALO_WEBHOOK_SECRET?.length || 0) >= 8, cronSecretConfigured: (process.env.CRON_SECRET?.length || 0) >= 32, lastRun: row ? { startedAt: new Date(row.started_at).toISOString(), finishedAt: row.finished_at ? new Date(row.finished_at).toISOString() : null, status: row.status, sent: row.sent_count, failed: row.failed_count, unknown: row.unknown_count } : null, jobs: { pending: Number(count.pending), failed: Number(count.failed), unknown: Number(count.unknown) }, demo: false });
 }
 export async function GET() {
   if (process.env.APP_DATA_SOURCE !== 'supabase') return NextResponse.json({ settings: emptyZaloSettings, tokenConfigured: false, webhookSecretConfigured: false, cronSecretConfigured: false, lastRun: null, jobs: { pending: 0, failed: 0, unknown: 0 }, demo: true });
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     if (!(input.action === 'save' && !input.preferences.enabled) && !zaloTokenConfigured()) throw new AccessError(409, 'Cần cấu hình ZALO_BOT_TOKEN phía server.');
     let result: Record<string, unknown> = {};
     if (input.action === 'pair') {
-      if ((process.env.ZALO_WEBHOOK_SECRET?.length || 0) < 32) throw new AccessError(409, 'Cần cấu hình ZALO_WEBHOOK_SECRET phía server.');
+      if ((process.env.ZALO_WEBHOOK_SECRET?.length || 0) < 8) throw new AccessError(409, 'Cần cấu hình ZALO_WEBHOOK_SECRET phía server.');
       result = await createZaloPairing();
     } else if (input.action === 'save') {
       await saveZaloPreferences(input.preferences);
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
       result = { messageId: await sendZaloMessage(settings.chatId, 'TOOLDESK · Tin kiểm tra\nKết nối thông báo Zalo cá nhân hoạt động. Gói sắp hết hạn, quá hạn và lịch chăm sóc sẽ được gửi theo cấu hình và lịch chạy của hệ thống.') };
     } else {
       const secret = process.env.ZALO_WEBHOOK_SECRET || '', appUrl = process.env.APP_URL || '';
-      if (secret.length < 32 || secret.length > 256 || !appUrl.startsWith('https://')) throw new AccessError(409, 'Cần APP_URL HTTPS và ZALO_WEBHOOK_SECRET từ 32 đến 256 ký tự.');
+      if (secret.length < 8 || secret.length > 256 || !appUrl.startsWith('https://')) throw new AccessError(409, 'Cần APP_URL HTTPS và ZALO_WEBHOOK_SECRET từ 8 đến 256 ký tự.');
       await callZalo('getMe');
       const previous = z.object({ url: z.string().optional() }).parse(await callZalo('getWebhookInfo'));
       const url = new URL('/api/zalo/webhook', appUrl).href;

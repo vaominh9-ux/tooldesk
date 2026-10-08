@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   const secret = process.env.ZALO_WEBHOOK_SECRET;
   const actual = Buffer.from(request.headers.get('x-bot-api-secret-token') || '');
   const expected = Buffer.from(secret || '');
-  if (!secret || secret.length < 32 || actual.length !== expected.length || !timingSafeEqual(actual, expected)) return NextResponse.json({ error: 'Không được phép.' }, { status: 401 });
+  if (!secret || secret.length < 8 || actual.length !== expected.length || !timingSafeEqual(actual, expected)) return NextResponse.json({ error: 'Không được phép.' }, { status: 401 });
   if (process.env.APP_DATA_SOURCE !== 'supabase') return NextResponse.json({ error: 'Webhook bị tắt trong bản demo.' }, { status: 409 });
   try {
     const body = await request.text();
