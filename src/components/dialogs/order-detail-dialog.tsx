@@ -8,6 +8,7 @@ import { AppIcon } from '../shared/app-icon';
 import { orderFinancials, formatMoney } from '@/domain/money';
 import { formatDateLabel, addDuration } from '@/domain/dates';
 import { formatOrderCode } from '@/domain/orders';
+import { orderEditPolicy } from '@/domain/order-edit-policy';
 
 export function OrderDetailDialog({
   orderId,
@@ -79,6 +80,7 @@ export function OrderDetailDialog({
   const product = data.products.find(p => p.id === order.productId);
   const plan = product?.plans.find(pl => pl.id === order.planId);
   const f = orderFinancials(order, data.refunds);
+  const editPolicy = orderEditPolicy(data, order);
   const orderRefunds = (data.refunds || [])
     .filter(r => r.orderId === order.id)
     .sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt || '').localeCompare(a.createdAt || ''));
@@ -97,7 +99,9 @@ export function OrderDetailDialog({
       if (editStartsAt) {
         try {
           setEditExpiresAt(addDuration(editStartsAt, pl.duration, pl.unit));
-        } catch {}
+        } catch (error) {
+          setEditError(error instanceof Error ? error.message : 'Ngày bắt đầu không hợp lệ.');
+        }
       }
     }
   };
@@ -108,7 +112,9 @@ export function OrderDetailDialog({
     if (pl && newStartsAt) {
       try {
         setEditExpiresAt(addDuration(newStartsAt, pl.duration, pl.unit));
-      } catch {}
+      } catch (error) {
+        setEditError(error instanceof Error ? error.message : 'Ngày bắt đầu không hợp lệ.');
+      }
     }
   };
 
@@ -129,9 +135,8 @@ export function OrderDetailDialog({
         note: editNote.trim()
       });
       setIsEditing(false);
-      addToast('Đã cập nhật thông tin đơn hàng', undefined, 'success');
-    } catch (err: any) {
-      setEditError(err.message || 'Không thể lưu thay đổi.');
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : 'Không thể lưu thay đổi.');
     } finally {
       setSaving(false);
     }
@@ -178,6 +183,7 @@ export function OrderDetailDialog({
                   {editError}
                 </div>
               )}
+              {editPolicy.reason && <p className="hint-banner neutral">{editPolicy.reason} Bạn vẫn có thể sửa ghi chú.</p>}
 
               {/* Customer preview (read-only) */}
               <div className="customer-preview" style={{ marginBottom: 16 }}>
@@ -206,6 +212,7 @@ export function OrderDetailDialog({
                   <span>Gói dịch vụ</span>
                   <select
                     value={editPlanId}
+                    disabled={editPolicy.locked}
                     onChange={e => handleEditPlanChange(e.target.value)}
                     required
                   >
@@ -225,6 +232,7 @@ export function OrderDetailDialog({
                   <input
                     type="date"
                     value={editStartsAt}
+                    disabled={editPolicy.locked || editPolicy.continuousRenewal}
                     required
                     onChange={e => handleEditStartsAtChange(e.target.value)}
                   />
@@ -235,6 +243,7 @@ export function OrderDetailDialog({
                   <input
                     type="date"
                     value={editExpiresAt}
+                    disabled={editPolicy.locked}
                     required
                     onChange={e => setEditExpiresAt(e.target.value)}
                   />
@@ -249,9 +258,10 @@ export function OrderDetailDialog({
                     <input
                       type="number"
                       min={0}
-                      step={1000}
+                      step={1}
                       required
                       value={editPrice}
+                      disabled={editPolicy.locked}
                       onChange={e => setEditPrice(Number(e.target.value))}
                     />
                     <span>₫</span>
@@ -264,9 +274,10 @@ export function OrderDetailDialog({
                     <input
                       type="number"
                       min={0}
-                      step={1000}
+                      step={1}
                       required
                       value={editCost}
+                      disabled={editPolicy.locked}
                       onChange={e => setEditCost(Number(e.target.value))}
                     />
                     <span>₫</span>
@@ -278,6 +289,7 @@ export function OrderDetailDialog({
                 <span>Trạng thái thanh toán</span>
                 <select
                   value={editPayment}
+                  disabled={editPolicy.locked}
                   onChange={e => setEditPayment(e.target.value as 'paid' | 'unpaid')}
                 >
                   <option value="unpaid">Chưa thanh toán</option>
@@ -335,7 +347,7 @@ export function OrderDetailDialog({
                   {order.kind === 'renewal' ? 'Đơn gia hạn' : 'Đơn mua mới'} · Tạo ngày {formatDateLabel(order.date, true)}
                 </p>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div className="order-detail-header-actions" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <button
                   type="button"
                   className="button small ghost"

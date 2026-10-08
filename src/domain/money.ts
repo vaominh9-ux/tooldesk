@@ -55,7 +55,7 @@ export function orderFinancials(
   const collected = order.payment === 'paid' && order.status !== 'cancelled' ? Math.round(order.price) : 0;
   const refunded = entries.reduce((sum, r) => sum + Math.round(r.amount || 0), 0);
   const costRecovered = entries.reduce((sum, r) => sum + Math.round(r.costRecovered || 0), 0);
-  const bookedCost = collected > 0 || order.payment === 'paid' ? Math.round(order.cost) : 0;
+  const bookedCost = order.status !== 'cancelled' && order.payment === 'paid' ? Math.round(order.cost) : 0;
   const net = collected - refunded;
 
   const remainingRefund = Math.max(0, collected - refunded);

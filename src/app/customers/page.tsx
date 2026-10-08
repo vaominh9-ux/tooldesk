@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '@/components/shared/app-icon';
 import { formatMoney, orderFinancials } from '@/domain/money';
-import { getCustomerStats, paginate, formatOrderCode } from '@/domain/orders';
+import { audienceFor, getCustomerStats, paginate, formatOrderCode, searchFilter } from '@/domain/orders';
 import { formatDateLabel, remainingLabel } from '@/domain/dates';
 import { subStatus } from '@/domain/subscriptions';
 import { CustomerNotes } from '@/components/shared/customer-notes';
@@ -12,24 +13,19 @@ import { CustomerOrderHistory } from '@/features/customers/customer-order-histor
 import Link from 'next/link';
 
 export default function CustomersPage() {
-  const { data, openDialog, today } = useTooldesk();
+  return <Suspense fallback={<div className="data-notice" role="status">Đang tải khách hàng…</div>}><CustomersContent /></Suspense>;
+}
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+function CustomersContent() {
+  const { data, openDialog, today } = useTooldesk();
+  const router = useRouter();
+  const params = useSearchParams();
+  const selectedId = params.get('id');
+  const selectCustomer = (customerId: string | null) => router.push(customerId ? `/customers?id=${encodeURIComponent(customerId)}` : '/customers');
   const [tab, setTab] = useState<'all' | 'active' | 'vip'>('all');
   const [search, setSearch] = useState('');
   const [consentFilter, setConsentFilter] = useState('');
   const [page, setPage] = useState(1);
-
-  // Check URL query param ?id=kh-xxx
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const custId = params.get('id');
-      if (custId && data.customers.some(c => c.id === custId)) {
-        setSelectedId(custId);
-      }
-    }
-  }, [data.customers]);
 
   const getInitials = (name?: string) => {
     if (!name) return '?';
@@ -58,7 +54,7 @@ export default function CustomersPage() {
         <div className="empty-state">
           <h3>Không tìm thấy khách hàng</h3>
           <p>Mã khách hàng không tồn tại trong hệ thống.</p>
-          <button type="button" className="button" onClick={() => setSelectedId(null)}>
+          <button type="button" className="button" onClick={() => selectCustomer(null)}>
             Quay lại danh sách
           </button>
         </div>
@@ -77,12 +73,7 @@ export default function CustomersPage() {
           type="button"
           className="back-link text-link"
           style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginBottom: '16px', color: '#5963e8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-          onClick={() => {
-            setSelectedId(null);
-            if (typeof window !== 'undefined') {
-              window.history.replaceState({}, '', '/customers');
-            }
-          }}
+          onClick={() => selectCustomer(null)}
         >
           <AppIcon name="left" size={14} />
           <span>Danh sách khách hàng</span>
@@ -192,6 +183,8 @@ export default function CustomersPage() {
                                 <span className="badge red"><i></i>Đã hết hạn</span>
                               ) : status === 'expiring' ? (
                                 <span className="badge amber"><i></i>Sắp hết hạn</span>
+                              ) : status === 'scheduled' ? (
+                                <span className="badge blue"><i></i>Chưa bắt đầu</span>
                               ) : (
                                 <span className="badge green"><i></i>Đang chạy</span>
                               )}
@@ -348,7 +341,7 @@ export default function CustomersPage() {
 
   // General Customers List
   const activeCount = data.customers.filter(c => getCustomerStats(data, c.id, today).activeCount > 0).length;
-  const eligibleEmails = data.customers.filter(c => c.email && c.emailConsent === 'opted_in').length;
+  const eligibleEmails = audienceFor(data, 'all', today).eligible.length;
 
   let items = data.customers.filter(c => {
     const stats = getCustomerStats(data, c.id, today);
@@ -362,11 +355,7 @@ export default function CustomersPage() {
   }
 
   if (search.trim()) {
-    const q = search.toLowerCase().trim();
-    items = items.filter(c => {
-      const text = `${c.name} ${c.phone || ''} ${c.email || ''}`.toLowerCase();
-      return text.includes(q);
-    });
+    items = searchFilter(items, search, c => `${c.name} ${c.phone} ${c.email}`);
   }
 
   const paged = paginate(items, page, 8);
@@ -509,7 +498,7 @@ export default function CustomersPage() {
                               <button
                                 type="button"
                                 className="text-link strong"
-                                onClick={() => setSelectedId(c.id)}
+                                onClick={() => selectCustomer(c.id)}
                               >
                                 {c.name}
                               </button>
@@ -537,7 +526,7 @@ export default function CustomersPage() {
                           <button
                             type="button"
                             className="icon-button"
-                            onClick={() => setSelectedId(c.id)}
+                            onClick={() => selectCustomer(c.id)}
                             aria-label={`Xem ${c.name}`}
                           >
                             <AppIcon name="chevron" size={16} />
@@ -569,7 +558,7 @@ export default function CustomersPage() {
                       <button
                         type="button"
                         className="icon-button"
-                        onClick={() => setSelectedId(customer.id)}
+                        onClick={() => selectCustomer(customer.id)}
                         aria-label={`Hồ sơ ${customer.name}`}
                       >
                         <AppIcon name="chevron" size={18} />
@@ -641,7 +630,7 @@ export default function CustomersPage() {
               <button
                 type="button"
                 className="icon-button"
-                onClick={() => setPage(p => Math.max(1, p - 1))}
+                onClick={() => setPage(Math.max(1, paged.page - 1))}
                 disabled={paged.page <= 1}
                 aria-label="Trang trước"
               >
@@ -651,7 +640,7 @@ export default function CustomersPage() {
               <button
                 type="button"
                 className="icon-button"
-                onClick={() => setPage(p => Math.min(paged.pages, p + 1))}
+                onClick={() => setPage(Math.min(paged.pages, paged.page + 1))}
                 disabled={paged.page >= paged.pages}
                 aria-label="Trang sau"
               >

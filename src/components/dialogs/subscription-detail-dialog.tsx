@@ -20,6 +20,9 @@ export function SubscriptionDetailDialog({
   const { data, openDialog, markContacted, updateSubscriptionNote, today } = useTooldesk();
   const backdropDismiss = useBackdropDismiss(onClose);
   const sub = data.subscriptions.find(s => s.id === subscriptionId);
+  const [isEditingNote, setIsEditingNote] = useState(false);
+  const [noteVal, setNoteVal] = useState(sub?.note || '');
+  const [isSavingNote, setIsSavingNote] = useState(false);
 
   if (!sub) {
     return (
@@ -55,17 +58,14 @@ export function SubscriptionDetailDialog({
   const plan = product?.plans.find(pl => pl.id === sub.planId);
   const status = subStatus(sub, today, data.settings.reminderDays);
 
-  const [isEditingNote, setIsEditingNote] = useState(false);
-  const [noteVal, setNoteVal] = useState(sub.note || '');
-  const [isSavingNote, setIsSavingNote] = useState(false);
-
   const handleSaveNote = async () => {
     setIsSavingNote(true);
     try {
       await updateSubscriptionNote(sub.id, noteVal.trim());
       setIsEditingNote(false);
-    } catch {
-      // handled
+    } catch (error) {
+      // The command already displays an error toast; keep the draft available for retry.
+      console.error('Không thể lưu ghi chú gói:', error);
     } finally {
       setIsSavingNote(false);
     }

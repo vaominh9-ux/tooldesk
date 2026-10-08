@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
 import { formatMoney } from '@/domain/money';
-import { formatOrderCode, formatCustomerCode } from '@/domain/orders';
+import { formatOrderCode, formatCustomerCode, normalizeText } from '@/domain/orders';
 
 export function SearchDialog({ onClose }: { onClose: () => void }) {
   const router = useRouter();
@@ -27,11 +27,11 @@ export function SearchDialog({ onClose }: { onClose: () => void }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  const q = query.trim().toLowerCase();
+  const q = normalizeText(query);
 
   const filteredCustomers = q
     ? data.customers
-        .filter(c => `${c.name} ${c.id} ${formatCustomerCode(c.id)} ${c.email || ''} ${c.phone || ''}`.toLowerCase().includes(q))
+        .filter(c => normalizeText(`${c.name} ${c.id} ${formatCustomerCode(c.id)} ${c.email || ''} ${c.phone || ''}`).includes(q))
         .slice(0, 5)
     : [];
 
@@ -40,9 +40,7 @@ export function SearchDialog({ onClose }: { onClose: () => void }) {
         .filter(o => {
           const cust = data.customers.find(c => c.id === o.customerId);
           const prod = data.products.find(p => p.id === o.productId);
-          return `${o.id} ${formatOrderCode(o.id)} ${cust?.name || ''} ${cust?.email || ''} ${cust?.phone || ''} ${prod?.name || ''}`
-            .toLowerCase()
-            .includes(q);
+          return normalizeText(`${o.id} ${formatOrderCode(o.id)} ${cust?.name || ''} ${cust?.email || ''} ${cust?.phone || ''} ${prod?.name || ''}`).includes(q);
         })
         .slice(0, 4)
     : [];
@@ -82,7 +80,7 @@ export function SearchDialog({ onClose }: { onClose: () => void }) {
             value={query}
             onChange={e => setQuery(e.target.value)}
           />
-          <kbd onClick={onClose} style={{ cursor: 'pointer' }}>Esc</kbd>
+          <button type="button" className="icon-button" onClick={onClose} aria-label="Đóng tìm kiếm"><AppIcon name="close" size={18} /></button>
         </div>
 
         <div className="command-results" id="command-results">

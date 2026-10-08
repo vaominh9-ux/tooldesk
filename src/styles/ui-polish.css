@@ -25,7 +25,7 @@
 .data-notice.error { color:var(--red); }
 .data-notice strong { color:var(--ink); }
 .dialog-footer { flex-wrap:wrap; }
-.dialog-content :is(p,small,strong) { overflow-wrap:anywhere; }
+.dialog-content :is(p,small,strong,span) { overflow-wrap:anywhere; }
 .dialog-content :is(input, select, textarea) { max-width:100%; }
 .dialog-content .date-flow { flex-wrap:wrap; }
 .dialog-content .refund-history article>div { min-width:0; }
@@ -51,6 +51,29 @@
 .search-result { text-align:left; white-space:normal; justify-content:space-between; width:100%; }
 .search-result small { display:block; color:var(--muted); font-weight:400; margin-top:4px; }
 @media (max-width:1023px) {
+  main .text-link, main .text-button, .segmented button { min-height:44px; }
+  main .text-link { display:inline-flex; align-items:center; }
+  main .work-table .person-cell .text-link { min-height:44px; }
+  main .record-card .order-number { min-width:44px; min-height:44px; }
+  main .add-plan-action-btn { min-height:44px !important; }
+  .dialog-content .text-button { min-width:44px; min-height:44px; }
+  .order-detail-header-actions { flex-shrink:0; }
+  .order-detail-header-actions>.button { display:none !important; }
+  .dialog-header h2 { overflow-wrap:anywhere; }
+  .customer-detail-identity { flex-wrap:wrap; }
+  .customer-detail-identity>h2 { max-width:100%; min-width:0; }
+  .customer-detail-drawer .dialog-content span { overflow-wrap:anywhere; min-width:0; }
+  .customer-detail-drawer .dialog-content div[style*='display: flex'] { flex-wrap:wrap; }
+  .customer-notes .customer-note-presets button { min-height:44px; }
+  .customer-notes .customer-note-actions button { min-width:44px; min-height:44px; justify-content:center; }
+  #api-integration .button { max-width:100%; white-space:normal; }
+  #api-integration .field>div { flex-wrap:wrap; }
+  #api-integration .field input { flex:1 1 140px; width:0; }
+  #api-integration .settings-actions { flex-wrap:wrap; }
+  #api-integration .settings-actions>.button { flex:1 1 100%; min-width:0; }
+  .dialog-content .customer-note-submit { flex-wrap:wrap; gap:8px; }
+  .dialog-content .customer-note-submit>span { display:none; }
+  .dialog-content .customer-note-submit>.button { width:100%; }
   .report-two-col { grid-template-columns:minmax(0,1fr); }
   .reconciliation-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .ui-toast-stack { bottom:calc(88px + env(safe-area-inset-bottom)); }
@@ -59,6 +82,8 @@
   .search-clear { min-width:44px; min-height:44px; }
 }
 @media (max-width:639px) {
+  .customer-detail-stats { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+  .customer-detail-stats>div:last-child { grid-column:1 / -1; }
   .ui-toast-stack { right:12px; left:12px; max-width:none; }
   .ui-toast-stack button { min-width:44px; min-height:44px; }
   .builder-grid { grid-template-columns:minmax(0,1fr); }
@@ -75,6 +100,9 @@
   .record-bottom { flex-wrap:wrap; }
   .record-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .record-stats>div:last-child { grid-column:1 / -1; }
+  .page-customers .record-stats { grid-template-columns:minmax(0,1fr) minmax(0,.8fr) minmax(0,1.5fr); }
+  .page-customers .record-stats>div:last-child { grid-column:auto; }
+  .page-customers .record-stats span { white-space:nowrap; }
   .product-plan { flex-wrap:wrap; gap:12px; }
   .product-plan>.row-actions { width:100%; justify-content:space-between; }
   .bar-row>div:first-child { flex-wrap:wrap; }

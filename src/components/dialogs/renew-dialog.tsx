@@ -82,8 +82,8 @@ export function RenewDialog({
         payment
       });
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Không thể gia hạn.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể gia hạn.');
     }
   };
 
@@ -179,7 +179,7 @@ export function RenewDialog({
                     inputMode="numeric"
                     min={0}
                     max={999999999}
-                    step={1000}
+                    step={1}
                     required
                     value={price}
                     onChange={e => setPrice(Number(e.target.value))}

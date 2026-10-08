@@ -427,7 +427,7 @@ export function ProductDialog({
                                 inputMode="numeric"
                                 min={0}
                                 max={999999999}
-                                step={1000}
+                                step={1}
                                 required
                                 value={pl.price}
                                 onChange={e => handleUpdatePlan(pl.id, 'price', Number(e.target.value))}
@@ -444,7 +444,7 @@ export function ProductDialog({
                                 inputMode="numeric"
                                 min={0}
                                 max={999999999}
-                                step={1000}
+                                step={1}
                                 required
                                 value={pl.cost}
                                 onChange={e => handleUpdatePlan(pl.id, 'cost', Number(e.target.value))}

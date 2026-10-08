@@ -122,7 +122,7 @@ export function GlobalDialogs() {
 
       {dialog.type === 'refund' && (
         <RefundDialog
-          key={`${orderId}:refund`}
+          key={`${orderId}:${payloadObj?.mode === 'recovery' ? 'recovery' : 'refund'}`}
           orderId={orderId}
           isRecovery={payloadObj?.mode === 'recovery'}
           onClose={closeDialog}
@@ -140,6 +140,7 @@ export function GlobalDialogs() {
 
       {dialog.type === 'pay-confirm' && (
         <PaymentConfirmDialog
+          key={orderId}
           orderId={orderId}
           onClose={closeDialog}
         />
@@ -155,6 +156,7 @@ export function GlobalDialogs() {
 
       {dialog.type === 'order-detail' && (
         <OrderDetailDialog
+          key={orderId}
           orderId={orderId}
           onClose={closeDialog}
         />
@@ -162,6 +164,7 @@ export function GlobalDialogs() {
 
       {dialog.type === 'customer-detail' && (
         <CustomerDetailDialog
+          key={customerId}
           customerId={customerId}
           onClose={closeDialog}
         />
@@ -169,6 +172,7 @@ export function GlobalDialogs() {
 
       {dialog.type === 'subscription-detail' && (
         <SubscriptionDetailDialog
+          key={subscriptionId}
           subscriptionId={subscriptionId}
           onClose={closeDialog}
         />

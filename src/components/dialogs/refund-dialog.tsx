@@ -31,7 +31,7 @@ export function RefundDialog({
   const [recoveryMode] = useState<boolean>(isRecovery);
   const [operationId] = useState(() => crypto.randomUUID());
   const [amount, setAmount] = useState<number>(f?.remainingRefund || 0);
-  const [costRecovered, setCostRecovered] = useState<number>(recoveryMode ? f?.remainingCost || 0 : 0);
+  const [costRecovered, setCostRecovered] = useState<number>(0);
   const [date, setDate] = useState(today);
   const [reason, setReason] = useState('');
   const [method, setMethod] = useState<'bank' | 'cash' | 'wallet' | 'other'>('bank');
@@ -128,8 +128,8 @@ export function RefundDialog({
         serviceAction: recoveryMode ? 'keep' : serviceAction
       });
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Không thể xử lý giao dịch.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể xử lý giao dịch.');
     }
   };
 
@@ -209,7 +209,7 @@ export function RefundDialog({
                       inputMode="numeric"
                       min={1}
                       max={f.remainingRefund}
-                      step={1000}
+                      step={1}
                       value={amount}
                       required
                       onChange={e => { setAmount(Number(e.target.value)); setServiceAction('keep'); }}
@@ -232,7 +232,7 @@ export function RefundDialog({
                   inputMode="numeric"
                   min={recoveryMode ? 1 : 0}
                   max={f.remainingCost}
-                  step={1000}
+                  step={1}
                   value={costRecovered}
                   required
                   onChange={e => setCostRecovered(Number(e.target.value))}
@@ -265,7 +265,10 @@ export function RefundDialog({
                 <select
                   name="method"
                   value={method}
-                  onChange={e => setMethod(e.target.value as any)}
+                  onChange={e => {
+                    const value = e.target.value;
+                    if (value === 'bank' || value === 'cash' || value === 'wallet' || value === 'other') setMethod(value);
+                  }}
                 >
                   <option value="bank">Chuyển khoản</option>
                   <option value="cash">Tiền mặt</option>

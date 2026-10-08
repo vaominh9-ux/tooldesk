@@ -1,13 +1,22 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 import { GET as healthGet } from '@/app/api/v1/health/route';
 import { GET as openapiGet } from '@/app/api/v1/openapi.json/route';
-import { DEFAULT_API_KEY, authenticateAgent } from '@/lib/agent-auth';
+import { authenticateAgent } from '@/lib/agent-auth';
+const TEST_API_KEY = 'tooldesk-isolated-test-key';
+beforeEach(() => vi.stubEnv('TOOLDESK_API_KEY', TEST_API_KEY));
+afterEach(() => vi.unstubAllEnvs());
 
 describe('Agent API Security & Discovery', () => {
+  it('keeps the API unavailable when no server key is configured', () => {
+    vi.stubEnv('TOOLDESK_API_KEY', '');
+    const result = authenticateAgent(new Request('http://localhost:3000/api/v1/products', { headers: { Authorization: `Bearer ${TEST_API_KEY}` } }));
+    expect(result.valid).toBe(false);
+    expect(result.errorResponse?.status).toBe(503);
+  });
   it('authenticates with valid Bearer token', () => {
     const req = new Request('http://localhost:3000/api/v1/products', {
-      headers: { Authorization: `Bearer ${DEFAULT_API_KEY}` }
+      headers: { Authorization: `Bearer ${TEST_API_KEY}` }
     });
     const result = authenticateAgent(req);
     expect(result.valid).toBe(true);
@@ -16,7 +25,7 @@ describe('Agent API Security & Discovery', () => {
 
   it('authenticates with valid x-api-key header', () => {
     const req = new Request('http://localhost:3000/api/v1/products', {
-      headers: { 'x-api-key': DEFAULT_API_KEY }
+      headers: { 'x-api-key': TEST_API_KEY }
     });
     const result = authenticateAgent(req);
     expect(result.valid).toBe(true);

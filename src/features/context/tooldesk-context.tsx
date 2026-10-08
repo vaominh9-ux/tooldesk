@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { createEmptyProductionData, createInitialData, type Customer, type Order, type ShopSettings, type TooldeskData } from '@/mocks/fixtures';
-import { DEFAULT_APP_TODAY } from '@/domain/dates';
 import { runtimeToday } from '@/lib/app-clock';
 import { commandSchema, executeCommand } from '@/domain/commands';
 import { dataSchema } from '@/domain/data-schema';
@@ -61,11 +60,13 @@ interface TooldeskContextType {
 }
 const TooldeskContext = createContext<TooldeskContextType | null>(null);
 
-export function TooldeskProvider({ children, dataSource = 'mock' }: { children: React.ReactNode; dataSource?: 'mock' | 'supabase' }) {
+export function TooldeskProvider({ children, dataSource = 'mock', initialToday }: { children: React.ReactNode; dataSource?: 'mock' | 'supabase'; initialToday: string }) {
   const [data, setData] = useState<TooldeskData>(() =>
     dataSource === 'mock' ? createInitialData() : createEmptyProductionData()
   );
   const currentData = useRef(data);
+  const dataVersion = useRef(0);
+  const [hasLoaded, setHasLoaded] = useState(dataSource === 'mock');
   const [dataStatus, setDataStatus] = useState<TooldeskContextType['dataStatus']>(dataSource === 'mock' ? 'mock' : 'loading');
   const [needsLogin, setNeedsLogin] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -76,9 +77,10 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
   const retryRequest = useRef<{ body: string; operationId: string } | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [dialog, setDialog] = useState<DialogState>({ type: null });
-  const [today, setToday] = useState(() => runtimeToday());
+  const [today, setToday] = useState(initialToday);
   const STORAGE_KEY = 'tooldesk_workspace_data';
   const updateData = (value: TooldeskData) => {
+    dataVersion.current++;
     currentData.current = value;
     setData(value);
     if (dataSource === 'mock' && typeof window !== 'undefined') {
@@ -95,27 +97,31 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
   };
   const closeDialog = () => { if (!busy.current) setDialog({ type: null }); };
   const load = async (silent = false) => {
-    if (dataSource === 'mock') { return; }
-    if (isFetching.current) return;
+    if (dataSource === 'mock') return false;
+    if (isFetching.current || busy.current) return false;
+    const version = dataVersion.current;
     isFetching.current = true;
     if (!silent) setDataStatus('loading');
     setIsSyncing(true);
     try {
       const response = await fetch('/api/data', { cache: 'no-store' });
-      if (response.status === 401) { setNeedsLogin(true); setDataStatus('error'); return; }
+      if (response.status === 401) { setNeedsLogin(true); setDataStatus('error'); return false; }
       const payload: unknown = await response.json();
       if (!response.ok || !payload || typeof payload !== 'object' || !('data' in payload)) throw new Error('Không tải được dữ liệu. Kiểm tra quyền và cấu hình backend.');
       const parsed = dataSchema.parse((payload as { data: unknown }).data);
+      if (busy.current || version !== dataVersion.current) return false;
       if (JSON.stringify(currentData.current) !== JSON.stringify(parsed)) {
         updateData(parsed);
       }
       if ('role' in payload && ['admin','staff','viewer'].includes(String(payload.role))) setRole(payload.role as TooldeskContextType['role']);
-      setNeedsLogin(false); setDataStatus('connected');
+      setHasLoaded(true); setNeedsLogin(false); setDataStatus('connected');
+      return true;
     } catch (error) {
+      setDataStatus('error');
       if (!silent) {
-        setDataStatus('error');
         addToast('Lỗi tải dữ liệu', error instanceof Error ? error.message : 'Dữ liệu không hợp lệ.', 'error');
       }
+      return false;
     } finally {
       isFetching.current = false;
       setIsSyncing(false);
@@ -128,7 +134,7 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
         if (saved) {
           const parsed = JSON.parse(saved);
           const valid = dataSchema.safeParse(parsed);
-          if (valid.success && valid.data.customers && valid.data.customers.length > 0) {
+          if (valid.success) {
             currentData.current = valid.data;
             setData(valid.data);
             return;
@@ -170,6 +176,7 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
     };
   }, [dataSource]);
   useEffect(() => {
+    setToday(runtimeToday());
     const timer = setInterval(() => setToday(runtimeToday()), 60000);
     return () => clearInterval(timer);
   }, []);
@@ -220,16 +227,22 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
     deletePlan: async planId => { await run({ type: 'delete_plan', input: { planId } }, 'Đã xóa gói dịch vụ'); },
     saveCampaign: async input => { await run({ type: 'save_campaign', input }, 'Đã lưu bản nháp'); },
     updateSettings: async input => { await run({ type: 'update_settings', input }, 'Đã lưu cài đặt', false); },
-    markContacted: async subscriptionId => { try { await run({ type: 'mark_contacted', input: { subscriptionId } }, 'Đã ghi nhận liên hệ', false); } catch { /* Error already shown to the user by run(). */ } },
+    markContacted: async subscriptionId => {
+      try { await run({ type: 'mark_contacted', input: { subscriptionId } }, 'Đã ghi nhận liên hệ', false); }
+      catch (error) {
+        // run already displays the error; do not leave an unhandled rejection in event handlers.
+        console.error('Không thể ghi nhận liên hệ:', error);
+      }
+    },
     updateSubscriptionNote: async (subscriptionId, note) => { await run({ type: 'update_subscription_note', input: { subscriptionId, note } }, 'Đã lưu tài khoản gói', false); },
-    importData: input => { updateData(dataSchema.parse(input)); closeDialog(); addToast('Đã nhập dữ liệu thành công', undefined, 'success'); },
-    resetData: () => { updateData(createEmptyProductionData()); closeDialog(); addToast('Đã làm sạch dữ liệu', 'Hệ thống đã sẵn sàng cho vận hành thực tế.', 'success'); },
-    loadDemoData: () => { updateData(createInitialData()); closeDialog(); addToast('Đã nạp dữ liệu mẫu', 'Đã tải 36 khách hàng và 98 đơn hàng demo.', 'info'); },
+    importData: input => { if (dataSource !== 'mock') throw new Error('Nhập dữ liệu cục bộ chỉ dùng trong bản demo.'); updateData(dataSchema.parse(input)); closeDialog(); addToast('Đã nhập dữ liệu thành công', undefined, 'success'); },
+    resetData: () => { if (dataSource !== 'mock') { addToast('Không thể làm sạch', 'Dữ liệu máy chủ không được xóa từ thao tác demo.', 'error'); return; } updateData(createEmptyProductionData()); closeDialog(); addToast('Đã làm sạch dữ liệu demo', undefined, 'success'); },
+    loadDemoData: () => { if (dataSource !== 'mock') { addToast('Không thể nạp demo', 'Đang sử dụng dữ liệu máy chủ.', 'error'); return; } updateData(createInitialData()); closeDialog(); addToast('Đã nạp dữ liệu mẫu', 'Đã tải 36 khách hàng và 98 đơn hàng demo.', 'info'); },
     syncWithSupabase: async () => {
       if (!busy.current) {
         addToast('Đang làm mới Realtime…', undefined, 'info');
-        await load();
-        addToast('Đã đồng bộ Realtime', 'Dữ liệu mới nhất từ Supabase Cloud.', 'success');
+        const loaded = await load();
+        if (loaded) addToast('Đã tải lại dữ liệu', 'Dữ liệu mới nhất từ máy chủ.', 'success');
       }
     },
     logout: async () => { const response = await fetch('/api/auth/logout', { method: 'POST' }); if (!response.ok) throw new Error('Không thể đăng xuất.'); setNeedsLogin(true); setDataStatus('error'); }
@@ -238,7 +251,7 @@ export function TooldeskProvider({ children, dataSource = 'mock' }: { children: 
     <TooldeskContext.Provider value={value}>
       {dataSource === 'supabase' && needsLogin ? (
         <LoginPanel onSuccess={() => void load()} />
-      ) : dataSource === 'supabase' && dataStatus !== 'connected' ? (
+      ) : dataSource === 'supabase' && !hasLoaded ? (
         <div className="app-splash-wrap">
           <div className="app-splash-card">
             <div className="login-logo-box" style={{ width: 56, height: 56, margin: '0 auto 16px' }}>

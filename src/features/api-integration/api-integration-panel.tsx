@@ -1,25 +1,41 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AppIcon } from '@/components/shared/app-icon';
 import { useTooldesk } from '@/features/context/tooldesk-context';
-import { DEFAULT_API_KEY } from '@/lib/agent-auth';
 
 export function ApiIntegrationPanel() {
   const { addToast } = useTooldesk();
   const [showKey, setShowKey] = useState(false);
   const [activeTab, setActiveTab] = useState<'curl' | 'chatgpt' | 'smax' | 'python'>('curl');
+  const [configuredKey, setConfiguredKey] = useState('');
+  const [baseUrl, setBaseUrl] = useState('/api/v1');
+  const [keyMessage, setKeyMessage] = useState('');
+  useEffect(() => {
+    setBaseUrl(`${window.location.origin}/api/v1`);
+    let mounted = true;
+    fetch('/api/settings/agent', { cache: 'no-store' }).then(async response => {
+      const value: unknown = await response.json();
+      if (!response.ok) throw new Error('Chỉ quản trị viên đã đăng nhập có thể xem khóa API.');
+      if (!value || typeof value !== 'object' || !('apiKey' in value) || typeof value.apiKey !== 'string') throw new Error('Không đọc được cấu hình API.');
+      if (mounted) { setConfiguredKey(value.apiKey); setKeyMessage(value.apiKey ? '' : 'Chưa cấu hình khóa API trên máy chủ.'); }
+    }).catch(error => { if (mounted) setKeyMessage(error instanceof Error ? error.message : 'Không tải được cấu hình API.'); });
+    return () => { mounted = false; };
+  }, []);
   const [testResult, setTestResult] = useState<{
     status: 'idle' | 'loading' | 'success' | 'error';
     message?: string;
   }>({ status: 'idle' });
 
-  const apiKey = DEFAULT_API_KEY;
-  const baseUrl = typeof window !== 'undefined' ? `${window.location.origin}/api/v1` : 'https://tooldesk-plum.vercel.app/api/v1';
+  const apiKey = configuredKey || 'YOUR_API_KEY';
 
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    addToast('Đã sao chép', `Đã chép ${label} vào bộ nhớ tạm.`, 'success');
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      addToast('Đã sao chép', `Đã chép ${label} vào bộ nhớ tạm.`, 'success');
+    } catch {
+      addToast('Không thể sao chép', 'Trình duyệt chưa cho phép truy cập bộ nhớ tạm.', 'error');
+    }
   };
 
   const handleTestPing = async () => {
@@ -52,10 +68,11 @@ export function ApiIntegrationPanel() {
           <h2>API & Kết nối AI Agent</h2>
           <p>Cung cấp giao diện đọc và ghi dữ liệu tự động cho ChatGPT, Claude, Smax AI, n8n, Zalo và Messenger Bot.</p>
         </div>
-        <span className="badge green">API v1 Sẵn sàng</span>
+        <span className={`badge ${configuredKey ? 'green' : 'neutral'}`}>{configuredKey ? 'API v1 đã cấu hình' : 'API v1 chưa cấu hình'}</span>
       </div>
 
       <div className="settings-form">
+        {keyMessage && <p className="dialog-note">{keyMessage}</p>}
         <div className="form-grid">
           <label className="field">
             <span>Secret API Key</span>
@@ -63,13 +80,15 @@ export function ApiIntegrationPanel() {
               <input
                 type={showKey ? 'text' : 'password'}
                 readOnly
-                value={apiKey}
+                value={configuredKey}
+                placeholder="Chưa có khóa API"
                 style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace' }}
               />
               <button
                 type="button"
                 className="button"
                 onClick={() => setShowKey(!showKey)}
+                disabled={!configuredKey}
                 title={showKey ? 'Ẩn khóa' : 'Hiện khóa'}
                 style={{ flexShrink: 0 }}
               >
@@ -80,6 +99,7 @@ export function ApiIntegrationPanel() {
                 type="button"
                 className="button primary"
                 onClick={() => copyToClipboard(apiKey, 'API Key')}
+                disabled={!configuredKey}
                 style={{ flexShrink: 0 }}
               >
                 <AppIcon name="check" size={15} />

@@ -8,7 +8,7 @@ import { SmtpSettingsPanel } from '@/components/settings/smtp-settings-panel';
 import { ApiIntegrationPanel } from '@/features/api-integration/api-integration-panel';
 
 export default function SettingsPage() {
-  const { data, dataStatus, updateSettings, openDialog, addToast, syncWithSupabase, logout, importData, loadDemoData } = useTooldesk();
+  const { data, dataStatus, today, updateSettings, openDialog, addToast, syncWithSupabase, logout, importData, loadDemoData } = useTooldesk();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [systemHealth, setSystemHealth] = useState<{
     databaseConfigured: boolean;
@@ -19,12 +19,12 @@ export default function SettingsPage() {
   useEffect(() => {
     fetch('/api/health')
       .then(response => response.json())
-      .then((value: any) => {
+      .then((value: unknown) => {
         if (value && typeof value === 'object') {
           setSystemHealth({
-            databaseConfigured: value.databaseConfigured === true,
-            emailConfigured: value.emailConfigured === true,
-            reminderSchedulerConfigured: value.reminderSchedulerConfigured === true
+            databaseConfigured: 'databaseConfigured' in value && value.databaseConfigured === true,
+            emailConfigured: 'emailConfigured' in value && value.emailConfigured === true,
+            reminderSchedulerConfigured: 'reminderSchedulerConfigured' in value && value.reminderSchedulerConfigured === true
           });
         }
       })
@@ -51,7 +51,7 @@ export default function SettingsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `tooldesk-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `tooldesk-backup-${today}.json`;
     a.click();
     URL.revokeObjectURL(url);
     addToast('Đã xuất file dữ liệu', 'Tệp .json đã được tải xuống máy tính.');
@@ -164,25 +164,25 @@ export default function SettingsPage() {
               <div>
                 <strong>Supabase</strong>
                 <p>
-                  {systemHealth?.databaseConfigured || dataStatus === 'connected'
-                    ? 'Đã kết nối PostgreSQL (jqkezzjkcyulkrmtrwgj)'
-                    : 'Chế độ lưu trữ trực tiếp / Ngoại tuyến'}
+                  {dataStatus === 'mock' ? 'Dữ liệu mẫu lưu trên thiết bị này' : dataStatus === 'connected'
+                    ? 'Đã tải dữ liệu từ máy chủ'
+                    : systemHealth?.databaseConfigured ? 'Đã cấu hình, đang kiểm tra kết nối' : 'Chưa kết nối máy chủ'}
                 </p>
               </div>
               <span
                 className={`badge ${
-                  systemHealth?.databaseConfigured || dataStatus === 'connected'
+                  dataStatus === 'connected'
                     ? 'green'
                     : dataStatus === 'error'
                     ? 'red'
                     : 'neutral'
                 }`}
               >
-                {systemHealth?.databaseConfigured || dataStatus === 'connected'
+                {dataStatus === 'connected'
                   ? 'Đã kết nối'
                   : dataStatus === 'loading'
                   ? 'Đang kiểm tra'
-                  : 'Trực tiếp'}
+                  : dataStatus === 'mock' ? 'Demo' : 'Chưa kết nối'}
               </span>
             </div>
 
@@ -231,7 +231,7 @@ export default function SettingsPage() {
       <div className="danger-zone">
         <h3>Quản lý dữ liệu hệ thống</h3>
         <p>
-          Hệ thống lưu trữ đơn hàng, khách hàng, sản phẩm và gói dịch vụ. Bạn có thể xuất sao lưu dự phòng, nạp tệp sao lưu, làm sạch dữ liệu để bắt đầu bán thật, hoặc nạp lại dữ liệu demo mẫu để tham khảo.
+          {dataStatus === 'mock' ? 'Bạn có thể xuất, nhập hoặc làm mới dữ liệu mẫu trên thiết bị này. Các thao tác demo không ảnh hưởng dữ liệu máy chủ.' : 'Xuất sao lưu để lưu lại dữ liệu đã tải. Nạp dữ liệu mẫu và làm sạch cục bộ chỉ có trong bản demo.'}
         </p>
         <div className="page-actions" style={{ flexWrap: 'wrap', gap: '10px' }}>
           {dataStatus === 'connected' && (
@@ -268,6 +268,7 @@ export default function SettingsPage() {
             accept=".json,application/json"
             style={{ display: 'none' }}
           />
+          {dataStatus === 'mock' && <>
           <button
             type="button"
             className="button"
@@ -291,8 +292,9 @@ export default function SettingsPage() {
             onClick={() => openDialog('reset')}
           >
             <AppIcon name="refresh" size={15} />
-            <span>Làm sạch dữ liệu bán thật</span>
+            <span>Làm sạch dữ liệu demo</span>
           </button>
+          </>}
         </div>
       </div>
     </>

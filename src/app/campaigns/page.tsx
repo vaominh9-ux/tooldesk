@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '@/components/shared/app-icon';
 import { formatDateLabel } from '@/domain/dates';
-import { audienceFor } from '@/domain/orders';
+import { audienceFor, searchFilter } from '@/domain/orders';
 
 export default function CampaignsPage() {
   const { data, openDialog, today } = useTooldesk();
@@ -22,8 +22,7 @@ export default function CampaignsPage() {
 
   let filtered = data.campaigns;
   if (search.trim()) {
-    const q = search.toLowerCase().trim();
-    filtered = filtered.filter(c => `${c.name} ${c.subject}`.toLowerCase().includes(q));
+    filtered = searchFilter(filtered, search, c => `${c.name} ${c.subject}`);
   }
 
   return (

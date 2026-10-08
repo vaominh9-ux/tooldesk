@@ -4,7 +4,7 @@ import { loadData, runCommand } from './data-repository';
 import { type Command } from '@/domain/commands';
 import { type AppData } from '@/domain/data-schema';
 import { todayInHoChiMinh } from './clock';
-import { subStatus } from '@/domain/subscriptions';
+import { isSubscriptionActive, subStatus } from '@/domain/subscriptions';
 import { daysLeft } from '@/domain/dates';
 import { calculateTotals, orderFinancials } from '@/domain/money';
 
@@ -229,7 +229,7 @@ export async function getOverviewService() {
     today,
     timezone: data.settings.timezone || 'Asia/Ho_Chi_Minh',
     shopName: data.settings.shopName,
-    activeSubscriptionsCount: data.subscriptions.filter(s => !s.cancelled && s.expiresAt > today).length,
+    activeSubscriptionsCount: data.subscriptions.filter(s => isSubscriptionActive(s, today)).length,
     expiringSubscriptionsCount: expiringSubs.length,
     expiredSubscriptionsCount: expiredSubs.length,
     unpaidOrdersCount: unpaidOrders.length,

@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     const user = await requireUser();
     if (user.role === 'viewer') throw new AccessError(403, 'Tài khoản chỉ có quyền xem.');
     const input = z.object({ operationId: z.uuid(), command: commandSchema }).strict().parse(await request.json());
-    if (['update_settings','add_product','update_plan','add_plan'].includes(input.command.type) && user.role !== 'admin') throw new AccessError(403, 'Thao tác này cần quyền quản trị.');
+    if (['update_settings','add_product','update_product','delete_product','update_plan','add_plan','delete_plan'].includes(input.command.type) && user.role !== 'admin') throw new AccessError(403, 'Thao tác này cần quyền quản trị.');
     const result = await runCommand(input.command, input.operationId, user);
     return NextResponse.json({ success: true, ...result }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {

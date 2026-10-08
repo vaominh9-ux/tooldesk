@@ -5,7 +5,7 @@ import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '@/components/shared/app-icon';
 import { orderFinancials, formatMoney } from '@/domain/money';
 import { formatDateLabel } from '@/domain/dates';
-import { paginate, formatOrderCode } from '@/domain/orders';
+import { paginate, formatOrderCode, searchFilter } from '@/domain/orders';
 import Link from 'next/link';
 
 export default function OrdersPage() {
@@ -43,12 +43,10 @@ export default function OrdersPage() {
   }
 
   if (search.trim()) {
-    const q = search.toLowerCase().trim();
-    items = items.filter(o => {
+    items = searchFilter(items, search, o => {
       const cust = data.customers.find(c => c.id === o.customerId);
       const prod = data.products.find(p => p.id === o.productId);
-      const text = `${o.id} ${formatOrderCode(o.id)} ${cust?.name || ''} ${cust?.email || ''} ${cust?.phone || ''} ${prod?.name || ''}`.toLowerCase();
-      return text.includes(q);
+      return `${o.id} ${formatOrderCode(o.id)} ${cust?.name || ''} ${cust?.email || ''} ${cust?.phone || ''} ${prod?.name || ''}`;
     });
   }
 
@@ -416,7 +414,7 @@ export default function OrdersPage() {
               <button
                 type="button"
                 className="icon-button"
-                onClick={() => setPage(p => Math.max(1, p - 1))}
+                onClick={() => setPage(Math.max(1, paged.page - 1))}
                 disabled={paged.page <= 1}
                 aria-label="Trang trước"
               >
@@ -426,7 +424,7 @@ export default function OrdersPage() {
               <button
                 type="button"
                 className="icon-button"
-                onClick={() => setPage(p => Math.min(paged.pages, p + 1))}
+                onClick={() => setPage(Math.min(paged.pages, paged.page + 1))}
                 disabled={paged.page >= paged.pages}
                 aria-label="Trang sau"
               >

@@ -5,6 +5,7 @@ import { isSubscriptionActive, subStatus } from './subscriptions';
 import { totalPaid } from './money';
 import { DEFAULT_APP_TODAY } from './dates';
 import type { AppData } from './data-schema';
+import { normalizeCustomerEmail } from './customer-identity';
 
 export function normalizeText(value = ''): string {
   return String(value)
@@ -95,7 +96,7 @@ export function audienceFor(
       excluded.invalidEmail++;
       return false;
     }
-    const email = c.email.trim().toLowerCase();
+    const email = normalizeCustomerEmail(c.email);
     if (unique.has(email)) {
       excluded.duplicate++;
       return false;

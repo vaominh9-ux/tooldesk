@@ -6,7 +6,7 @@ import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '@/components/shared/app-icon';
 import { subStatus } from '@/domain/subscriptions';
 import { formatDateLabel, remainingLabel } from '@/domain/dates';
-import { paginate } from '@/domain/orders';
+import { paginate, searchFilter } from '@/domain/orders';
 
 export default function SubscriptionsPage() {
   const { data, today, openDialog, markContacted } = useTooldesk();
@@ -39,12 +39,10 @@ export default function SubscriptionsPage() {
   }
 
   if (search.trim()) {
-    const q = search.toLowerCase().trim();
-    items = items.filter(s => {
+    items = searchFilter(items, search, s => {
       const cust = data.customers.find(c => c.id === s.customerId);
       const prod = data.products.find(p => p.id === s.productId);
-      const text = `${cust?.name || ''} ${cust?.phone || ''} ${cust?.email || ''} ${prod?.name || ''}`.toLowerCase();
-      return text.includes(q);
+      return `${cust?.name || ''} ${cust?.phone || ''} ${cust?.email || ''} ${prod?.name || ''}`;
     });
   }
 
@@ -432,7 +430,7 @@ export default function SubscriptionsPage() {
               <button
                 type="button"
                 className="icon-button"
-                onClick={() => setPage(p => Math.max(1, p - 1))}
+                onClick={() => setPage(Math.max(1, paged.page - 1))}
                 disabled={paged.page <= 1}
                 aria-label="Trang trước"
               >
@@ -442,7 +440,7 @@ export default function SubscriptionsPage() {
               <button
                 type="button"
                 className="icon-button"
-                onClick={() => setPage(p => Math.min(paged.pages, p + 1))}
+                onClick={() => setPage(Math.min(paged.pages, paged.page + 1))}
                 disabled={paged.page >= paged.pages}
                 aria-label="Trang sau"
               >

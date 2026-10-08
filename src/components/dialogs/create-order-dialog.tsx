@@ -8,6 +8,8 @@ import { AppIcon } from '../shared/app-icon';
 import { addDuration, formatDateLabel } from '@/domain/dates';
 import { formatMoney } from '@/domain/money';
 import { formatCustomerCode } from '@/domain/orders';
+import { customersWithEmail } from '@/domain/customer-identity';
+import { CustomerEmailMatches } from '@/features/customers/customer-email-matches';
 
 export function CreateOrderDialog({
   onClose,
@@ -44,6 +46,12 @@ export function CreateOrderDialog({
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
+  const emailMatches = isNewCustomer ? customersWithEmail(data.customers, newCustomerEmail) : [];
+  const useExistingCustomer = (customerId: string) => {
+    setSelectedCustomerId(customerId);
+    setIsNewCustomer(false);
+    setError('');
+  };
 
   const handleProductChange = (prodId: string) => {
     setSelectedProductId(prodId);
@@ -77,6 +85,7 @@ export function CreateOrderDialog({
 
     try {
       if (isNewCustomer) {
+        if (emailMatches.length) throw new Error('Email này đã có hồ sơ. Chọn “Dùng khách này” để tiếp tục tạo đơn.');
         if (!newCustomerName.trim()) {
           throw new Error('Vui lòng nhập họ tên khách hàng mới.');
         }
@@ -129,8 +138,8 @@ export function CreateOrderDialog({
       });
 
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Không thể tạo đơn hàng.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể tạo đơn hàng.');
     } finally {
       setPending(false);
     }
@@ -223,8 +232,11 @@ export function CreateOrderDialog({
                     maxLength={120}
                     value={newCustomerEmail}
                     onChange={e => setNewCustomerEmail(e.target.value)}
+                    aria-invalid={emailMatches.length > 0 || undefined}
+                    aria-describedby={emailMatches.length ? 'customer-email-matches' : undefined}
                   />
                 </label>
+                <CustomerEmailMatches customers={emailMatches} onUse={useExistingCustomer} />
                 <label className="field">
                   <span>Số điện thoại</span>
                   <input
@@ -322,7 +334,7 @@ export function CreateOrderDialog({
                     inputMode="numeric"
                     min={0}
                     max={999999999}
-                    step={1000}
+                    step={1}
                     required
                     value={price}
                     onChange={e => setPrice(Number(e.target.value))}
@@ -358,7 +370,7 @@ export function CreateOrderDialog({
                       inputMode="numeric"
                       min={0}
                       max={999999999}
-                      step={1000}
+                      step={1}
                       required
                       value={cost}
                       onChange={e => setCost(Number(e.target.value))}

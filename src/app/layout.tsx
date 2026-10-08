@@ -5,6 +5,7 @@ import '@/styles/tooldesk-v02.css';
 import '@/styles/ui-polish.css';
 import { TooldeskProvider } from '@/features/context/tooldesk-context';
 import { AppShell } from '@/components/layout/app-shell';
+import { runtimeToday } from '@/lib/app-clock';
 
 export const metadata: Metadata = {
   title: 'Tooldesk — Quản lý kinh doanh tool AI',
@@ -22,7 +23,7 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body>
-        <TooldeskProvider dataSource={process.env.APP_DATA_SOURCE === 'supabase' ? 'supabase' : 'mock'}>
+        <TooldeskProvider initialToday={runtimeToday()} dataSource={process.env.APP_DATA_SOURCE === 'supabase' ? 'supabase' : 'mock'}>
           <AppShell>{children}</AppShell>
         </TooldeskProvider>
       </body>

@@ -5,6 +5,8 @@ import { useBackdropDismiss } from './use-backdrop-dismiss';
 import React, { useState } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
+import { customersWithEmail, normalizeCustomerEmail } from '@/domain/customer-identity';
+import { CustomerEmailMatches } from '@/features/customers/customer-email-matches';
 
 export function CustomerDialog({
   customerId,
@@ -29,6 +31,8 @@ export function CustomerDialog({
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const contentRef = React.useRef<HTMLDivElement>(null);
+  const emailChanged = !existing || normalizeCustomerEmail(email) !== normalizeCustomerEmail(existing.email);
+  const emailMatches = emailChanged ? customersWithEmail(data.customers, email, existing?.id) : [];
 
   const handleEmailConsentChange = (val: 'unknown' | 'opted_in' | 'opted_out') => {
     setEmailConsent(val);
@@ -39,6 +43,10 @@ export function CustomerDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (emailMatches.length) {
+      setError('Email này đã có hồ sơ. Hãy xem hồ sơ hiện có hoặc nhập email khác.');
+      return;
+    }
     if (!name.trim()) {
       setError('Vui lòng nhập tên khách hàng.');
       contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -141,8 +149,11 @@ export function CustomerDialog({
                 maxLength={120}
                 placeholder="khach@example.com"
                 onChange={e => setEmail(e.target.value)}
+                aria-invalid={emailMatches.length > 0 || undefined}
+                aria-describedby={emailMatches.length ? 'customer-email-matches' : undefined}
               />
             </label>
+            <CustomerEmailMatches customers={emailMatches} />
 
             <label className="field">
               <span>Số điện thoại</span>
@@ -179,7 +190,10 @@ export function CustomerDialog({
               <select
                 name="emailConsent"
                 value={emailConsent}
-                onChange={e => handleEmailConsentChange(e.target.value as any)}
+                onChange={e => {
+                  const value = e.target.value;
+                  if (value === 'unknown' || value === 'opted_in' || value === 'opted_out') handleEmailConsentChange(value);
+                }}
               >
                 <option value="unknown">Chưa xác nhận</option>
                 <option value="opted_in">Đã đồng ý nhận</option>
@@ -232,7 +246,7 @@ export function CustomerDialog({
               <button type="button" className="button" onClick={onClose} disabled={isSubmitting}>
                 Hủy
               </button>
-              <button type="submit" className="button primary" disabled={isSubmitting}>
+              <button type="submit" className="button primary" disabled={isSubmitting || emailMatches.length > 0}>
                 <AppIcon name="check" size={15} />
                 <span>{isSubmitting ? 'Đang lưu…' : 'Lưu khách hàng'}</span>
               </button>

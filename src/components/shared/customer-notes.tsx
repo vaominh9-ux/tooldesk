@@ -153,7 +153,7 @@ export function CustomerNotes({
       setCopiedId(item.id);
       setTimeout(() => setCopiedId(null), 2000);
     } catch {
-      // fallback
+      addToast('Không thể sao chép', 'Trình duyệt chưa cho phép truy cập bộ nhớ tạm.', 'error');
     }
   };
 

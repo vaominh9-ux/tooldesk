@@ -62,12 +62,12 @@ export function CustomerDetailDialog({
 
   return (
     <div className="dialog-overlay" {...backdropDismiss}>
-      <dialog id="active-dialog" className="drawer" open onClick={e => e.stopPropagation()} aria-labelledby="dialog-title">
+      <dialog id="active-dialog" className="drawer customer-detail-drawer" open onClick={e => e.stopPropagation()} aria-labelledby="dialog-title">
         <div className="dialog-shell">
           {/* Header */}
           <header className="dialog-header">
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="customer-detail-identity" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h2 id="dialog-title">{customer.name}</h2>
                 <span className="badge neutral" style={{ fontSize: '11px' }}>
                   {customer.source || 'Trực tiếp'}
@@ -85,7 +85,7 @@ export function CustomerDetailDialog({
           {/* Content */}
           <div className="dialog-content">
             {/* Quick KPI stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', textAlign: 'center', marginBottom: '18px' }}>
+            <div className="customer-detail-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', textAlign: 'center', marginBottom: '18px' }}>
               <div style={{ padding: '12px 8px', background: '#f8f9fc', border: '1px solid var(--line)', borderRadius: '10px' }}>
                 <span style={{ fontSize: '11px', color: '#778197', display: 'block', fontWeight: 600 }}>Gói đang dùng</span>
                 <strong style={{ fontSize: '18px', color: '#15775c', display: 'block', marginTop: '2px' }}>

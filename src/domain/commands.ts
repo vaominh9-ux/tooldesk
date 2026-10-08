@@ -3,9 +3,11 @@ import { daySchema, moneySchema, settingsSchema, type AppData } from './data-sch
 import { addDuration } from './dates';
 import { renewalDates } from './subscriptions';
 import { validateRefundInput } from './refunds';
+import { orderEditPolicy } from './order-edit-policy';
+import { customerEmailInputSchema, customersWithEmail, normalizeCustomerEmail } from './customer-identity';
 
 const id = z.string().min(1).max(100);
-const customerFields = z.object({ name: z.string().trim().min(1).max(80), email: z.union([z.literal(''), z.email()]).default(''), phone: z.string().trim().max(25).default(''), source: z.string().trim().max(100).default('Nhập thủ công'), notes: z.string().trim().max(50000).default(''), emailConsent: z.enum(['unknown', 'opted_in', 'opted_out']).default('unknown'), consentSource: z.string().trim().max(200).default('') }).strict();
+const customerFields = z.object({ name: z.string().trim().min(1).max(80), email: customerEmailInputSchema.default(''), phone: z.string().trim().max(25).default(''), source: z.string().trim().max(100).default('Nhập thủ công'), notes: z.string().trim().max(50000).default(''), emailConsent: z.enum(['unknown', 'opted_in', 'opted_out']).default('unknown'), consentSource: z.string().trim().max(200).default('') }).strict();
 const customerInput = customerFields.refine(value => value.email || value.phone, 'Cần email hoặc số điện thoại.').refine(value => value.emailConsent !== 'opted_in' || value.consentSource.length > 0, 'Cần nguồn xác nhận đồng ý nhận email.');
 export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('create_order'), input: z.object({ customerId: id.optional(), newCustomer: customerInput.optional(), productId: id, planId: id, startsAt: daySchema, price: moneySchema, cost: moneySchema, payment: z.enum(['paid', 'unpaid']), note: z.string().trim().max(5000).default('') }).strict() }).strict(),
@@ -14,7 +16,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('renew_subscription'), input: z.object({ subscriptionId: id, planId: id, price: moneySchema, cost: moneySchema, payment: z.enum(['paid', 'unpaid']).default('unpaid') }).strict() }).strict(),
   z.object({ type: z.literal('record_refund'), input: z.object({ operationId: z.uuid(), orderId: id, amount: moneySchema, costRecovered: moneySchema.default(0), date: daySchema, reason: z.string().trim().min(3).max(500), method: z.enum(['bank', 'cash', 'wallet', 'other']), reference: z.string().trim().max(120).default(''), serviceAction: z.enum(['keep', 'end']).default('keep') }).strict() }).strict(),
   z.object({ type: z.literal('add_customer'), input: customerInput }).strict(),
-  z.object({ type: z.literal('update_customer'), input: z.object({ id, updates: z.object({ name: z.string().trim().min(1).max(80).optional(), email: z.union([z.literal(''), z.email()]).optional(), phone: z.string().trim().max(25).optional(), source: z.string().trim().max(100).optional(), notes: z.string().trim().max(50000).optional(), emailConsent: z.enum(['unknown','opted_in','opted_out']).optional(), consentSource: z.string().trim().max(200).optional() }).strict() }).strict() }).strict(),
+  z.object({ type: z.literal('update_customer'), input: z.object({ id, updates: z.object({ name: z.string().trim().min(1).max(80).optional(), email: customerEmailInputSchema.optional(), phone: z.string().trim().max(25).optional(), source: z.string().trim().max(100).optional(), notes: z.string().trim().max(50000).optional(), emailConsent: z.enum(['unknown','opted_in','opted_out']).optional(), consentSource: z.string().trim().max(200).optional() }).strict() }).strict() }).strict(),
   z.object({ type: z.literal('mark_contacted'), input: z.object({ subscriptionId: id }).strict() }).strict(),
   z.object({ type: z.literal('update_subscription_note'), input: z.object({ subscriptionId: id, note: z.string().trim().max(500) }).strict() }).strict(),
   z.object({ type: z.literal('update_settings'), input: settingsSchema.partial().strict() }).strict(),
@@ -34,8 +36,9 @@ export function executeCommand(original: AppData, command: Command, operation: O
   const { today, newId } = operation;
   let resultId: string | undefined;
   const addCustomer = (input: z.infer<typeof customerInput>) => {
-    const email = input.email.trim().toLowerCase();
-    if (email && data.customers.some(customer => customer.email.trim().toLowerCase() === email)) throw new Error('Email đã thuộc khách khác.');
+    const email = normalizeCustomerEmail(input.email);
+    const duplicate = customersWithEmail(data.customers, email)[0];
+    if (duplicate) throw new Error(`Email đã thuộc khách ${duplicate.name}. Hãy dùng hồ sơ hiện có.`);
     const customer = { ...input, email, id: newId('kh'), color: 'sky', joinedAt: today, consentUpdatedAt: today };
     data.customers.unshift(customer); return customer;
   };
@@ -58,16 +61,27 @@ export function executeCommand(original: AppData, command: Command, operation: O
       const input = command.input;
       const order = data.orders.find(o => o.id === input.orderId);
       if (!order) throw new Error('Đơn hàng không tồn tại.');
+      const policy = orderEditPolicy(data, order);
+      const protectedFields = ['price', 'cost', 'startsAt', 'expiresAt', 'payment', 'planId'] as const;
+      if (policy.locked && protectedFields.some(field => input[field] !== undefined && input[field] !== order[field])) {
+        throw new Error(policy.reason);
+      }
+      const product = data.products.find(item => item.id === order.productId);
+      if (input.planId !== undefined && !product?.plans.some(plan => plan.id === input.planId)) {
+        throw new Error('Gói bán không thuộc sản phẩm của đơn hàng.');
+      }
+      const startsAt = input.startsAt ?? order.startsAt;
+      const expiresAt = input.expiresAt ?? order.expiresAt;
+      if (expiresAt <= startsAt) throw new Error('Ngày hết hạn phải sau ngày bắt đầu.');
+      if (policy.continuousRenewal && startsAt !== order.previousSubscription?.expiresAt) {
+        throw new Error('Kỳ gia hạn còn hạn phải bắt đầu từ hạn kết thúc của kỳ trước.');
+      }
       if (input.price !== undefined) order.price = input.price;
       if (input.cost !== undefined) order.cost = input.cost;
       if (input.startsAt !== undefined) order.startsAt = input.startsAt;
       if (input.expiresAt !== undefined) order.expiresAt = input.expiresAt;
       if (input.note !== undefined) order.note = input.note;
-      if (input.planId !== undefined && input.planId !== order.planId) {
-        const prod = data.products.find(p => p.id === order.productId);
-        const plan = prod?.plans.find(pl => pl.id === input.planId);
-        if (plan) order.planId = plan.id;
-      }
+      if (input.planId !== undefined) order.planId = input.planId;
       if (input.payment !== undefined && input.payment !== order.payment) {
         order.payment = input.payment;
         if (input.payment === 'paid') {
@@ -78,8 +92,8 @@ export function executeCommand(original: AppData, command: Command, operation: O
       }
       if (order.subscriptionId) {
         const sub = data.subscriptions.find(s => s.id === order.subscriptionId);
-        if (sub) {
-          if (input.startsAt !== undefined) sub.startsAt = input.startsAt;
+        if (sub && sub.lastOrderId === order.id && !policy.locked) {
+          if (input.startsAt !== undefined && !policy.continuousRenewal) sub.startsAt = input.startsAt;
           if (input.expiresAt !== undefined) sub.expiresAt = input.expiresAt;
           if (input.price !== undefined) sub.price = input.price;
           if (input.cost !== undefined) sub.cost = input.cost;
@@ -132,8 +146,9 @@ export function executeCommand(original: AppData, command: Command, operation: O
       if (!customer) throw new Error('Không tìm thấy khách hàng.');
       const oldNotes = customer.notes;
       const updates = customerInput.parse({ name: customer.name, email: customer.email, phone: customer.phone, source: customer.source, notes: customer.notes, emailConsent: customer.emailConsent, consentSource: customer.consentSource, ...command.input.updates });
-      const email = updates.email.toLowerCase();
-      if (email && data.customers.some(other => other.id !== customer.id && other.email.toLowerCase() === email)) throw new Error('Email đã thuộc khách khác.');
+      const email = normalizeCustomerEmail(updates.email);
+      const duplicate = customersWithEmail(data.customers, email, customer.id)[0];
+      if (duplicate && email !== normalizeCustomerEmail(customer.email)) throw new Error(`Email đã thuộc khách ${duplicate.name}. Hãy dùng hồ sơ hiện có.`);
       const consentChanged = command.input.updates.emailConsent !== undefined && command.input.updates.emailConsent !== customer.emailConsent;
       const consentUpdatedAt = consentChanged ? today : (customer.consentUpdatedAt || today);
       Object.assign(customer, updates, { email, consentUpdatedAt });

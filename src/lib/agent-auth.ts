@@ -1,9 +1,9 @@
+import 'server-only';
 import { NextResponse } from 'next/server';
 
-export const DEFAULT_API_KEY = 'tdk_live_a89f3c7e2b104d5fa61e89c2';
 
 export function getExpectedApiKey(): string {
-  return process.env.TOOLDESK_API_KEY || DEFAULT_API_KEY;
+  return process.env.TOOLDESK_API_KEY?.trim() || '';
 }
 
 export interface AgentAuthResult {
@@ -13,6 +13,7 @@ export interface AgentAuthResult {
 
 export function authenticateAgent(request: Request): AgentAuthResult {
   const expectedKey = getExpectedApiKey();
+  if (!expectedKey) return { valid: false, errorResponse: NextResponse.json({ success: false, error: 'Chưa cấu hình khóa API trên máy chủ.' }, { status: 503 }) };
   
   // Check Authorization header: Bearer <key>
   const authHeader = request.headers.get('authorization') || '';

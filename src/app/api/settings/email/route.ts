@@ -5,16 +5,11 @@ import { readSmtpConfig, saveSmtpConfig } from '@/lib/smtp-config-store';
 import { publicSmtpConfig, smtpConfigSchema, smtpUpdateSchema } from '@/domain/smtp-config';
 export const dynamic = 'force-dynamic';
 export async function GET() {
-  const isDbConfigured = process.env.APP_DATA_SOURCE === 'supabase' || Boolean(process.env.DATABASE_URL);
+  const isDbConfigured = process.env.APP_DATA_SOURCE === 'supabase';
   if (!isDbConfigured) return NextResponse.json({ ...publicSmtpConfig(null, 'empty'), canEdit: false, demo: true, storageReady: false });
   try {
-    let userRole: 'admin' | 'staff' | 'viewer' | null = null;
-    try {
-      const user = await requireUser();
-      userRole = user.role;
-    } catch {}
-
-    const canEdit = userRole === 'admin';
+    const user = await requireUser();
+    const canEdit = user.role === 'admin';
     const { config, source } = await readSmtpConfig();
     return NextResponse.json(
       {
@@ -33,7 +28,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     requireSameOrigin(request);
-    const isDbConfigured = process.env.APP_DATA_SOURCE === 'supabase' || Boolean(process.env.DATABASE_URL);
+    const isDbConfigured = process.env.APP_DATA_SOURCE === 'supabase';
     if (!isDbConfigured) return NextResponse.json({ error: 'Bản demo không lưu cấu hình SMTP thật.' }, { status: 409 });
     const user = await requireUser();
     if (user.role !== 'admin') throw new AccessError(403, 'Chỉ quản trị viên được thay đổi SMTP.');
