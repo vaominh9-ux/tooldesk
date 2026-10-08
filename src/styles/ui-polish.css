@@ -167,7 +167,10 @@
 @media (max-width:1023px) {
   main .text-link, main .text-button, .segmented button { min-height:44px; }
   main .text-link { display:inline-flex; align-items:center; }
-  main .work-table .person-cell .text-link { min-height:44px; }
+  .dashboard-work .work-table .person-cell { position:relative; min-height:var(--control-mobile); }
+  main .dashboard-work .work-table .person-cell .text-link { display:block; min-height:0; }
+  .dashboard-work .work-table .person-cell .text-link::after { content:""; position:absolute; inset:0; }
+  .dashboard-work .work-table .person-cell small { margin-top:2px; }
   main .record-card .order-number { min-width:44px; min-height:44px; }
   main .add-plan-action-btn { min-height:44px !important; }
   .dialog-content .text-button { min-width:44px; min-height:44px; }
@@ -304,7 +307,8 @@
   .page-customers .customer-order-history .badge { font-size:12px; }
   .page-customers .customer-order-history .product-cell>div { min-width:0; overflow-wrap:anywhere; }
   .page-customers .customer-contact-panel { min-width:0; padding:16px !important; }
-  .page-customers .customer-contact-panel .detail-info { gap:16px !important; }
+  .page-customers .customer-contact-panel .detail-info { padding:0; gap:16px !important; }
+  .page-customers .customer-contact-panel .customer-notes-body { padding:12px !important; }
   .page-customers .customer-contact-panel .detail-info strong { font-size:14px !important; overflow-wrap:anywhere; }
   .page-customers .customer-contact-panel .consent-note { color:var(--muted) !important; font-size:12px !important; }
   .page-customers .customer-notes { margin-bottom:0 !important; }
@@ -320,6 +324,9 @@
 
 @media (max-width:639px) {
   .page-customers .customer-order-history { grid-template-columns:minmax(0,1fr); }
+  .page-customers .customer-contact-panel .customer-note-presets { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .page-customers .customer-contact-panel .customer-note-presets button { min-width:0; white-space:normal; line-height:1.4; }
+  .page-customers .customer-contact-panel .customer-note-presets button:last-child { grid-column:1 / -1; }
 }
 
 /* Renew button and small button icon sizing & alignment */
@@ -1005,6 +1012,27 @@
 .care-actions { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:8px; font-size:12px; }
 .care-panel .data-table td:first-child { max-width:320px; overflow-wrap:anywhere; }
 .care-panel .data-table p { margin-top:6px; }
+.zalo-settings-panel { margin-top:var(--space-section); scroll-margin-top:88px; }
+.zalo-settings-body { display:grid; gap:16px; padding:0 22px 22px; }
+.zalo-settings-actions { display:flex; flex-wrap:wrap; gap:10px; }
+.zalo-settings-actions .button { min-height:var(--control-mobile); }
+.zalo-recipient { display:flex; align-items:center; gap:12px; padding:14px; border:1px solid var(--line); border-radius:10px; background:var(--bg); }
+.zalo-recipient > div { min-width:0; }
+.zalo-recipient p, .zalo-explanation, .zalo-run-status p { margin-top:6px; color:var(--muted); font-size:12px; line-height:1.7; overflow-wrap:anywhere; }
+.zalo-preferences { display:grid; gap:10px; border:1px solid var(--line); border-radius:10px; padding:14px; min-width:0; }
+.zalo-preferences legend { padding:0 6px; font-weight:600; font-size:13px; }
+.zalo-preferences > label { display:flex; align-items:center; gap:10px; min-height:var(--control-mobile); font-size:13px; }
+.zalo-preferences input { width:18px; height:18px; flex-shrink:0; accent-color:var(--accent); }
+.zalo-hour { justify-content:space-between; flex-wrap:wrap; }
+.zalo-hour select { min-height:var(--control-mobile); padding:8px 12px; border:1px solid var(--line); border-radius:9px; background:var(--surface); }
+.zalo-pairing { display:grid; gap:10px; padding:14px; border:1px solid var(--line); border-radius:10px; background:var(--accent-soft); }
+.zalo-pairing code { padding:10px; background:var(--surface); border-radius:7px; overflow-wrap:anywhere; user-select:all; }
+.zalo-pairing small { font-size:12px; line-height:1.7; }
+.zalo-run-status { display:grid; gap:8px; padding-top:16px; border-top:1px solid var(--line); }
+@media(max-width:639px) {
+  .zalo-settings-body { padding:0 16px 16px; }
+  .zalo-settings-actions .button { flex:1 1 100%; }
+}
 .customer-care-panel .empty-state { display:grid; grid-template-columns:44px minmax(0,1fr); align-items:center; column-gap:12px; max-width:none; margin:0 22px 22px; padding:16px; text-align:left; border:1px solid var(--line); border-radius:10px; background:var(--bg); }
 .customer-care-panel .empty-icon { grid-row:1 / 3; width:44px; height:44px; margin:0; color:var(--accent); background:var(--accent-soft); border-color:var(--line); }
 .customer-care-panel .empty-state p { margin-top:4px; }

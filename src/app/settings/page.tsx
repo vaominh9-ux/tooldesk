@@ -6,6 +6,7 @@ import { AppIcon } from '@/components/shared/app-icon';
 import { ReminderStatusPanel } from '@/features/communications/reminder-status-panel';
 import { SmtpSettingsPanel } from '@/components/settings/smtp-settings-panel';
 import { ApiIntegrationPanel } from '@/features/api-integration/api-integration-panel';
+import { ZaloSettingsPanel } from '@/features/communications/zalo-settings-panel';
 
 export default function SettingsPage() {
   const { data, dataStatus, today, updateSettings, openDialog, addToast, syncWithSupabase, logout, importData, loadDemoData } = useTooldesk();
@@ -227,6 +228,7 @@ export default function SettingsPage() {
       {/* Integrations */}
       <ApiIntegrationPanel />
       <SmtpSettingsPanel />
+      <ZaloSettingsPanel />
       {(dataStatus === 'connected' || dataStatus === 'mock') && <ReminderStatusPanel />}
       <div className="danger-zone">
         <h3>Quản lý dữ liệu hệ thống</h3>

@@ -192,7 +192,7 @@ export function CustomerNotes({
         </div>
       </div>
 
-      <div style={{ padding: '12px 14px' }}>
+      <div className="customer-notes-body" style={{ padding: '12px 14px' }}>
         {/* Preset quick chips */}
         <div className="customer-note-presets" style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '8px' }}>
           {presets.map(p => (

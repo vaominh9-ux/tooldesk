@@ -25,6 +25,7 @@
    - Modal tạo đơn hàng: Chọn khách / tạo khách mới, chọn tool, gói, ngày bắt đầu, tính tự động hạn kết thúc và lợi nhuận gộp dự kiến.
    - Modal hoàn tiền: Tính số tiền tối đa còn được hoàn, lý do, phương thức, tùy chọn xử lý gói (giữ nguyên hoặc dừng).
 3. **Khách hàng (Customers)**:
+   - Mobile: khung ghi chú dùng hết chiều rộng nội dung khung liên hệ, không cộng thêm lề bên trong; nút ghi chú nhanh hai cột và vùng bấm tối thiểu 44px. Desktop giữ nguyên.
    - Hồ sơ: lịch chăm sóc nối tiếp gói dịch vụ và lịch sử đơn trong cột nội dung, không chờ chiều cao cột liên hệ. Phần chưa có lịch hiển thị gọn, không tạo khung trắng lớn.
    - Danh sách khách hàng, tìm kiếm theo tên, email, SĐT.
    - Chi tiết khách hàng: Tổng chi tiêu, các gói đang dùng, lịch sử đơn hàng.
@@ -44,6 +45,7 @@
 7. **Báo cáo (Reports)**:
    - Chọn tháng báo cáo, tính dòng tiền thực thu, giá vốn, hoàn tiền, lãi gộp.
 8. **Cài đặt (Settings)**:
+   - Thông báo Zalo: chỉ admin liên kết bằng mã một lần qua chat riêng; có bật/tắt, chọn loại nhắc, giờ Việt Nam, gửi thử và lịch sử chạy thật. Token chỉ ở server; demo không gửi thật. Hướng dẫn triển khai: [ZALO-NOTIFICATIONS.md](ZALO-NOTIFICATIONS.md).
    - Cài đặt tên shop, người quản lý, số ngày nhắc hạn, trạng thái kết nối.
    - Theo dõi lịch sử chạy thật, tác vụ nhắc lỗi/lâu chưa chạy và hàng đợi. Không coi có cấu hình là bằng chứng lịch hoạt động.
    - Đang tải/lỗi/chưa có dữ liệu phân biệt rõ, phản hồi SMTP và toast dùng token chung.
