@@ -1,5 +1,6 @@
 import 'server-only';
 import { cookies } from 'next/headers';
+import { z } from 'zod';
 import { getDbPool } from './db';
 
 interface CachedUser {
@@ -48,23 +49,25 @@ export async function requireUser(): Promise<{ id: string; email: string; role: 
       signal: AbortSignal.timeout(10000)
     });
     if (refreshRes.ok) {
-      const refreshed: unknown = await refreshRes.json();
-      if (refreshed && typeof refreshed === 'object' && 'access_token' in refreshed && typeof refreshed.access_token === 'string') {
-        currentToken = refreshed.access_token;
+      const refreshed = z.object({ access_token: z.string().min(1), refresh_token: z.string().min(1), expires_in: z.number().int().positive() }).safeParse(await refreshRes.json());
+      if (refreshed.success) {
+        currentToken = refreshed.data.access_token;
         userResponse = await fetch(url + '/auth/v1/user', {
           headers: { apikey: key, Authorization: 'Bearer ' + currentToken },
           cache: 'no-store',
           signal: AbortSignal.timeout(10000)
         });
-        try {
-          cookieStore.set('tooldesk-access', currentToken, {
+        const cookieOptions = {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            sameSite: 'lax' as const,
             path: '/',
             maxAge: 30 * 24 * 3600
-          });
-        } catch {}
+        };
+        // Refresh tokens rotate too. Keeping the previous token breaks the next
+        // refresh after the provider's reuse window expires.
+        cookieStore.set('tooldesk-access', currentToken, cookieOptions);
+        cookieStore.set('tooldesk-refresh', refreshed.data.refresh_token, cookieOptions);
       }
     }
   }

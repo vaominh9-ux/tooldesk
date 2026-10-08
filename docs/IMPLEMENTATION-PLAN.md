@@ -52,3 +52,13 @@ Chuyển đổi giao diện nguyên bản Tooldesk v0.2 sang cấu trúc **Next.
 - [ ] Áp dụng migration và xác nhận scheduler trên hệ thống thật khi được yêu cầu. Chưa kết nối gửi chiến dịch/chăm sóc tự động.
 
 Chi tiết luồng và giới hạn vận hành: [CARE-SCHEDULING.md](CARE-SCHEDULING.md).
+
+## Bàn giao sửa kỳ báo cáo 08/10/2026
+
+- [x] Xem tất cả thời gian hoặc từng tháng; tổng hợp tháng, sản phẩm và phiếu hoàn dùng cùng phạm vi.
+- [x] Nhập ngày bán và ngày nhận tiền thực tế khi tạo đơn cũ hoặc xác nhận thu tiền; ngày bắt đầu dịch vụ được quản lý riêng.
+- [x] Sửa ngày ghi nhận của đơn đã nhập, giữ nguyên tiền, kỳ dịch vụ và phiếu hoàn; nhật ký lưu ngày trước/sau.
+- [x] Chặn ngày tương lai, ngày nhận tiền trước ngày bán hoặc sau phiếu hoàn đã tồn tại.
+- [x] 177 kiểm thử đạt; kiểm tra báo cáo, sửa ngày, thu tiền và nhập đơn cũ trên màn hình 320/393/768/1440/1920 px.
+- [ ] Người quản lý đối chiếu và sửa ngày thực tế của các đơn cũ đang ghi nhận vào tháng nhập. Không tự suy ra ngày thu tiền từ ngày dịch vụ.
+- [ ] Agent phụ trách triển khai đưa mã nguồn lên Vercel. Đợt sửa này không tự thay đổi dữ liệu production.

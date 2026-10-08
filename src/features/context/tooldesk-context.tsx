@@ -14,12 +14,12 @@ import { BrandLogoMark } from '@/components/shared/app-icon';
 
 interface ToastItem { id: string; title: string; message?: string; type?: 'info' | 'success' | 'warning' | 'error' }
 interface DialogState {
-  type: 'create-order' | 'renew' | 'renew-subscription' | 'refund' | 'recover-cost' | 'pay-confirm' | 'customer' | 'order-detail' | 'customer-detail' | 'subscription-detail' | 'product' | 'edit-product' | 'plan' | 'add-plan' | 'campaign' | 'care-appointment' | 'search' | 'activity' | 'help' | 'reset' | null;
+  type: 'create-order' | 'renew' | 'renew-subscription' | 'refund' | 'recover-cost' | 'pay-confirm' | 'customer' | 'order-detail' | 'order-dates' | 'customer-detail' | 'subscription-detail' | 'product' | 'edit-product' | 'plan' | 'add-plan' | 'campaign' | 'care-appointment' | 'search' | 'activity' | 'help' | 'reset' | null;
   payload?: string | { id?: string; orderId?: string; customerId?: string; subscriptionId?: string; productId?: string; planId?: string; mode?: string; segment?: string };
 }
 interface CustomerInput { name: string; email?: string; phone?: string; source?: string; notes?: string; emailConsent?: Customer['emailConsent']; consentSource?: string }
-interface CreateOrderInput { customerId?: string; newCustomer?: { name: string; email?: string; phone?: string }; productId: string; planId: string; startsAt: string; price: number; cost: number; payment: 'paid' | 'unpaid'; note?: string }
-export interface UpdateOrderInput { orderId: string; price?: number; cost?: number; startsAt?: string; expiresAt?: string; payment?: 'paid' | 'unpaid'; note?: string; planId?: string }
+interface CreateOrderInput { customerId?: string; newCustomer?: { name: string; email?: string; phone?: string }; productId: string; planId: string; startsAt: string; date?: string; paidAt?: string; price: number; cost: number; payment: 'paid' | 'unpaid'; note?: string }
+export interface UpdateOrderInput { orderId: string; date?: string; paidAt?: string; price?: number; cost?: number; startsAt?: string; expiresAt?: string; payment?: 'paid' | 'unpaid'; note?: string; planId?: string }
 interface RenewalInput { subscriptionId: string; planId: string; startsAt: string; price: number; cost: number; payment?: 'paid' | 'unpaid' }
 interface ProductInput { name: string; symbol: string; category: string; description: string; plans: { name: string; duration: number; unit: 'months' | 'days'; price: number; cost: number }[] }
 interface UpdateProductInput { name: string; category?: string; description?: string; color?: string; symbol?: string; plans?: ProductPlanUpdate[]; expectedPlanIds?: string[] }
@@ -40,7 +40,7 @@ interface TooldeskContextType {
   createOrder: (input: CreateOrderInput) => Promise<Order>;
   updateOrder: (input: UpdateOrderInput) => Promise<void>;
   renewSubscription: (input: RenewalInput) => Promise<Order>;
-  recordPayment: (orderId: string) => Promise<void>;
+  recordPayment: (orderId: string, paidAt?: string) => Promise<void>;
   processRefund: (input: RefundInput) => Promise<void>;
   addCustomer: (input: CustomerInput) => Promise<Customer>;
   updateCustomer: (id: string, updates: Partial<Customer>, close?: boolean) => Promise<void>;
@@ -257,7 +257,7 @@ export function TooldeskProvider({ children, dataSource = 'mock', initialToday }
     createOrder: async input => { const result = await run({ type: 'create_order', input }, 'Đã tạo đơn'); const order = result.data.orders.find(item => item.id === result.resultId); if (!order) throw new Error('Thiếu đơn trong phản hồi.'); return order; },
     updateOrder: async input => { await run({ type: 'update_order', input }, 'Đã cập nhật đơn hàng', false); },
     renewSubscription: async ({ startsAt: _startsAt, ...input }) => { const result = await run({ type: 'renew_subscription', input }, 'Đã gia hạn'); const order = result.data.orders.find(item => item.id === result.resultId); if (!order) throw new Error('Thiếu đơn gia hạn.'); return order; },
-    recordPayment: async orderId => { await run({ type: 'record_payment', input: { orderId } }, 'Đã ghi nhận thanh toán'); },
+    recordPayment: async (orderId, paidAt) => { await run({ type: 'record_payment', input: { orderId, paidAt } }, 'Đã ghi nhận thanh toán'); },
     processRefund: async ({ actor: _actor, ...input }) => { await run({ type: 'record_refund', input: { ...input, operationId: input.operationId || crypto.randomUUID() } }, 'Đã ghi nhận hoàn/thu hồi vốn'); },
     addCustomer: async input => { const result = await run({ type: 'add_customer', input }, 'Đã thêm khách'); const customer = result.data.customers.find(item => item.id === result.resultId); if (!customer) throw new Error('Thiếu khách trong phản hồi.'); return customer; },
     updateCustomer: async (id, updates, close = true) => { await run({ type: 'update_customer', input: { id, updates } }, 'Đã cập nhật khách', close); },

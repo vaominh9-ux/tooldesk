@@ -43,6 +43,8 @@ export function CreateOrderDialog({
   const [price, setPrice] = useState(currentPlan?.price || 0);
   const [cost, setCost] = useState(currentPlan?.cost || 0);
   const [payment, setPayment] = useState<'paid' | 'unpaid'>('paid');
+  const [orderDate, setOrderDate] = useState(today);
+  const [paidAt, setPaidAt] = useState(today);
   const [accountEmail, setAccountEmail] = useState('');
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
@@ -141,6 +143,8 @@ export function CreateOrderDialog({
         productId: selectedProductId,
         planId: selectedPlanId,
         startsAt,
+        date: orderDate,
+        paidAt: payment === 'paid' ? paidAt : undefined,
         price: Number(price),
         cost: Number(cost),
         payment,
@@ -340,7 +344,7 @@ export function CreateOrderDialog({
                 <AppIcon name="arrow" size={17} />
                 <strong id="order-end-label">{formatDateLabel(expiresAt, true)}</strong>
               </div>
-              <small>Gói tháng tính theo tháng lịch. Hết hạn lúc 00:00 ngày kết thúc, giờ Việt Nam.</small>
+              <small>Gói tháng tính theo tháng lịch. Hết hạn lúc 00:00 ngày kết thúc, giờ Việt Nam. Ngày dịch vụ không quyết định tháng doanh thu.</small>
             </div>
 
             {/* Price & Payment */}
@@ -378,6 +382,18 @@ export function CreateOrderDialog({
             </div>
 
             {/* Cost & Note toggle */}
+            <div className="form-grid">
+              <label className="field">
+                <span>Ngày bán</span>
+                <input type="date" name="orderDate" value={orderDate} max={today} required onChange={e => { if (paidAt === orderDate) setPaidAt(e.target.value); setOrderDate(e.target.value); }} />
+                <small>Nhập đơn cũ: chọn ngày đã bán thực tế.</small>
+              </label>
+              {payment === 'paid' && <label className="field">
+                <span>Ngày nhận tiền</span>
+                <input type="date" name="paidAt" value={paidAt} min={orderDate} max={today} required onChange={e => setPaidAt(e.target.value)} />
+                <small>Báo cáo theo tháng của ngày nhận tiền.</small>
+              </label>}
+            </div>
             <details className="details-toggle">
               <summary>Giá vốn & ghi chú</summary>
               <div>

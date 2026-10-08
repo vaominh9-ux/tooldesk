@@ -189,6 +189,8 @@ export async function GET(request: Request) {
                     productId: { type: 'string', description: 'Mã sản phẩm (vd: p-claude, p-chatgpt, p-gemini)' },
                     planId: { type: 'string', description: 'Mã gói (vd: pl-claude-1, pl-gpt-1)' },
                     payment: { type: 'string', enum: ['paid', 'unpaid'], default: 'paid', description: 'Đã thanh toán hay chờ thu' },
+                    date: { type: 'string', format: 'date', description: 'Ngày bán thực tế; để trống dùng ngày vận hành. Đơn cũ cần truyền ngày đã bán.' },
+                    paidAt: { type: 'string', format: 'date', description: 'Ngày nhận tiền thực tế cho đơn đã thu; doanh thu tính theo tháng này. Để trống dùng ngày bán.' },
                     note: { type: 'string', description: 'Ghi chú đơn hàng' }
                   }
                 }
@@ -238,6 +240,7 @@ export async function GET(request: Request) {
           summary: 'Xác nhận đã thanh toán đơn',
           description: 'Đánh dấu đơn hàng là đã thu tiền khi nhận được chuyển khoản.',
           operationId: 'markOrderPaid',
+          requestBody: { required: false, content: { 'application/json': { schema: { type: 'object', properties: { paidAt: { type: 'string', format: 'date', description: 'Ngày thực tế nhận tiền. Để trống dùng ngày vận hành.' } } } } } },
           parameters: [
             {
               name: 'id',

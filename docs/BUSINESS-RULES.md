@@ -21,6 +21,16 @@ Trạng thái thanh toán của đơn hàng (`payment / financial status`):
 ### Báo cáo dòng tiền quản trị (Management Cash View)
 - Doanh thu nhận ghi nhận theo `paidAt` (hoặc `date` nếu chưa có `paidAt`).
 - Các khoản hoàn tiền và thu hồi giá vốn ghi nhận theo ngày phát sinh giao dịch (`refund.date`).
+- `order.date` là ngày bán thực tế; `paidAt` là ngày nhận tiền thực tế. `created_at`
+  chỉ là thời điểm nhập hồ sơ vào database, không quyết định tháng doanh thu.
+- Nhập lại đơn cũ phải chọn ngày bán và ngày nhận tiền. Không suy đoán ngày nhận
+  tiền từ ngày bắt đầu dịch vụ; ngày bán có thể khác ngày bắt đầu sử dụng gói.
+- Ngày bán/nhận tiền không được ở tương lai; ngày nhận tiền không trước ngày bán
+  hoặc sau bất kỳ phiếu hoàn/thu hồi vốn đã ghi nhận của đơn.
+- Có thể đối chiếu lại ngày của đơn lịch sử mà không đổi số tiền/kỳ dịch vụ hoặc
+  sửa phiếu hoàn. Lưu nhật ký ngày cũ → mới. Đơn đã hủy không đổi ngày ghi nhận.
+- Báo cáo mặc định xem tất cả thời gian; chế độ tháng giữ nguyên quy tắc dòng tiền
+  theo ngày phát sinh. Tổng các tháng phải khớp tổng toàn bộ thời gian.
 
 ## 2. Thời hạn dịch vụ (Subscriptions)
 - Múi giờ chuẩn: `Asia/Ho_Chi_Minh` (UTC+7).

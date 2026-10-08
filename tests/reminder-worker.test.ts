@@ -1,16 +1,17 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { createInitialData } from '../src/mocks/fixtures';
 import { dataSchema } from '../src/domain/data-schema';
-const mocks = vi.hoisted(() => ({ query: vi.fn(), load: vi.fn(), send: vi.fn(), configured: vi.fn() }));
+const mocks = vi.hoisted(() => ({ query: vi.fn(), load: vi.fn(), send: vi.fn(), configured: vi.fn(), readConfig: vi.fn() }));
 vi.mock('server-only', () => ({}));
 vi.mock('../src/lib/db', () => ({ getDbPool: () => ({ query: mocks.query }), transaction: (callback: (client: { query: typeof mocks.query }) => Promise<unknown>) => callback({ query: mocks.query }) }));
 vi.mock('../src/lib/data-repository', () => ({ loadData: mocks.load }));
 vi.mock('../src/lib/email', () => ({ emailConfigured: mocks.configured, sendEmail: mocks.send }));
-vi.mock('../src/lib/smtp-config-store', () => ({ readSmtpConfig: async () => ({ config: { enabled: mocks.configured(), sendHour: 9 }, source: 'environment' }) }));
+vi.mock('../src/lib/smtp-config-store', () => ({ readSmtpConfig: mocks.readConfig }));
 import { runReminderWorker } from '../src/features/communications/reminder-worker';
 import { reminderCandidates } from '../src/domain/reminders';
 
 beforeEach(() => {
+  vi.stubEnv('APP_DATA_SOURCE', 'supabase');
   vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-07T03:00:00Z'));
   vi.clearAllMocks();
   const data = dataSchema.parse(createInitialData());
@@ -22,10 +23,52 @@ beforeEach(() => {
     return { rows: [], rowCount: 1 };
   });
   mocks.load.mockResolvedValue(data); mocks.configured.mockReturnValue(true);
+  mocks.readConfig.mockImplementation(async () => ({ config: { enabled: mocks.configured(), sendHour: 9 }, source: 'database' }));
   mocks.send.mockResolvedValue({ skipped: false, messageId: 'smtp-test' });
 });
-afterEach(() => { vi.useRealTimers(); });
+afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); });
 describe('Reminder worker safety', () => {
+  it('blocks database and transport in demo mode', async () => {
+    vi.stubEnv('APP_DATA_SOURCE', 'mock');
+    expect(await runReminderWorker()).toMatchObject({ enabled: false });
+    expect(mocks.readConfig).not.toHaveBeenCalled();
+    expect(mocks.query).not.toHaveBeenCalled();
+    expect(mocks.send).not.toHaveBeenCalled();
+  });
+  it('reuses the transaction connection and fresh configuration at SMTP handoff', async () => {
+    await runReminderWorker();
+    expect(mocks.readConfig).toHaveBeenLastCalledWith({ query: mocks.query });
+    expect(mocks.send.mock.calls[0][1]).toEqual({ enabled: true, sendHour: 9 });
+  });
+  it('defers without consuming an attempt when sending is disabled after enqueue', async () => {
+    mocks.configured.mockReturnValueOnce(true).mockReturnValue(false);
+    expect(await runReminderWorker()).toMatchObject({ sent: 0, unknown: 0 });
+    expect(mocks.send).not.toHaveBeenCalled();
+    expect(mocks.query.mock.calls.some(call => String(call[0]).includes('attempts=GREATEST(0,attempts-1)'))).toBe(true);
+  });
+  it('keeps a skipped job pending rather than recording ambiguous delivery', async () => {
+    mocks.send.mockResolvedValue({ skipped: true, messageId: '' });
+    expect(await runReminderWorker()).toMatchObject({ sent: 0, unknown: 0 });
+    expect(mocks.query.mock.calls.some(call => String(call[0]).includes('attempts=GREATEST(0,attempts-1)'))).toBe(true);
+  });
+  it('does not start SMTP when too little time remains after waiting for the transaction', async () => {
+    mocks.readConfig.mockResolvedValueOnce({ config: { enabled: true, sendHour: 9 } }).mockImplementation(async () => {
+      vi.setSystemTime(new Date('2026-10-07T03:00:38Z'));
+      return { config: { enabled: true, sendHour: 9 } };
+    });
+    expect(await runReminderWorker()).toMatchObject({ sent: 0, unknown: 0 });
+    expect(mocks.send).not.toHaveBeenCalled();
+  });
+  it('leaves remaining jobs for the next scheduler run when the time budget expires', async () => {
+    mocks.query.mockImplementation(async (sql: string) => {
+      if (sql.startsWith('SELECT id,cycle_key')) return { rows: [{ id: 'job', cycle_key: reminderCandidates(dataSchema.parse(createInitialData()), '2026-10-07')[0].cycleKey }] };
+      if (sql.startsWith('SELECT status')) return { rows: [{ status: 'sending' }] };
+      return { rows: [], rowCount: 1 };
+    });
+    mocks.send.mockImplementation(async () => { vi.setSystemTime(new Date('2026-10-07T03:00:41Z')); return { skipped: false, messageId: 'accepted' }; });
+    expect(await runReminderWorker()).toMatchObject({ sent: 1 });
+    expect(mocks.send).toHaveBeenCalledTimes(1);
+  });
   it('records successful scheduler runs and explicit waiting before the send hour', async () => {
     vi.setSystemTime(new Date('2026-10-07T00:00:00Z'));
     expect(await runReminderWorker()).toMatchObject({ waitingForSendHour: true, sent: 0 });

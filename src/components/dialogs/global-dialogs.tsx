@@ -19,6 +19,7 @@ import { CareAppointmentDialog } from '@/features/communications/care-appointmen
 import { EmptyState } from '@/components/shared/feedback';
 import { PlanDialog } from './plan-dialog';
 import { PaymentConfirmDialog } from './payment-confirm-dialog';
+import { OrderDatesDialog } from '@/features/orders/order-dates-dialog';
 import { SearchDialog } from './search-dialog';
 
 export function GlobalDialogs() {
@@ -96,6 +97,7 @@ export function GlobalDialogs() {
       </div>
 
       {/* Active Modal */}
+      {dialog.type === 'order-dates' && <OrderDatesDialog key={orderId} orderId={orderId} onClose={closeDialog} />}
       {dialog.type === 'create-order' && (
         <CreateOrderDialog
           key={`${defaultCustomerId || ''}:${defaultProductId || ''}`}

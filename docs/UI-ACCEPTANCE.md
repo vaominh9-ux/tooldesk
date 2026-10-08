@@ -45,6 +45,13 @@
    - Lịch chuẩn bị chiến dịch hiển thị đúng trạng thái, ngày giờ; nói rõ gửi tự động chưa bật.
 7. **Báo cáo (Reports)**:
    - Chọn tháng báo cáo, tính dòng tiền thực thu, giá vốn, hoàn tiền, lãi gộp.
+   - Mặc định Tất cả thời gian; chuyển Theo tháng và chọn bất kỳ tháng quá khứ,
+     kể cả tháng chưa có dữ liệu. Thẻ KPI, biểu đồ, phiếu hoàn và danh sách đơn
+     dùng chung kỳ lọc; tổng hợp từng tháng cho phép bấm xem chi tiết.
+   - Mục Đơn hàng & ngày ghi nhận có ngày bán/ngày nhận tiền/ngày bắt đầu gói,
+     mở cửa sổ Sửa ngày riêng; chỉ cập nhật ngày thực tế, có phản hồi lỗi và nhật ký.
+   - Tạo/sửa đơn và Thu tiền có ngày nhận tiền, tạo/sửa đơn có ngày bán riêng.
+     Hỗ trợ nhập lại đơn cũ, không gán mặc định ngày dịch vụ thành ngày thu tiền.
 8. **Cài đặt (Settings)**:
    - Thông báo Zalo: chỉ admin liên kết bằng mã một lần qua chat riêng; có bật/tắt, chọn loại nhắc, giờ Việt Nam, gửi thử và lịch sử chạy thật. Token chỉ ở server; demo không gửi thật. Hướng dẫn triển khai: [ZALO-NOTIFICATIONS.md](ZALO-NOTIFICATIONS.md).
    - Cài đặt tên shop, người quản lý, số ngày nhắc hạn, trạng thái kết nối.

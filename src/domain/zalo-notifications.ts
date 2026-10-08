@@ -51,8 +51,8 @@ export function zaloNotificationCandidates(data: TooldeskData, today: string, no
 const rawEventSchema = z.object({
   event_name: z.literal('message.text.received'),
   message: z.object({
-    from: z.object({ id: z.string().min(1).max(200), display_name: z.string().max(200).optional(), is_bot: z.boolean().optional() }),
-    chat: z.object({ id: z.string().min(1).max(200), chat_type: z.string().optional() }),
+    from: z.object({ id: z.string().min(1).max(200), display_name: z.string().max(200).optional(), is_bot: z.literal(false) }),
+    chat: z.object({ id: z.string().min(1).max(200), chat_type: z.literal('PRIVATE') }),
     text: z.string().max(2000)
   }),
 });
@@ -67,8 +67,6 @@ export function zaloPairingMessage(input: unknown) {
   const event = direct.success ? direct.data : wrappedEventSchema.safeParse(input).data?.result;
   if (!event) return null;
   const message = event.message;
-  if (message.from.is_bot === true) return null;
-  if (message.chat.chat_type && message.chat.chat_type !== 'PRIVATE') return null;
   const match = message.text.trim().match(/^\/tooldesk\s+([a-f0-9]{24})$/i);
   if (!match) return null;
   return { code: match[1].toLowerCase(), chatId: message.chat.id, name: message.from.display_name || 'Người nhận Zalo' };

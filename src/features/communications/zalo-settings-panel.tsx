@@ -12,19 +12,20 @@ export type ZaloConnectionState = { status: ZaloStatus | null; loading: boolean;
 
 export function ZaloConnectionRow({ status, loading, error }: ZaloConnectionState) {
   let label = 'Chưa xác định', tone = 'neutral';
+  let description = 'Nhắc hạn và lịch chăm sóc cá nhân';
   if (error) { label = 'Chưa xác định'; tone = 'amber'; }
   else if (loading) label = 'Đang kiểm tra';
   else if (status?.demo) label = 'Demo';
   else if (status) {
     if (!status.tokenConfigured) label = 'Chưa cấu hình';
     else if (!status.settings.chatId) label = 'Chưa liên kết';
-    else if (!status.settings.enabled) label = 'Đã liên kết';
+    else if (!status.settings.enabled) { label = 'Đã liên kết'; tone = 'green'; description = 'Thông báo tự động đang tắt'; }
     else if (!status.webhookSecretConfigured || !status.cronSecretConfigured) { label = 'Thiếu cấu hình'; tone = 'amber'; }
     else { label = 'Đã bật'; tone = 'green'; }
   }
   return <a className="integration-row" href="#zalo-notifications" aria-label="Cấu hình Bot Zalo">
     <span className="integration-icon"><AppIcon name="bell" size={19} /></span>
-    <div><strong>Bot Zalo</strong><p>Nhắc hạn và lịch chăm sóc cá nhân</p></div>
+    <div><strong>Bot Zalo</strong><p>{description}</p></div>
     <span className={`badge ${tone}`}>{label}</span>
   </a>;
 }

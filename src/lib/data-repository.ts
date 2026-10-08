@@ -2,7 +2,8 @@ import 'server-only';
 import type { PoolClient } from 'pg';
 import { getDbPool, transaction } from './db';
 import { dataSchema, type AppData } from '@/domain/data-schema';
-import { executeCommand, type Command } from '@/domain/commands';
+import { commandSchema, executeCommand, type Command } from '@/domain/commands';
+import { dayInHoChiMinh } from '@/domain/dates';
 import { createShortId } from '@/domain/orders';
 import { todayInHoChiMinh } from './clock';
 import { createHash, randomUUID } from 'node:crypto';
@@ -112,7 +113,7 @@ export async function loadData(db: Db = getDbPool()): Promise<AppData> {
       body: campaign.content || '',
       subject: campaign.subject || '',
       scheduledAt: campaign.scheduledAt ? timestamp(campaign.scheduledAt) : null,
-      date: String(campaign.createdAt).slice(0, 10)
+      date: dayInHoChiMinh(new Date(String(campaign.createdAt)))
     })),
     activity: activity.map(entry => ({
       ...entry,
@@ -123,17 +124,24 @@ export async function loadData(db: Db = getDbPool()): Promise<AppData> {
 }
 
 // Only changed rows are persisted. Table/column names are code constants, never user input.
-async function upsert(db: Db, table: string, row: Row): Promise<void> {
+async function upsert(db: Db, table: string, row: Row, existing: boolean): Promise<void> {
   const columns = Object.keys(row), values = Object.values(row);
   const updates = columns.filter(column => column !== 'id').map(column => column + '=EXCLUDED.' + column).join(',');
-  await db.query('INSERT INTO ' + table + ' (' + columns.join(',') + ') VALUES (' + columns.map((_, index) => '$' + (index + 1)).join(',') + ') ON CONFLICT (id) DO UPDATE SET ' + updates, values);
+  await db.query('INSERT INTO ' + table + ' (' + columns.join(',') + ') VALUES (' + columns.map((_, index) => '$' + (index + 1)).join(',') + ')' + (existing ? ' ON CONFLICT (id) DO UPDATE SET ' + updates : ''), values);
 }
 function changed<T extends { id: string }>(before: T[], after: T[]): T[] {
   const old = new Map(before.map(item => [item.id, JSON.stringify(item)]));
   return after.filter(item => old.get(item.id) !== JSON.stringify(item));
 }
 export async function saveChanges(db: Db, before: AppData, after: AppData): Promise<void> {
-  if (JSON.stringify(before.settings) !== JSON.stringify(after.settings)) await upsert(db, 'settings', { id: 'default', shop_name: after.settings.shopName, owner_name: after.settings.ownerName, reminder_days: after.settings.reminderDays, currency: after.settings.currency, timezone: after.settings.timezone });
+  const existingIds = new Map<string, Set<string>>([
+    ['settings', new Set(['default'])],
+    ...Object.entries({ products: before.products, product_plans: before.products.flatMap(product => product.plans), customers: before.customers, subscriptions: before.subscriptions, orders: before.orders, refunds: before.refunds, campaigns: before.campaigns, care_appointments: before.careAppointments, activity_logs: before.activity }).map(([table, items]): [string, Set<string>] => [table, new Set(items.map(item => item.id))])
+  ]);
+  // New records must INSERT. A collision with a row outside the loaded snapshot
+  // (such as an older activity log) must never overwrite that row.
+  const persist = (table: string, row: Row) => upsert(db, table, row, existingIds.get(table)?.has(String(row.id)) === true);
+  if (JSON.stringify(before.settings) !== JSON.stringify(after.settings)) await persist('settings', { id: 'default', shop_name: after.settings.shopName, owner_name: after.settings.ownerName, reminder_days: after.settings.reminderDays, currency: after.settings.currency, timezone: after.settings.timezone });
   const beforePlanIds = new Set(before.products.flatMap(p => p.plans.map(pl => pl.id)));
   const afterPlanIds = new Set(after.products.flatMap(p => p.plans.map(pl => pl.id)));
   for (const id of beforePlanIds) {
@@ -145,19 +153,20 @@ export async function saveChanges(db: Db, before: AppData, after: AppData): Prom
     if (!afterProductIds.has(id)) await db.query('DELETE FROM products WHERE id = $1', [id]);
   }
   for (const p of changed(before.products, after.products)) {
-    await upsert(db, 'products', { id: p.id, name: p.name, category: p.category, color: p.color, symbol: p.symbol, description: p.description });
-    for (const plan of p.plans) await upsert(db, 'product_plans', { id: plan.id, product_id: p.id, name: plan.name, duration: plan.duration, unit: plan.unit, price: plan.price, cost: plan.cost });
+    await persist('products', { id: p.id, name: p.name, category: p.category, color: p.color, symbol: p.symbol, description: p.description });
+    for (const plan of p.plans) await persist('product_plans', { id: plan.id, product_id: p.id, name: plan.name, duration: plan.duration, unit: plan.unit, price: plan.price, cost: plan.cost });
   }
-  for (const c of changed(before.customers, after.customers)) await upsert(db, 'customers', { id: c.id, name: c.name, email: c.email, phone: c.phone, source: c.source, notes: c.notes, color: c.color, joined_at: c.joinedAt, email_consent: c.emailConsent, consent_source: c.consentSource, consent_updated_at: c.consentUpdatedAt });
-  for (const s of changed(before.subscriptions, after.subscriptions)) await upsert(db, 'subscriptions', { id: s.id, customer_id: s.customerId, product_id: s.productId, plan_id: s.planId, starts_at: s.startsAt, expires_at: s.expiresAt, price: s.price, cost: s.cost, cancelled: s.cancelled, reminded_at: s.remindedAt || null, last_order_id: s.lastOrderId || null, note: s.note || '' });
-  for (const o of changed(before.orders, after.orders)) await upsert(db, 'orders', { id: o.id, customer_id: o.customerId, product_id: o.productId, plan_id: o.planId, subscription_id: o.subscriptionId || null, date: o.date, starts_at: o.startsAt, expires_at: o.expiresAt, price: o.price, cost: o.cost, payment: o.payment, paid_at: o.paidAt || null, status: o.status, kind: o.kind, note: o.note || '', previous_subscription: o.previousSubscription ? JSON.stringify(o.previousSubscription) : null });
-  for (const r of changed(before.refunds, after.refunds)) await upsert(db, 'refunds', { id: r.id, operation_id: r.operationId, order_id: r.orderId, amount: r.amount, cost_recovered: r.costRecovered, date: r.date, reason: r.reason, method: r.method || 'other', reference: r.reference || '', actor: r.actor || '', service_action: r.serviceAction || 'keep' });
-  for (const c of changed(before.campaigns, after.campaigns)) await upsert(db, 'campaigns', { id: c.id, title: c.name, subject: c.subject, content: c.body, segment: c.segment, status: c.status, scheduled_at: c.scheduledAt || null });
-  for (const item of changed(before.careAppointments, after.careAppointments)) await upsert(db, 'care_appointments', { id: item.id, customer_id: item.customerId, title: item.title, channel: item.channel, scheduled_at: item.scheduledAt, notes: item.notes, status: item.status, created_at: item.createdAt, updated_at: item.updatedAt, completed_at: item.completedAt });
-  for (const a of after.activity.filter(item => !before.activity.some(old => old.id === item.id))) await upsert(db, 'activity_logs', { id: a.id, type: a.type, title: a.title, description: a.description, created_at: a.at });
+  for (const c of changed(before.customers, after.customers)) await persist('customers', { id: c.id, name: c.name, email: c.email, phone: c.phone, source: c.source, notes: c.notes, color: c.color, joined_at: c.joinedAt, email_consent: c.emailConsent, consent_source: c.consentSource, consent_updated_at: c.consentUpdatedAt });
+  for (const s of changed(before.subscriptions, after.subscriptions)) await persist('subscriptions', { id: s.id, customer_id: s.customerId, product_id: s.productId, plan_id: s.planId, starts_at: s.startsAt, expires_at: s.expiresAt, price: s.price, cost: s.cost, cancelled: s.cancelled, reminded_at: s.remindedAt || null, last_order_id: s.lastOrderId || null, note: s.note || '' });
+  for (const o of changed(before.orders, after.orders)) await persist('orders', { id: o.id, customer_id: o.customerId, product_id: o.productId, plan_id: o.planId, subscription_id: o.subscriptionId || null, date: o.date, starts_at: o.startsAt, expires_at: o.expiresAt, price: o.price, cost: o.cost, payment: o.payment, paid_at: o.paidAt || null, status: o.status, kind: o.kind, note: o.note || '', previous_subscription: o.previousSubscription ? JSON.stringify(o.previousSubscription) : null });
+  for (const r of changed(before.refunds, after.refunds)) await persist('refunds', { id: r.id, operation_id: r.operationId, order_id: r.orderId, amount: r.amount, cost_recovered: r.costRecovered, date: r.date, reason: r.reason, method: r.method || 'other', reference: r.reference || '', actor: r.actor || '', service_action: r.serviceAction || 'keep' });
+  for (const c of changed(before.campaigns, after.campaigns)) await persist('campaigns', { id: c.id, title: c.name, subject: c.subject, content: c.body, segment: c.segment, status: c.status, scheduled_at: c.scheduledAt || null });
+  for (const item of changed(before.careAppointments, after.careAppointments)) await persist('care_appointments', { id: item.id, customer_id: item.customerId, title: item.title, channel: item.channel, scheduled_at: item.scheduledAt, notes: item.notes, status: item.status, created_at: item.createdAt, updated_at: item.updatedAt, completed_at: item.completedAt });
+  for (const a of after.activity.filter(item => !before.activity.some(old => old.id === item.id))) await persist('activity_logs', { id: a.id, type: a.type, title: a.title, description: a.description, created_at: a.at });
 }
 
 export async function runCommand(command: Command, operationId: string, actor: { id: string; email: string }): Promise<{ data: AppData; resultId?: string }> {
+  command = commandSchema.parse(command);
   return transaction(async client => {
     // Single-system MVP: serialize business commands to prevent lost updates/over-refunds.
     await client.query('SELECT pg_advisory_xact_lock(718326)');

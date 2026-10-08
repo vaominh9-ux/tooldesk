@@ -18,7 +18,7 @@ export function OrderDetailDialog({
   orderId: string;
   onClose: () => void;
 }) {
-  const { data, openDialog, recordPayment, updateOrder, addToast } = useTooldesk();
+  const { data, today, openDialog, updateOrder, addToast } = useTooldesk();
   const backdropDismiss = useBackdropDismiss(onClose);
   const order = data.orders.find(o => o.id === orderId);
 
@@ -28,6 +28,8 @@ export function OrderDetailDialog({
   const [editStartsAt, setEditStartsAt] = useState(order?.startsAt || '');
   const [editExpiresAt, setEditExpiresAt] = useState(order?.expiresAt || '');
   const [editPayment, setEditPayment] = useState<'paid' | 'unpaid'>(order?.payment || 'paid');
+  const [editDate, setEditDate] = useState(order?.date || today);
+  const [editPaidAt, setEditPaidAt] = useState(order?.paidAt || order?.date || today);
   const [editPlanId, setEditPlanId] = useState(order?.planId || '');
   const [editNote, setEditNote] = useState(order?.note || '');
   const [saving, setSaving] = useState(false);
@@ -43,6 +45,8 @@ export function OrderDetailDialog({
       setEditStartsAt(order.startsAt);
       setEditExpiresAt(order.expiresAt);
       setEditPayment(order.payment);
+      setEditDate(order.date);
+      setEditPaidAt(order.paidAt || order.date);
       setEditPlanId(order.planId);
       setEditNote(order.note || '');
     }
@@ -127,6 +131,8 @@ export function OrderDetailDialog({
     try {
       await updateOrder({
         orderId: order.id,
+        date: editDate,
+        paidAt: editPayment === 'paid' ? editPaidAt : undefined,
         price: Number(editPrice),
         cost: Number(editCost),
         startsAt: editStartsAt,
@@ -184,7 +190,7 @@ export function OrderDetailDialog({
                   {editError}
                 </div>
               )}
-              {editPolicy.reason && <p className="hint-banner neutral">{editPolicy.reason} Bạn vẫn có thể sửa ghi chú.</p>}
+              {editPolicy.reason && <p className="hint-banner neutral">{editPolicy.reason} {order.status === 'cancelled' ? 'Bạn vẫn có thể sửa ghi chú.' : 'Bạn có thể đối chiếu lại ngày bán, ngày nhận tiền và sửa ghi chú.'}</p>}
 
               {/* Customer preview (read-only) */}
               <div className="customer-preview" style={{ marginBottom: 16 }}>
@@ -291,7 +297,7 @@ export function OrderDetailDialog({
                 <select
                   value={editPayment}
                   disabled={editPolicy.locked}
-                  onChange={e => setEditPayment(e.target.value as 'paid' | 'unpaid')}
+                  onChange={e => { setEditPayment(e.target.value as 'paid' | 'unpaid'); if (e.target.value === 'paid' && order.payment === 'unpaid') setEditPaidAt(today); }}
                 >
                   <option value="unpaid">Chưa thanh toán</option>
                   <option value="paid">Đã nhận đủ tiền</option>
@@ -308,6 +314,17 @@ export function OrderDetailDialog({
                   rows={3}
                 />
               </label>
+              <div className="form-grid">
+                <label className="field">
+                  <span>Ngày bán</span>
+                  <input type="date" name="orderDate" value={editDate} max={today} required disabled={order.status === 'cancelled'} onChange={e => setEditDate(e.target.value)} />
+                </label>
+                {editPayment === 'paid' && <label className="field">
+                  <span>Ngày nhận tiền</span>
+                  <input type="date" name="paidAt" value={editPaidAt} min={editDate} max={today} required disabled={order.status === 'cancelled'} onChange={e => setEditPaidAt(e.target.value)} />
+                </label>}
+              </div>
+              <p className="hint-banner blue">Đơn nhập lại: chọn ngày bán và nhận tiền thực tế. Báo cáo doanh thu tính theo ngày nhận tiền; ngày bắt đầu gói được giữ riêng.</p>
             </div>
 
             <footer className="dialog-footer">
@@ -345,7 +362,7 @@ export function OrderDetailDialog({
               <div>
                 <h2 id="dialog-title">{formatOrderCode(order.id)}</h2>
                 <p>
-                  {order.kind === 'renewal' ? 'Đơn gia hạn' : 'Đơn mua mới'} · Tạo ngày {formatDateLabel(order.date, true)}
+                  {order.kind === 'renewal' ? 'Đơn gia hạn' : 'Đơn mua mới'} · Ngày bán {formatDateLabel(order.date, true)}
                 </p>
               </div>
               <div className="order-detail-header-actions" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -661,7 +678,7 @@ export function OrderDetailDialog({
                 type="button"
                 className="button primary"
                 onClick={async () => {
-                  try { await recordPayment(order.id); onClose(); } catch (error) { addToast('Không thể thu tiền', error instanceof Error ? error.message : 'Lỗi lưu dữ liệu.', 'error'); }
+                  openDialog('pay-confirm', order.id);
                 }}
               >
                 <AppIcon name="wallet" size={15} />

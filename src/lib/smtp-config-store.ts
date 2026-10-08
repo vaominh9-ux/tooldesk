@@ -1,6 +1,7 @@
 import 'server-only';
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
-import { getDbPool } from './db';
+import type { Pool } from 'pg';
+import { getDbPool, transaction } from './db';
 import { smtpConfigSchema, type SmtpConfig } from '@/domain/smtp-config';
 
 function encryptionKey(): Buffer {
@@ -27,17 +28,18 @@ function environmentConfig(): SmtpConfig | null {
   const parsed = smtpConfigSchema.safeParse({ host: process.env.SMTP_HOST || '', port: Number(process.env.SMTP_PORT || 587), user: process.env.SMTP_USER || '', password: process.env.SMTP_PASSWORD || '', fromEmail: match?.[2] || rawFrom, fromName: match?.[1]?.trim().replace(/^"|"$/g, '') || 'Tooldesk', enabled: process.env.EMAIL_SEND_ENABLED === 'true', sendHour: Number(process.env.REMINDER_SEND_HOUR || 9) });
   return parsed.success ? parsed.data : null;
 }
-export async function readSmtpConfig(): Promise<{ config: SmtpConfig | null; source: 'database' | 'environment' | 'empty' }> {
+export async function readSmtpConfig(db?: Pick<Pool, 'query'>): Promise<{ config: SmtpConfig | null; source: 'database' | 'environment' | 'empty' }> {
   if (process.env.APP_DATA_SOURCE === 'supabase' || process.env.DATABASE_URL) {
-    try {
-      const result = await getDbPool().query<{ encrypted_config: string }>("SELECT encrypted_config FROM smtp_configuration WHERE id='default'");
-      if (result.rows[0]) return { config: decryptSmtpConfig(result.rows[0].encrypted_config), source: 'database' };
-    } catch {}
+    const result = await (db || getDbPool()).query<{ encrypted_config: string }>("SELECT encrypted_config FROM smtp_configuration WHERE id='default'");
+    if (result.rows[0]) return { config: decryptSmtpConfig(result.rows[0].encrypted_config), source: 'database' };
   }
   const config = environmentConfig();
   return { config, source: config ? 'environment' : 'empty' };
 }
 export async function saveSmtpConfig(config: SmtpConfig, actorId: string): Promise<void> {
   const encrypted = encryptSmtpConfig(config);
-  await getDbPool().query("INSERT INTO smtp_configuration(id,encrypted_config,updated_by,updated_at) VALUES ('default',$1,$2,NOW()) ON CONFLICT(id) DO UPDATE SET encrypted_config=EXCLUDED.encrypted_config,updated_by=EXCLUDED.updated_by,updated_at=NOW()", [encrypted, actorId]);
+  await transaction(async client => {
+    await client.query('SELECT pg_advisory_xact_lock(718326)');
+    await client.query("INSERT INTO smtp_configuration(id,encrypted_config,updated_by,updated_at) VALUES ('default',$1,$2,NOW()) ON CONFLICT(id) DO UPDATE SET encrypted_config=EXCLUDED.encrypted_config,updated_by=EXCLUDED.updated_by,updated_at=NOW()", [encrypted, actorId]);
+  });
 }

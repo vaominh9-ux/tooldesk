@@ -15,7 +15,8 @@ export function PaymentConfirmDialog({
   orderId: string;
   onClose: () => void;
 }) {
-  const { data, recordPayment, addToast } = useTooldesk();
+  const { data, today, pending, recordPayment, addToast } = useTooldesk();
+  const [paidAt, setPaidAt] = React.useState(today);
   const backdropDismiss = useBackdropDismiss(onClose);
 
   const order = data.orders.find(o => o.id === orderId);
@@ -49,7 +50,7 @@ export function PaymentConfirmDialog({
   }
 
   const handleConfirm = async () => {
-    try { await recordPayment(order.id); onClose(); } catch (error) { addToast('Không thể thu tiền', error instanceof Error ? error.message : 'Lỗi lưu giao dịch.', 'error'); }
+    try { await recordPayment(order.id, paidAt); onClose(); } catch (error) { addToast('Không thể thu tiền', error instanceof Error ? error.message : 'Lỗi lưu giao dịch.', 'error'); }
   };
 
   return (
@@ -102,6 +103,11 @@ export function PaymentConfirmDialog({
                 Chỉ xác nhận khi bạn đã kiểm tra và nhận đủ tiền. Bản này không kết nối ngân hàng hay kiểm tra chuyển khoản.
               </span>
             </div>
+            <label className="field">
+              <span>Ngày nhận tiền</span>
+              <input type="date" name="paidAt" value={paidAt} min={order.date} max={today} required onChange={e => setPaidAt(e.target.value)} />
+              <small>Chọn ngày thực tế nhận tiền để báo cáo đúng tháng.</small>
+            </label>
           </div>
 
           <footer className="dialog-footer">
@@ -112,6 +118,7 @@ export function PaymentConfirmDialog({
               type="button"
               className="button primary"
               onClick={handleConfirm}
+              disabled={pending || !paidAt || paidAt < order.date || paidAt > today}
             >
               <AppIcon name="check" size={15} />
               <span>Đã nhận {formatMoney(order.price)}</span>

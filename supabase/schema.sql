@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS public.settings (
     reminder_days INT NOT NULL DEFAULT 7,
     currency TEXT NOT NULL DEFAULT 'VND',
     timezone TEXT NOT NULL DEFAULT 'Asia/Ho_Chi_Minh',
-    updated_at TIMESTAMPTZ DEFAULT TIMEZONE('Asia/Ho_Chi_Minh', NOW())
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 2. Bảng Sản phẩm (Products: ChatGPT, Claude, Gemini, Canva...)
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS public.products (
     symbol TEXT DEFAULT '◈',
     description TEXT,
     is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMPTZ DEFAULT TIMEZONE('Asia/Ho_Chi_Minh', NOW())
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 3. Bảng Gói sản phẩm (Product Plans: 1 tháng, 3 tháng, 1 năm...)
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS public.product_plans (
     unit TEXT NOT NULL DEFAULT 'months', -- 'months' hoặc 'days'
     price BIGINT NOT NULL DEFAULT 0,
     cost BIGINT NOT NULL DEFAULT 0,
-    created_at TIMESTAMPTZ DEFAULT TIMEZONE('Asia/Ho_Chi_Minh', NOW())
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 4. Bảng Khách hàng (Customers)
@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS public.customers (
     notes TEXT DEFAULT '',
     color TEXT DEFAULT 'sky',
     joined_at DATE DEFAULT CURRENT_DATE,
-    created_at TIMESTAMPTZ DEFAULT TIMEZONE('Asia/Ho_Chi_Minh', NOW())
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 5. Bảng Gói dịch vụ / Đăng ký gia hạn (Subscriptions)
@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
     reminded_at DATE,
     last_order_id TEXT,
     note TEXT DEFAULT '',
-    created_at TIMESTAMPTZ DEFAULT TIMEZONE('Asia/Ho_Chi_Minh', NOW())
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 6. Bảng Đơn hàng (Orders)
@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
     paid_at_estimated BOOLEAN DEFAULT FALSE,
     previous_subscription JSONB,
     note TEXT DEFAULT '',
-    created_at TIMESTAMPTZ DEFAULT TIMEZONE('Asia/Ho_Chi_Minh', NOW())
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 7. Bảng Hoàn tiền (Refunds)
@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS public.refunds (
     method TEXT,
     reference TEXT,
     service_action TEXT DEFAULT 'keep',
-    created_at TIMESTAMPTZ DEFAULT TIMEZONE('Asia/Ho_Chi_Minh', NOW())
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 8. Bảng Chiến dịch chăm sóc / Email / Zalo (Campaigns)
@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS public.campaigns (
     channel TEXT NOT NULL DEFAULT 'email',
     status TEXT NOT NULL DEFAULT 'draft',
     sent_count INT DEFAULT 0,
-    created_at TIMESTAMPTZ DEFAULT TIMEZONE('Asia/Ho_Chi_Minh', NOW())
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 9. Bảng Nhật ký hoạt động (Activity Logs)
@@ -130,7 +130,7 @@ CREATE TABLE IF NOT EXISTS public.activity_logs (
     title TEXT NOT NULL,
     description TEXT,
     actor TEXT DEFAULT 'Minh',
-    created_at TIMESTAMPTZ DEFAULT TIMEZONE('Asia/Ho_Chi_Minh', NOW())
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Authentication, reminder delivery and transactional command idempotency.

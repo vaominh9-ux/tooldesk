@@ -4,6 +4,7 @@ import { authenticateAgent } from '@/lib/agent-auth';
 import { getOrdersService, getAgentData, executeAgentCommand } from '@/lib/agent-service';
 import { todayInHoChiMinh } from '@/lib/clock';
 import { customerEmailInputSchema, customersWithEmail } from '@/domain/customer-identity';
+import { daySchema } from '@/domain/data-schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,6 +48,8 @@ const createOrderSchema = z.object({
   planId: z.string().trim().min(1, 'Thiếu mã gói bán (planId).'),
   startsAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày bắt đầu phải theo định dạng YYYY-MM-DD.').optional(),
   payment: z.enum(['paid', 'unpaid']).default('paid'),
+  date: daySchema.optional(),
+  paidAt: daySchema.optional(),
   note: z.string().trim().max(500).default('Tạo qua AI Agent')
 }).refine(data => data.customerId || (data.customer && (data.customer.phone || data.customer.email)), {
   message: 'Cần truyền customerId hoặc object customer (có ít nhất số điện thoại hoặc email).'
@@ -109,6 +112,8 @@ export async function POST(request: Request) {
         productId: product.id,
         planId: plan.id,
         startsAt,
+        date: validated.date,
+        paidAt: validated.paidAt,
         price: plan.price,
         cost: plan.cost,
         payment: validated.payment,

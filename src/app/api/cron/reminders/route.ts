@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { runReminderWorker } from '@/features/communications/reminder-worker';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+export const maxDuration = 60;
 async function handleCron(request: Request) {
   const secret = process.env.CRON_SECRET;
   const actual = Buffer.from(request.headers.get('authorization') || '');

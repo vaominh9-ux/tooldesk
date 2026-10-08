@@ -94,8 +94,17 @@ describe('Zalo candidates and private identity', () => {
     expect(zaloPairingMessage(message(code, 'GROUP'))).toBeNull();
     expect(zaloPairingMessage(message(code, 'PRIVATE', true))).toBeNull();
     expect(zaloPairingMessage(message('guess'))).toBeNull();
-    const forged = message(code); forged.result.message.from.id = 'other';
-    expect(zaloPairingMessage(forged)).toBeNull();
+    const distinctIds = message(code); distinctIds.result.message.from.id = 'other';
+    expect(zaloPairingMessage(distinctIds)?.chatId).toBe('owner');
+  });
+  it('validates raw and wrapped events and requires explicit private human metadata', () => {
+    const wrapped = message('a'.repeat(24)), raw = wrapped.result;
+    expect(zaloPairingMessage(raw)?.chatId).toBe('owner');
+    expect(zaloPairingMessage({ ...raw, message: { ...raw.message, chat: { id: 'owner' } } })).toBeNull();
+    expect(zaloPairingMessage({ ...raw, message: { ...raw.message, from: { id: 'owner' } } })).toBeNull();
+    expect(zaloPairingMessage(message('a'.repeat(24), 'GROUP').result)).toBeNull();
+    expect(zaloPairingMessage(message('a'.repeat(24), 'PRIVATE', true).result)).toBeNull();
+    expect(zaloPairingMessage({ ...wrapped, ok: false })).toBeNull();
   });
 });
 describe('Zalo pairing, permissions and safe transport', () => {

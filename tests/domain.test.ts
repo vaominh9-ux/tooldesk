@@ -168,11 +168,12 @@ describe('Domain: Short ID generation & display formatting', () => {
 
   it('propagates note to subscription when creating order and updates via update_subscription_note', () => {
     const data = createInitialData();
+    let sequence = 0;
     const op = {
       today: '2026-10-07',
       now: new Date().toISOString(),
       actor: 'Tester',
-      newId: (p: string) => `${p}-TEST`
+      newId: (p: string) => `${p}-TEST-${++sequence}`
     };
 
     const created = executeCommand(data, {

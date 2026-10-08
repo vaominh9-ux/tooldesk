@@ -11,6 +11,19 @@ function setup() {
   return { data, operation };
 }
 describe('Backend commands', () => {
+  it('retries ID collisions without overwriting an existing customer or history', () => {
+    const { data, operation } = setup();
+    let calls = 0;
+    const result = executeCommand(data, commandSchema.parse({ type: 'add_customer', input: { name: 'Khách mới', email: 'unique@example.com' } }), { ...operation, newId: prefix => ++calls === 1 ? data.customers[0].id : `${prefix}-unique-${calls}` });
+    expect(result.resultId).not.toBe(data.customers[0].id);
+    expect(result.data.customers.find(item => item.id === data.customers[0].id)).toEqual(data.customers[0]);
+    expect(result.data.orders).toEqual(data.orders);
+  });
+  it('aborts repeated ID collisions without modifying the original data', () => {
+    const { data, operation } = setup(), before = structuredClone(data);
+    expect(() => executeCommand(data, commandSchema.parse({ type: 'add_customer', input: { name: 'Khách mới', email: 'unique@example.com' } }), { ...operation, newId: () => data.customers[0].id })).toThrow(/duy nhất/);
+    expect(data).toEqual(before);
+  });
   it('rejects fractional/negative money and unknown fields', () => {
     const command = { type: 'create_order', input: { customerId: 'kh', productId: 'p', planId: 'pl', startsAt: '2026-10-07', price: -1, cost: 0, payment: 'paid' } };
     expect(() => commandSchema.parse(command)).toThrow();

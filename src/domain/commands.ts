@@ -8,14 +8,15 @@ import { renewalDates } from './subscriptions';
 import { validateRefundInput } from './refunds';
 import { orderEditPolicy } from './order-edit-policy';
 import { customerEmailInputSchema, customersWithEmail, normalizeCustomerEmail } from './customer-identity';
+import { validateOrderDates } from './order-dates';
 
 const id = z.string().min(1).max(100);
 const customerFields = z.object({ name: z.string().trim().min(1).max(80), email: customerEmailInputSchema.default(''), phone: z.string().trim().max(25).default(''), source: z.string().trim().max(100).default('Nhập thủ công'), notes: z.string().trim().max(50000).default(''), emailConsent: z.enum(['unknown', 'opted_in', 'opted_out']).default('unknown'), consentSource: z.string().trim().max(200).default('') }).strict();
 const customerInput = customerFields.refine(value => value.email || value.phone, 'Cần email hoặc số điện thoại.').refine(value => value.emailConsent !== 'opted_in' || value.consentSource.length > 0, 'Cần nguồn xác nhận đồng ý nhận email.');
 export const commandSchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('create_order'), input: z.object({ customerId: id.optional(), newCustomer: customerInput.optional(), productId: id, planId: id, startsAt: daySchema, price: moneySchema, cost: moneySchema, payment: z.enum(['paid', 'unpaid']), note: z.string().trim().max(5000).default('') }).strict() }).strict(),
-  z.object({ type: z.literal('update_order'), input: z.object({ orderId: id, price: moneySchema.optional(), cost: moneySchema.optional(), startsAt: daySchema.optional(), expiresAt: daySchema.optional(), payment: z.enum(['paid', 'unpaid']).optional(), note: z.string().trim().max(5000).optional(), planId: id.optional() }).strict() }).strict(),
-  z.object({ type: z.literal('record_payment'), input: z.object({ orderId: id }).strict() }).strict(),
+  z.object({ type: z.literal('create_order'), input: z.object({ customerId: id.optional(), newCustomer: customerInput.optional(), productId: id, planId: id, startsAt: daySchema, date: daySchema.optional(), paidAt: daySchema.optional(), price: moneySchema, cost: moneySchema, payment: z.enum(['paid', 'unpaid']), note: z.string().trim().max(5000).default('') }).strict() }).strict(),
+  z.object({ type: z.literal('update_order'), input: z.object({ orderId: id, date: daySchema.optional(), paidAt: daySchema.optional(), price: moneySchema.optional(), cost: moneySchema.optional(), startsAt: daySchema.optional(), expiresAt: daySchema.optional(), payment: z.enum(['paid', 'unpaid']).optional(), note: z.string().trim().max(5000).optional(), planId: id.optional() }).strict() }).strict(),
+  z.object({ type: z.literal('record_payment'), input: z.object({ orderId: id, paidAt: daySchema.optional() }).strict() }).strict(),
   z.object({ type: z.literal('renew_subscription'), input: z.object({ subscriptionId: id, planId: id, price: moneySchema, cost: moneySchema, payment: z.enum(['paid', 'unpaid']).default('unpaid') }).strict() }).strict(),
   z.object({ type: z.literal('record_refund'), input: z.object({ operationId: z.uuid(), orderId: id, amount: moneySchema, costRecovered: moneySchema.default(0), date: daySchema, reason: z.string().trim().min(3).max(500), method: z.enum(['bank', 'cash', 'wallet', 'other']), reference: z.string().trim().max(120).default(''), serviceAction: z.enum(['keep', 'end']).default('keep') }).strict() }).strict(),
   z.object({ type: z.literal('add_customer'), input: customerInput }).strict(),
@@ -39,8 +40,21 @@ export interface Operation { today: string; now: string; actor: string; newId: (
 
 export function executeCommand(original: AppData, command: Command, operation: Operation): { data: AppData; resultId?: string } {
   const data = structuredClone(original);
-  const { today, newId } = operation;
+  const { today } = operation;
+  const usedIds = new Set([
+    ...data.products, ...data.products.flatMap(product => product.plans), ...data.customers,
+    ...data.orders, ...data.subscriptions, ...data.refunds, ...data.campaigns,
+    ...data.careAppointments, ...data.activity
+  ].map(item => item.id));
+  const newId = (prefix: string) => {
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const candidate = operation.newId(prefix);
+      if (!usedIds.has(candidate)) { usedIds.add(candidate); return candidate; }
+    }
+    throw new Error('Chưa tạo được mã bản ghi duy nhất. Vui lòng thử lại.');
+  };
   let resultId: string | undefined;
+  let dateCorrection = '';
   const addCustomer = (input: z.infer<typeof customerInput>) => {
     const email = normalizeCustomerEmail(input.email);
     const duplicate = customersWithEmail(data.customers, email)[0];
@@ -56,11 +70,15 @@ export function executeCommand(original: AppData, command: Command, operation: O
       const product = data.products.find(product => product.id === input.productId);
       const plan = product?.plans.find(plan => plan.id === input.planId);
       if (!customer || !product || !plan) throw new Error('Khách hàng hoặc gói bán không hợp lệ.');
+      const date = input.date || today;
+      if (input.payment === 'unpaid' && input.paidAt !== undefined) throw new Error('Đơn chưa thu không có ngày nhận tiền.');
+      const paidAt = input.payment === 'paid' ? input.paidAt || date : null;
+      validateOrderDates(date, paidAt, today);
       const orderId = newId('DH'), subscriptionId = newId('sub');
       const expiresAt = addDuration(input.startsAt, plan.duration, plan.unit);
       const common = { customerId: customer.id, productId: product.id, planId: plan.id, startsAt: input.startsAt, expiresAt, price: input.price, cost: input.cost };
       data.subscriptions.unshift({ ...common, id: subscriptionId, cancelled: false, lastOrderId: orderId, note: input.note || '' });
-      data.orders.unshift({ ...common, id: orderId, subscriptionId, date: today, payment: input.payment, paidAt: input.payment === 'paid' ? today : null, note: input.note, status: 'completed', kind: 'new' });
+      data.orders.unshift({ ...common, id: orderId, subscriptionId, date, payment: input.payment, paidAt, note: input.note, status: 'completed', kind: 'new' });
       resultId = orderId; break;
     }
     case 'update_order': {
@@ -71,6 +89,16 @@ export function executeCommand(original: AppData, command: Command, operation: O
       const protectedFields = ['price', 'cost', 'startsAt', 'expiresAt', 'payment', 'planId'] as const;
       if (policy.locked && protectedFields.some(field => input[field] !== undefined && input[field] !== order[field])) {
         throw new Error(policy.reason);
+      }
+      const date = input.date ?? order.date;
+      const payment = input.payment ?? order.payment;
+      if (payment === 'unpaid' && input.paidAt !== undefined) throw new Error('Đơn chưa thu không có ngày nhận tiền.');
+      const paidAt = payment === 'paid' ? input.paidAt ?? (order.payment === 'paid' ? order.paidAt || order.date : today) : null;
+      if (order.status === 'cancelled' && (date !== order.date || paidAt !== (order.paidAt || null))) throw new Error('Đơn đã hủy không được đổi ngày ghi nhận.');
+      validateOrderDates(date, paidAt, today);
+      if (paidAt && data.refunds.some(refund => refund.orderId === order.id && refund.date < paidAt)) throw new Error('Ngày nhận tiền không được sau ngày hoàn tiền hoặc thu hồi vốn đã ghi nhận.');
+      if (date !== order.date || paidAt !== (order.paidAt || (order.payment === 'paid' ? order.date : null))) {
+        dateCorrection = `Ngày bán ${order.date} → ${date}; ngày nhận tiền ${order.paidAt || (order.payment === 'paid' ? order.date : 'chưa thu')} → ${paidAt || 'chưa thu'}`;
       }
       const product = data.products.find(item => item.id === order.productId);
       if (input.planId !== undefined && !product?.plans.some(plan => plan.id === input.planId)) {
@@ -90,12 +118,10 @@ export function executeCommand(original: AppData, command: Command, operation: O
       if (input.planId !== undefined) order.planId = input.planId;
       if (input.payment !== undefined && input.payment !== order.payment) {
         order.payment = input.payment;
-        if (input.payment === 'paid') {
-          order.paidAt = today;
-        } else {
-          order.paidAt = null;
-        }
       }
+      order.date = date;
+      order.paidAt = paidAt;
+      if (input.paidAt !== undefined) order.paidAtEstimated = false;
       if (order.subscriptionId) {
         const sub = data.subscriptions.find(s => s.id === order.subscriptionId);
         if (sub && sub.lastOrderId === order.id && !policy.locked) {
@@ -113,8 +139,13 @@ export function executeCommand(original: AppData, command: Command, operation: O
     case 'record_payment': {
       const order = data.orders.find(order => order.id === command.input.orderId);
       if (!order || order.status === 'cancelled') throw new Error('Đơn không tồn tại hoặc đã hủy.');
-      if (order.payment === 'paid') return { data: original, resultId: order.id };
-      order.payment = 'paid'; order.paidAt = today; resultId = order.id; break;
+      if (order.payment === 'paid') {
+        if (command.input.paidAt !== undefined && command.input.paidAt !== (order.paidAt || order.date)) throw new Error('Đơn đã thu tiền. Hãy sửa ngày nhận tiền trong chi tiết đơn nếu cần đối chiếu lại.');
+        return { data: original, resultId: order.id };
+      }
+      const paidAt = command.input.paidAt || today;
+      validateOrderDates(order.date, paidAt, today);
+      order.payment = 'paid'; order.paidAt = paidAt; resultId = order.id; break;
     }
     case 'renew_subscription': {
       const input = command.input;
@@ -254,7 +285,7 @@ export function executeCommand(original: AppData, command: Command, operation: O
         requireFutureAppointment(command.input.scheduledAt, operation.now);
         if (!audienceFor(data, command.input.segment, today).eligible.length) throw new Error('Chưa có email đủ điều kiện trong nhóm khách này.');
       }
-      const campaign = { ...command.input, scheduledAt: command.input.scheduledAt || null, id: existing?.id || newId('cp'), date: today, status: command.input.scheduledAt ? 'scheduled' as const : 'draft' as const };
+      const campaign = { ...command.input, scheduledAt: command.input.scheduledAt || null, id: existing?.id || newId('cp'), date: existing?.date || today, status: command.input.scheduledAt ? 'scheduled' as const : 'draft' as const };
       if (existing) Object.assign(existing, campaign); else data.campaigns.unshift(campaign);
       resultId = campaign.id; break;
     }
@@ -282,7 +313,8 @@ export function executeCommand(original: AppData, command: Command, operation: O
       resultId = item.id; break;
     }
   }
-  data.activity.unshift({ id: newId('act'), ...commandActivity(command, resultId, operation.actor), at: operation.now });
+  const activity = commandActivity(command, resultId, operation.actor);
+  data.activity.unshift({ id: newId('act'), ...activity, description: activity.description + (dateCorrection ? ' · ' + dateCorrection : ''), at: operation.now });
   return { data, resultId };
 }
 
