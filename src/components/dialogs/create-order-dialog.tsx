@@ -45,6 +45,7 @@ export function CreateOrderDialog({
   const [payment, setPayment] = useState<'paid' | 'unpaid'>('paid');
   const [orderDate, setOrderDate] = useState(today);
   const [paidAt, setPaidAt] = useState(today);
+  const [datesTouched, setDatesTouched] = useState(false);
   const [accountEmail, setAccountEmail] = useState('');
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
@@ -332,7 +333,14 @@ export function CreateOrderDialog({
                 name="startsAt"
                 value={startsAt}
                 required
-                onChange={e => setStartsAt(e.target.value)}
+                onChange={e => {
+                  const val = e.target.value;
+                  setStartsAt(val);
+                  if (!datesTouched && val && val <= today) {
+                    setOrderDate(val);
+                    setPaidAt(val);
+                  }
+                }}
               />
             </label>
 
@@ -385,12 +393,34 @@ export function CreateOrderDialog({
             <div className="form-grid">
               <label className="field">
                 <span>Ngày bán</span>
-                <input type="date" name="orderDate" value={orderDate} max={today} required onChange={e => { if (paidAt === orderDate) setPaidAt(e.target.value); setOrderDate(e.target.value); }} />
+                <input
+                  type="date"
+                  name="orderDate"
+                  value={orderDate}
+                  max={today}
+                  required
+                  onChange={e => {
+                    setDatesTouched(true);
+                    if (paidAt === orderDate) setPaidAt(e.target.value);
+                    setOrderDate(e.target.value);
+                  }}
+                />
                 <small>Nhập đơn cũ: chọn ngày đã bán thực tế.</small>
               </label>
               {payment === 'paid' && <label className="field">
                 <span>Ngày nhận tiền</span>
-                <input type="date" name="paidAt" value={paidAt} min={orderDate} max={today} required onChange={e => setPaidAt(e.target.value)} />
+                <input
+                  type="date"
+                  name="paidAt"
+                  value={paidAt}
+                  min={orderDate}
+                  max={today}
+                  required
+                  onChange={e => {
+                    setDatesTouched(true);
+                    setPaidAt(e.target.value);
+                  }}
+                />
                 <small>Báo cáo theo tháng của ngày nhận tiền.</small>
               </label>}
             </div>
