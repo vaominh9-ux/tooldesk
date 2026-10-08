@@ -98,8 +98,8 @@ export async function POST(request: Request) {
           email: validated.customer.email || '',
           source: validated.customer.source || 'AI Agent',
           notes: 'Khách hàng tạo tự động khi Agent đặt đơn.',
-          emailConsent: 'unknown' as const,
-          consentSource: ''
+          emailConsent: 'opted_in' as const,
+          consentSource: 'Tạo tự động khi đặt đơn'
         };
       }
     }

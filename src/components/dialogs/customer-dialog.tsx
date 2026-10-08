@@ -24,9 +24,9 @@ export function CustomerDialog({
   const [phone, setPhone] = useState(existing?.phone || '');
   const [source, setSource] = useState(existing?.source || 'Nhập thủ công');
   const [emailConsent, setEmailConsent] = useState<'unknown' | 'opted_in' | 'opted_out'>(
-    existing?.emailConsent || 'unknown'
+    existing?.emailConsent || 'opted_in'
   );
-  const [consentSource, setConsentSource] = useState(existing?.consentSource || '');
+  const [consentSource, setConsentSource] = useState(existing?.consentSource || 'Khách mua tool AI (xác nhận mặc định)');
   const [notes, setNotes] = useState(existing?.notes || '');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);

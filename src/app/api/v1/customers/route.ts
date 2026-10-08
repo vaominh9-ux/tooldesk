@@ -55,8 +55,8 @@ export async function POST(request: Request) {
         email: validated.email,
         source: validated.source,
         notes: validated.notes,
-        emailConsent: 'unknown',
-        consentSource: ''
+        emailConsent: 'opted_in',
+        consentSource: 'API'
       }
     });
 

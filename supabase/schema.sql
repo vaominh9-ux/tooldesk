@@ -46,8 +46,8 @@ CREATE TABLE IF NOT EXISTS public.customers (
     email TEXT,
     phone TEXT,
     source TEXT DEFAULT 'Zalo',
-    email_consent TEXT DEFAULT 'unknown', -- Explicit consent only
-    consent_source TEXT DEFAULT 'Đăng ký dịch vụ',
+    email_consent TEXT DEFAULT 'opted_in', -- Default to confirmed
+    consent_source TEXT DEFAULT 'Khách mua tool AI (xác nhận mặc định)',
     consent_updated_at DATE DEFAULT CURRENT_DATE,
     notes TEXT DEFAULT '',
     color TEXT DEFAULT 'sky',
