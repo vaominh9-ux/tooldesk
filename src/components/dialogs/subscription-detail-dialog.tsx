@@ -293,7 +293,7 @@ export function SubscriptionDetailDialog({
                 onClick={() => markContacted(sub.id)}
               >
                 <AppIcon name="mail" size={14} />
-                <span>Ghi nhận đã nhắc</span>
+                <span>Đã nhắc</span>
               </button>
             )}
             <button

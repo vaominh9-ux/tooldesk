@@ -232,7 +232,7 @@
   .data-notice { font-size:12px; padding:12px; }
   .work-footer { flex-wrap:wrap; }
   .work-footer>.text-button { white-space:normal; }
-  .dialog-footer>.button { min-width:0; white-space:normal; }
+  .dialog-footer>.button { min-width:0; white-space:nowrap; }
   .order-detail-footer { gap:8px; }
   .order-detail-footer>.button:first-child:not(:only-child) { min-width:56px; }
   .order-detail-footer>.button.ghost { white-space:nowrap; }
