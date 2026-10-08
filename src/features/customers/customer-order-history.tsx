@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { AppIcon } from '@/components/shared/app-icon';
+import { ProductLogo } from '@/components/shared/product-logo';
 import { formatDateLabel } from '@/domain/dates';
 import { formatMoney, orderFinancials } from '@/domain/money';
 import { formatOrderCode } from '@/domain/orders';
@@ -37,9 +38,7 @@ export function CustomerOrderHistory({ orders, products, refunds, renderPaymentB
               {renderPaymentBadge(order)}
             </div>
             <div className="product-cell">
-              <span className={`product-logo ${product?.color || 'mint'}`} aria-hidden="true">
-                {product?.symbol || '◈'}
-              </span>
+              <ProductLogo name={product?.name} color={product?.color} />
               <div>
                 <strong>{product?.name || 'Sản phẩm'}</strong>
                 {plan && <small>{plan.name}</small>}

@@ -5,6 +5,7 @@ import { useBackdropDismiss } from './use-backdrop-dismiss';
 import React from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '../shared/app-icon';
+import { ProductLogo } from '@/components/shared/product-logo';
 import { getCustomerStats, formatOrderCode, formatCustomerCode } from '@/domain/orders';
 import { formatMoney } from '@/domain/money';
 import { formatDateLabel, remainingLabel } from '@/domain/dates';
@@ -157,7 +158,7 @@ export function CustomerDetailDialog({
                       >
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ color: '#5963e8', fontWeight: 700 }}>{product?.symbol || '◈'}</span>
+                            <ProductLogo name={product?.name} color={product?.color} />
                             <strong style={{ color: '#202a43' }}>{product?.name}</strong>
                             <small style={{ color: '#778197' }}>({plan?.name})</small>
                           </div>

@@ -3,10 +3,12 @@
 import React, { useState } from 'react';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '@/components/shared/app-icon';
+import { ProductLogo } from '@/components/shared/product-logo';
 import { orderFinancials, formatMoney } from '@/domain/money';
 import { formatDateLabel } from '@/domain/dates';
 import { paginate, formatOrderCode, searchFilter } from '@/domain/orders';
 import { OrderRecordCard } from '@/features/orders/order-record-card';
+import { OrderListFilters } from '@/features/orders/order-list-filters';
 import Link from 'next/link';
 
 export default function OrdersPage() {
@@ -138,70 +140,13 @@ export default function OrdersPage() {
         </div>
 
         {/* Toolbar */}
-        <div className="list-toolbar">
-          <label className="search-field">
-            <AppIcon name="search" size={18} />
-            <input
-              id="list-search"
-              type="search"
-              value={search}
-              onChange={e => { setSearch(e.target.value); setPage(1); }}
-              placeholder="Tìm mã đơn, tên, SĐT hoặc email..."
-              aria-label="Tìm mã đơn, tên, SĐT hoặc email..."
-              autoComplete="off"
-            />
-            {search && (
-              <button
-                type="button"
-                className="search-clear"
-                onClick={() => setSearch('')}
-                aria-label="Xóa tìm kiếm"
-              >
-                ×
-              </button>
-            )}
-          </label>
-
-          <select
-            className="select-filter"
-            value={productFilter}
-            onChange={e => { setProductFilter(e.target.value); setPage(1); }}
-            aria-label="Lọc sản phẩm"
-          >
-            <option value="">Tất cả sản phẩm</option>
-            {data.products.map(p => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-
-          <select
-            className="select-filter"
-            value={kindFilter}
-            onChange={e => { setKindFilter(e.target.value); setPage(1); }}
-            aria-label="Loại đơn"
-          >
-            <option value="">Tất cả loại đơn</option>
-            <option value="new">Mua mới</option>
-            <option value="renewal">Gia hạn</option>
-          </select>
-
-          <button
-            type="button"
-            className="button small ghost toolbar-end"
-            onClick={() => {
-              setSearch('');
-              setProductFilter('');
-              setKindFilter('');
-              setTab('all');
-              setPage(1);
-            }}
-          >
-            <AppIcon name="refresh" size={13} />
-            <span>Đặt lại bộ lọc</span>
-          </button>
-        </div>
+        <OrderListFilters
+          search={search} productFilter={productFilter} kindFilter={kindFilter} products={data.products}
+          onSearch={value => { setSearch(value); setPage(1); }}
+          onProduct={value => { setProductFilter(value); setPage(1); }}
+          onKind={value => { setKindFilter(value); setPage(1); }}
+          onReset={() => { setSearch(''); setProductFilter(''); setKindFilter(''); setTab('all'); setPage(1); }}
+        />
 
         {/* Records */}
         {paged.items.length > 0 ? (
@@ -262,9 +207,7 @@ export default function OrdersPage() {
                         </td>
                         <td>
                           <div className="product-cell">
-                            <span className={`product-logo ${prod?.color || 'mint'}`} aria-hidden="true">
-                              {prod?.symbol || '✦'}
-                            </span>
+                            <ProductLogo name={prod?.name} color={prod?.color} />
                             <div>
                               <span className="strong">{prod?.name || 'Sản phẩm'}</span>
                               <small>{plan?.name || ''}</small>

@@ -7,6 +7,8 @@ import { Feedback } from '@/components/shared/feedback';
 import { useBackdropDismiss } from '@/components/dialogs/use-backdrop-dismiss';
 import { formatMoney } from '@/domain/money';
 import type { ProductPlanUpdate } from '@/domain/products';
+import { ProductLogo } from '@/components/shared/product-logo';
+import { productInitial } from '@/lib/product-initial';
 
 interface PlanDraft {
   key: string; id?: string; name: string; duration: string; unit: 'months' | 'days'; price: string; cost: string;
@@ -20,7 +22,6 @@ export function ProductEditorDialog({ productId, onClose }: { productId?: string
   const [name, setName] = useState(product?.name || '');
   const [category, setCategory] = useState(product?.category || categories[0]);
   const [description, setDescription] = useState(product?.description || '');
-  const [symbol, setSymbol] = useState(product?.symbol || '◈');
   const [plans, setPlans] = useState<PlanDraft[]>(() => product ? product.plans.map(plan => ({ ...plan, key: plan.id, duration: String(plan.duration), price: String(plan.price), cost: String(plan.cost) })) : [{ key: 'initial', name: 'Gói 1 tháng', duration: '1', unit: 'months', price: '350000', cost: '250000' }]);
   const [expectedPlanIds] = useState(() => product?.plans.map(plan => plan.id) || []);
   const [expanded, setExpanded] = useState<string | null>(plans[0]?.key || null);
@@ -71,7 +72,7 @@ export function ProductEditorDialog({ productId, onClose }: { productId?: string
         if (!plan.cost.trim() || !Number.isSafeInteger(cost) || cost < 0) failPlan(plan, 'Giá vốn phải là số nguyên VND từ 0 trở lên.');
         return { ...(plan.id ? { id: plan.id } : {}), name: plan.name.trim(), duration, unit: plan.unit, price, cost };
       });
-      const fields = { name: name.trim(), category, description: description.trim(), symbol: symbol.trim() || name.trim()[0].toUpperCase() };
+      const fields = { name: name.trim(), category, description: description.trim(), symbol: productInitial(name) };
       if (editing && product) await updateProduct(product.id, { ...fields, color: product.color, plans: updates, expectedPlanIds });
       else if (!editing) await addProduct({ ...fields, plans: updates });
       else throw new Error('Sản phẩm không còn tồn tại.');
@@ -93,7 +94,8 @@ export function ProductEditorDialog({ productId, onClose }: { productId?: string
             {role !== 'admin' && <Feedback>Chỉ quản trị viên được sửa sản phẩm và gói dịch vụ.</Feedback>}
             <fieldset disabled={disabled} className="product-editor-fields">
               <label className="field"><span>Tên sản phẩm</span><input name="name" required maxLength={80} value={name} onChange={event => setName(event.target.value)} /></label>
-              <div className="form-grid"><label className="field"><span id="product-category-label">Nhóm sản phẩm</span><select aria-labelledby="product-category-label" value={category} onChange={event => setCategory(event.target.value)}>{!categories.includes(category) && <option value={category}>{category}</option>}{categories.map(category => <option key={category} value={category}>{category}</option>)}</select></label><label className="field"><span>Ký hiệu (Logo)</span><input name="symbol" maxLength={4} value={symbol} onChange={event => setSymbol(event.target.value)} /></label></div>
+              <label className="field"><span id="product-category-label">Nhóm sản phẩm</span><select aria-labelledby="product-category-label" value={category} onChange={event => setCategory(event.target.value)}>{!categories.includes(category) && <option value={category}>{category}</option>}{categories.map(category => <option key={category} value={category}>{category}</option>)}</select></label>
+              <div className="product-logo-preview"><ProductLogo name={name} color={product?.color} large /><div><strong>Biểu tượng sản phẩm</strong><p>Tự động lấy chữ cái đầu của tên sản phẩm.</p></div></div>
               <label className="field"><span>Mô tả ngắn</span><input name="description" maxLength={1000} value={description} onChange={event => setDescription(event.target.value)} /></label>
               <div className="product-editor-heading"><div><h3>Gói dịch vụ ({plans.length})</h3><p>Mở từng gói để chỉnh thông tin và giá mặc định.</p></div><button type="button" className="button small" disabled={plans.length >= limit} onClick={() => addPlan()}><AppIcon name="plus" size={16} />Thêm gói</button></div>
               <div className="product-plan-presets"><span>Thêm nhanh:</span>{[1, 3, 6, 12].map(months => <button type="button" className="button small" key={months} disabled={plans.length >= limit} onClick={() => addPlan(months)}>{months === 12 ? '+ 1 năm' : `+ ${months} tháng`}</button>)}</div>

@@ -2,6 +2,7 @@
 
 import { useId, type ReactNode } from 'react';
 import { AppIcon } from '@/components/shared/app-icon';
+import { ProductLogo } from '@/components/shared/product-logo';
 import type { AppData } from '@/domain/data-schema';
 import { formatDateLabel } from '@/domain/dates';
 import { formatMoney, type OrderFinancialSummary } from '@/domain/money';
@@ -37,9 +38,7 @@ export function OrderRecordCard({
 
         <span className="order-card-sale">
           <span className="order-card-product">
-            <span className={`product-logo ${product?.color || 'mint'}`} aria-hidden="true">
-              {product?.symbol || '✦'}
-            </span>
+            <ProductLogo name={product?.name} color={product?.color} />
             <span className="order-card-product-info">
               <strong>{product?.name || 'Sản phẩm'}</strong>
               {plan?.name && <span>{plan.name}</span>}

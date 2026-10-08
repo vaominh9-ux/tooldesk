@@ -4,15 +4,16 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useTooldesk } from '@/features/context/tooldesk-context';
 import { AppIcon } from '@/components/shared/app-icon';
+import { ProductLogo } from '@/components/shared/product-logo';
 import { calculateTotals, formatMoney, orderFinancials, cashSummary } from '@/domain/money';
 import { formatDateLabel, remainingLabel, addDays } from '@/domain/dates';
 import { subStatus, isActive } from '@/domain/subscriptions';
 import { formatOrderCode } from '@/domain/orders';
+import { DashboardWorkFilters, useDashboardWorkTab } from '@/features/dashboard/dashboard-work-filters';
 
 export default function DashboardPage() {
   const { data, today, openDialog } = useTooldesk();
 
-  const [dashTab, setDashTab] = useState<'renewal' | 'expired' | 'unpaid'>('renewal');
   const [chartDays, setChartDays] = useState<7 | 30>(7);
 
   const windowDays = data.settings.reminderDays || 7;
@@ -30,6 +31,9 @@ export default function DashboardPage() {
   const unpaid = data.orders
     .filter(o => o.payment === 'unpaid' && o.status !== 'cancelled')
     .sort((a, b) => b.date.localeCompare(a.date));
+
+  const workCounts = { renewal: expiring.length, expired: expired.length, unpaid: unpaid.length };
+  const { activeTab: dashTab, selectTab: setDashTab } = useDashboardWorkTab(workCounts);
 
   const activeCount = data.subscriptions.filter(s => isActive(s, today)).length;
   const taskCount = expiring.length + expired.length + unpaid.length;
@@ -170,33 +174,11 @@ export default function DashboardPage() {
       {/* Main Work Area: Action Table + Right Rail */}
       <section className="dashboard-work">
         <article className="panel">
-          <div className="section-heading">
+          <div className="section-heading dashboard-work-heading">
             <div>
               <h2>Việc cần xử lý hôm nay</h2>
             </div>
-            <div className="segmented" role="group" aria-label="Loại việc cần xử lý">
-              <button
-                type="button"
-                className={dashTab === 'renewal' ? 'active' : ''}
-                onClick={() => setDashTab('renewal')}
-              >
-                Sắp hết hạn <span>{expiring.length}</span>
-              </button>
-              <button
-                type="button"
-                className={dashTab === 'expired' ? 'active' : ''}
-                onClick={() => setDashTab('expired')}
-              >
-                Đã hết hạn <span>{expired.length}</span>
-              </button>
-              <button
-                type="button"
-                className={dashTab === 'unpaid' ? 'active' : ''}
-                onClick={() => setDashTab('unpaid')}
-              >
-                Chưa thanh toán <span>{unpaid.length}</span>
-              </button>
-            </div>
+            <DashboardWorkFilters counts={workCounts} activeTab={dashTab} onSelect={setDashTab} />
           </div>
 
           <div className="table-scroll">
@@ -234,9 +216,7 @@ export default function DashboardPage() {
                           </td>
                           <td>
                             <div className="product-cell">
-                              <span className={`product-logo ${prod?.color || 'mint'}`} aria-hidden="true">
-                                {prod?.symbol || '✦'}
-                              </span>
+                              <ProductLogo name={prod?.name} color={prod?.color} />
                               <div>
                                 <span className="strong">{prod?.name || 'Sản phẩm'}</span>
                                 <small>{plan?.name || ''}</small>
@@ -310,9 +290,7 @@ export default function DashboardPage() {
                         </td>
                         <td>
                           <div className="product-cell">
-                            <span className={`product-logo ${prod?.color || 'mint'}`} aria-hidden="true">
-                              {prod?.symbol || '✦'}
-                            </span>
+                            <ProductLogo name={prod?.name} color={prod?.color} />
                             <div>
                               <span className="strong">{prod?.name || 'Sản phẩm'}</span>
                               <small>{plan?.name || ''}</small>
