@@ -52,9 +52,6 @@ export function CreateOrderDialog({
     });
   }, [data.products, productPopularity]);
 
-  const topProducts = React.useMemo(() => {
-    return sortedProducts.filter(p => (productPopularity.get(p.id) || 0) > 0).slice(0, 5);
-  }, [sortedProducts, productPopularity]);
 
   const [selectedProductId, setSelectedProductId] = useState(
     defaultProductId || sortedProducts[0]?.id || data.products[0]?.id || ''
@@ -347,28 +344,6 @@ export function CreateOrderDialog({
             {/* Package Info */}
             <div className="form-section-title">Thông tin gói dịch vụ</div>
 
-            {topProducts.length > 0 && (
-              <div className="popular-product-chips">
-                <span className="chips-label">🔥 Mua nhiều:</span>
-                <div className="chips-list">
-                  {topProducts.map(p => {
-                    const count = productPopularity.get(p.id) || 0;
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        className={`chip-button ${p.id === selectedProductId ? 'active' : ''}`}
-                        onClick={() => handleProductChange(p.id)}
-                        title={`${p.name} (${count} đơn đã bán)`}
-                      >
-                        {p.name} <small>({count})</small>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
             <div className="form-grid">
               <label className="field">
                 <span>Sản phẩm</span>
@@ -378,12 +353,11 @@ export function CreateOrderDialog({
                   value={selectedProductId}
                   onChange={e => handleProductChange(e.target.value)}
                 >
-                  {sortedProducts.map((item, idx) => {
+                  {sortedProducts.map(item => {
                     const count = productPopularity.get(item.id) || 0;
-                    const badge = idx === 0 && count > 0 ? `🔥 [Bán chạy nhất - ${count} đơn] ` : count > 0 ? `(${count} đơn) ` : '';
                     return (
                       <option key={item.id} value={item.id}>
-                        {badge}{item.name}
+                        {item.name}{count > 0 ? ` (${count} đơn)` : ''}
                       </option>
                     );
                   })}
@@ -404,20 +378,6 @@ export function CreateOrderDialog({
                     </option>
                   ))}
                 </select>
-                {currentProduct && currentProduct.plans.length > 1 && (
-                  <div className="popular-plan-chips">
-                    {currentProduct.plans.map(plan => (
-                      <button
-                        key={plan.id}
-                        type="button"
-                        className={`chip-button ${plan.id === selectedPlanId ? 'active' : ''}`}
-                        onClick={() => handlePlanChange(plan.id)}
-                      >
-                        {plan.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
               </label>
             </div>
 
