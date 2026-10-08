@@ -22,7 +22,7 @@ export function CustomerDialog({
   const [name, setName] = useState(existing?.name || '');
   const [email, setEmail] = useState(existing?.email || '');
   const [phone, setPhone] = useState(existing?.phone || '');
-  const [source, setSource] = useState(existing?.source || 'Nhập thủ công');
+  const [source, setSource] = useState(existing?.source || 'Zalo');
   const [emailConsent, setEmailConsent] = useState<'unknown' | 'opted_in' | 'opted_out'>(
     existing?.emailConsent || 'opted_in'
   );
@@ -175,11 +175,11 @@ export function CustomerDialog({
                 value={source}
                 onChange={e => setSource(e.target.value)}
               >
-                <option value="Nhập thủ công">Nhập thủ công</option>
-                <option value="Messenger">Messenger</option>
                 <option value="Zalo">Zalo</option>
+                <option value="Messenger">Messenger</option>
                 <option value="Website">Website</option>
                 <option value="Giới thiệu">Giới thiệu</option>
+                <option value="Nhập thủ công">Nhập thủ công</option>
               </select>
             </label>
 

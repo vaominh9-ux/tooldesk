@@ -18,7 +18,7 @@ interface DialogState {
   payload?: string | { id?: string; orderId?: string; customerId?: string; subscriptionId?: string; productId?: string; planId?: string; mode?: string; segment?: string };
 }
 interface CustomerInput { name: string; email?: string; phone?: string; source?: string; notes?: string; emailConsent?: Customer['emailConsent']; consentSource?: string }
-interface CreateOrderInput { customerId?: string; newCustomer?: { name: string; email?: string; phone?: string }; productId: string; planId: string; startsAt: string; date?: string; paidAt?: string; price: number; cost: number; payment: 'paid' | 'unpaid'; note?: string }
+interface CreateOrderInput { customerId?: string; newCustomer?: { name: string; email?: string; phone?: string; source?: string }; productId: string; planId: string; startsAt: string; date?: string; paidAt?: string; price: number; cost: number; payment: 'paid' | 'unpaid'; note?: string }
 export interface UpdateOrderInput { orderId: string; date?: string; paidAt?: string; price?: number; cost?: number; startsAt?: string; expiresAt?: string; payment?: 'paid' | 'unpaid'; note?: string; planId?: string }
 interface RenewalInput { subscriptionId: string; planId: string; startsAt: string; price: number; cost: number; payment?: 'paid' | 'unpaid' }
 interface ProductInput { name: string; symbol: string; category: string; description: string; plans: { name: string; duration: number; unit: 'months' | 'days'; price: number; cost: number }[] }

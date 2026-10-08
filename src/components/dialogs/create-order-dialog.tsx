@@ -31,6 +31,7 @@ export function CreateOrderDialog({
   const nameInputRef = React.useRef<HTMLInputElement>(null);
   const [newCustomerEmail, setNewCustomerEmail] = useState('');
   const [newCustomerPhone, setNewCustomerPhone] = useState('');
+  const [newCustomerSource, setNewCustomerSource] = useState('Zalo');
 
   const [selectedProductId, setSelectedProductId] = useState(defaultProductId || data.products[0]?.id || '');
   const currentProduct = data.products.find(p => p.id === selectedProductId) || data.products[0];
@@ -138,7 +139,8 @@ export function CreateOrderDialog({
           ? {
               name: newCustomerName.trim(),
               email: newCustomerEmail.trim() || undefined,
-              phone: newCustomerPhone.trim() || undefined
+              phone: newCustomerPhone.trim() || undefined,
+              source: newCustomerSource
             }
           : undefined,
         productId: selectedProductId,
@@ -272,7 +274,21 @@ export function CreateOrderDialog({
                     value={newCustomerPhone}
                     onChange={e => setNewCustomerPhone(e.target.value)}
                   />
-                  <small>Nhập ít nhất email hoặc số điện thoại. Chưa mặc định đồng ý nhận ưu đãi.</small>
+                  <small>Nhập ít nhất email hoặc số điện thoại.</small>
+                </label>
+                <label className="field">
+                  <span>Nguồn khách hàng</span>
+                  <select
+                    name="newCustomerSource"
+                    value={newCustomerSource}
+                    onChange={e => setNewCustomerSource(e.target.value)}
+                  >
+                    <option value="Zalo">Zalo</option>
+                    <option value="Messenger">Messenger</option>
+                    <option value="Website">Website</option>
+                    <option value="Giới thiệu">Giới thiệu</option>
+                    <option value="Nhập thủ công">Nhập thủ công</option>
+                  </select>
                 </label>
               </div>
             )}

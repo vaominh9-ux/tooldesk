@@ -11,7 +11,7 @@ import { customerEmailInputSchema, customersWithEmail, normalizeCustomerEmail } 
 import { validateOrderDates } from './order-dates';
 
 const id = z.string().min(1).max(100);
-const customerFields = z.object({ name: z.string().trim().min(1).max(80), email: customerEmailInputSchema.default(''), phone: z.string().trim().max(25).default(''), source: z.string().trim().max(100).default('Nhập thủ công'), notes: z.string().trim().max(50000).default(''), emailConsent: z.enum(['unknown', 'opted_in', 'opted_out']).default('opted_in'), consentSource: z.string().trim().max(200).default('Khách mua tool AI (xác nhận mặc định)') }).strict();
+const customerFields = z.object({ name: z.string().trim().min(1).max(80), email: customerEmailInputSchema.default(''), phone: z.string().trim().max(25).default(''), source: z.string().trim().max(100).default('Zalo'), notes: z.string().trim().max(50000).default(''), emailConsent: z.enum(['unknown', 'opted_in', 'opted_out']).default('opted_in'), consentSource: z.string().trim().max(200).default('Khách mua tool AI (xác nhận mặc định)') }).strict();
 const customerInput = customerFields.refine(value => value.email || value.phone, 'Cần email hoặc số điện thoại.').refine(value => value.emailConsent !== 'opted_in' || value.consentSource.length > 0, 'Cần nguồn xác nhận đồng ý nhận email.');
 export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('create_order'), input: z.object({ customerId: id.optional(), newCustomer: customerInput.optional(), productId: id, planId: id, startsAt: daySchema, date: daySchema.optional(), paidAt: daySchema.optional(), price: moneySchema, cost: moneySchema, payment: z.enum(['paid', 'unpaid']), note: z.string().trim().max(5000).default('') }).strict() }).strict(),
