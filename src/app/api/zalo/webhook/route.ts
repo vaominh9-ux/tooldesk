@@ -5,6 +5,14 @@ import { consumeZaloPairing } from '@/lib/zalo-settings-store';
 import { sendZaloMessage } from '@/lib/zalo-bot';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+
+export async function GET() {
+  return NextResponse.json({ ok: true, service: 'tooldesk-zalo-webhook' });
+}
+
+export async function HEAD() {
+  return new Response(null, { status: 200 });
+}
 export async function POST(request: Request) {
   const secret = process.env.ZALO_WEBHOOK_SECRET;
   const actual = Buffer.from(request.headers.get('x-bot-api-secret-token') || '');
