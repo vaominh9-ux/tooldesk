@@ -7,7 +7,8 @@
 2. docs/BUSINESS-RULES.md
 3. docs/UI-ACCEPTANCE.md
 4. docs/IMPLEMENTATION-PLAN.md
-5. Source v0.2 do chủ dự án cung cấp, nhất là REFUNDS.md và tests.
+5. docs/DATABASE-SERVERLESS-RULES.md
+6. Source v0.2 do chủ dự án cung cấp, nhất là REFUNDS.md và tests.
 
 Bộ tài liệu này là chỉ dẫn triển khai, không phải một project Next.js đã hoạt động.
 Source v0.2 hiện là HTML/CSS/JavaScript. Đừng tuyên bố nó đang dùng React/Supabase.
@@ -80,3 +81,12 @@ expires_on là mốc exclusive theo Asia/Ho_Chi_Minh.
 Gia hạn còn hạn cộng từ hạn hiện tại; hết hạn/đã dừng tính từ ngày vận hành.
 Tạo đơn mới, không sửa đơn lịch sử.
 Hoàn tiền mặc định giữ gói. Chỉ hoàn hết đơn mới nhất và có lựa chọn rõ mới dừng/rollback kỳ.
+
+## Kết nối Database và Vercel Serverless
+
+Tuân thủ nghiêm ngặt [docs/DATABASE-SERVERLESS-RULES.md](file:///c:/Users/ASUS/Desktop/qu%E1%BA%A3n%20l%C3%BD%20kh%C3%A1ch%20h%C3%A0ng%20tool%20ai/docs/DATABASE-SERVERLESS-RULES.md):
+- Pooler Supabase luôn dùng cổng 6543 (Transaction Mode), không dùng 5432 (Session Mode giới hạn 15 clients).
+- `resolveCaCert()` luôn giữ `DEFAULT_SUPABASE_CA_CERT` nhúng trong mã nguồn làm fallback để tránh `SELF_SIGNED_CERT_IN_CHAIN` trên Vercel Lambda.
+- Serverless pool size: `max: 2`, `idleTimeoutMillis: 5000`.
+- `loadData()` và truy vấn đọc gọi trực tiếp `getDbPool()`, không bọc transaction/isolation level thừa thãi.
+- Bắt buộc trả về thông báo lỗi chi tiết khi database gặp sự cố, không nuốt lỗi 503.

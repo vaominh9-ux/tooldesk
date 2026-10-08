@@ -121,3 +121,11 @@ tooldesk/
 - Desktop dùng bảng (`data-table`), mobile dùng thẻ (`record-card`).
 - Dùng chung dữ liệu và hành vi giữa desktop/mobile.
 - Không nhúng HTML cũ bằng `dangerouslySetInnerHTML`.
+
+## 5. Kết nối Database & Vercel Serverless
+
+Xem chi tiết tại [docs/DATABASE-SERVERLESS-RULES.md](file:///c:/Users/ASUS/Desktop/qu%E1%BA%A3n%20l%C3%BD%20kh%C3%A1ch%20h%C3%A0ng%20tool%20ai/docs/DATABASE-SERVERLESS-RULES.md):
+- Bắt buộc cổng 6543 cho Transaction Mode qua Supabase Pooler.
+- Luôn có fallback `DEFAULT_SUPABASE_CA_CERT` trong mã nguồn để tránh lỗi chứng chỉ trên runtime Lambda.
+- Tối ưu pool cho serverless (`max: 2`, `idleTimeoutMillis: 5000`).
+- Truy vấn đọc `loadData()` chạy trực tiếp qua connection pool, không bọc transaction thừa thãi.
