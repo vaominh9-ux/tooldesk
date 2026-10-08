@@ -8,13 +8,35 @@ import { zaloDefaultPreferences, zaloStatusSchema, type ZaloPreferences, type Za
 import { formatAppointment } from '@/domain/care-scheduling';
 
 const replySchema = zaloStatusSchema.extend({ command: z.string().optional(), expiresAt: z.iso.datetime().optional(), webhookVerified: z.boolean().optional() });
-export function ZaloSettingsPanel() {
+export type ZaloConnectionState = { status: ZaloStatus | null; loading: boolean; error: boolean };
+
+export function ZaloConnectionRow({ status, loading, error }: ZaloConnectionState) {
+  let label = 'Chưa xác định', tone = 'neutral';
+  if (error) { label = 'Chưa xác định'; tone = 'amber'; }
+  else if (loading) label = 'Đang kiểm tra';
+  else if (status?.demo) label = 'Demo';
+  else if (status) {
+    if (!status.tokenConfigured) label = 'Chưa cấu hình';
+    else if (!status.settings.chatId) label = 'Chưa liên kết';
+    else if (!status.settings.enabled) label = 'Đã liên kết';
+    else if (!status.webhookSecretConfigured || !status.cronSecretConfigured) { label = 'Thiếu cấu hình'; tone = 'amber'; }
+    else { label = 'Đã bật'; tone = 'green'; }
+  }
+  return <a className="integration-row" href="#zalo-notifications" aria-label="Cấu hình Bot Zalo">
+    <span className="integration-icon"><AppIcon name="bell" size={19} /></span>
+    <div><strong>Bot Zalo</strong><p>Nhắc hạn và lịch chăm sóc cá nhân</p></div>
+    <span className={`badge ${tone}`}>{label}</span>
+  </a>;
+}
+
+export function ZaloSettingsPanel({ onConnectionChange }: { onConnectionChange?: (state: ZaloConnectionState) => void }) {
   const [status, setStatus] = useState<ZaloStatus | null>(null);
   const [preferences, setPreferences] = useState<ZaloPreferences>(zaloDefaultPreferences);
   const [loading, setLoading] = useState(true), [pending, setPending] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error' | 'warning'; text: string } | null>(null);
   const [pairing, setPairing] = useState<{ command: string; expiresAt: string } | null>(null);
+  useEffect(() => { onConnectionChange?.({ status, loading, error: Boolean(loadError) }); }, [status, loading, loadError, onConnectionChange]);
   const dirty = useRef(false), busy = useRef(false), active = useRef(true), controller = useRef<AbortController | null>(null);
   const recipient = useRef<string | null>(null);
   const refresh = useCallback(async () => {

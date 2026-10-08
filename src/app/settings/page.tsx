@@ -6,11 +6,12 @@ import { AppIcon } from '@/components/shared/app-icon';
 import { ReminderStatusPanel } from '@/features/communications/reminder-status-panel';
 import { SmtpSettingsPanel } from '@/components/settings/smtp-settings-panel';
 import { ApiIntegrationPanel } from '@/features/api-integration/api-integration-panel';
-import { ZaloSettingsPanel } from '@/features/communications/zalo-settings-panel';
+import { ZaloConnectionRow, ZaloSettingsPanel, type ZaloConnectionState } from '@/features/communications/zalo-settings-panel';
 
 export default function SettingsPage() {
   const { data, dataStatus, today, updateSettings, openDialog, addToast, syncWithSupabase, logout, importData, loadDemoData } = useTooldesk();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [zaloConnection, setZaloConnection] = useState<ZaloConnectionState>({ status: null, loading: true, error: false });
   const [systemHealth, setSystemHealth] = useState<{
     databaseConfigured: boolean;
     emailConfigured: boolean;
@@ -200,16 +201,7 @@ export default function SettingsPage() {
               </span>
             </div>
 
-            <div className="integration-row">
-              <span className="integration-icon">
-                <AppIcon name="send" size={19} />
-              </span>
-              <div>
-                <strong>Telegram</strong>
-                <p>Thông báo nội bộ</p>
-              </div>
-              <span className="badge neutral">Chưa nối</span>
-            </div>
+            <ZaloConnectionRow {...zaloConnection} />
 
             <div className="integration-row">
               <span className="integration-icon">
@@ -228,7 +220,7 @@ export default function SettingsPage() {
       {/* Integrations */}
       <ApiIntegrationPanel />
       <SmtpSettingsPanel />
-      <ZaloSettingsPanel />
+      <ZaloSettingsPanel onConnectionChange={setZaloConnection} />
       {(dataStatus === 'connected' || dataStatus === 'mock') && <ReminderStatusPanel />}
       <div className="danger-zone">
         <h3>Quản lý dữ liệu hệ thống</h3>

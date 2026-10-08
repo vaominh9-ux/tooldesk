@@ -91,6 +91,12 @@
 .sidebar-bottom { flex: 0 0 auto; width: 100%; margin-top: 0; padding: 8px 0 0; background: var(--surface); }
 .sidebar-bottom > .nav-group { margin-bottom: 0; }
 .smtp-settings-panel { margin-top: 22px; scroll-margin-top:88px; }
+@media (min-width:1024px) {
+  .settings-layout { align-items:stretch; }
+  .settings-layout > article { display:flex; flex-direction:column; }
+  .settings-layout > article .settings-form { display:flex; flex-direction:column; flex:1; }
+  .settings-layout > article .settings-actions { margin-top:auto; }
+}
 .smtp-fields { border:0; margin:0; padding:0; min-width:0; }
 .smtp-settings-panel .settings-actions { display:flex; flex-wrap:wrap; gap:10px; }
 .save-overlay { position:fixed; inset:0; z-index:200; display:flex; align-items:center; justify-content:center; background:#ffffffb8; color:var(--ink); font-weight:600; backdrop-filter:blur(2px); }
