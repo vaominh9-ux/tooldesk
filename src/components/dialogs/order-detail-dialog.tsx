@@ -725,13 +725,13 @@ export function OrderDetailDialog({
             {!editPolicy.locked && (
               <button
                 type="button"
-                className="button ghost"
-                style={{ color: '#c53030', borderColor: '#feb2b2', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                className="button ghost order-delete-button"
                 aria-label="Xóa đơn hàng ghi nhầm"
+                title="Xóa đơn hàng ghi nhầm"
                 onClick={() => setIsConfirmingDelete(true)}
               >
-                <AppIcon name="trash" size={15} />
-                <span>Xóa đơn nhầm</span>
+                <AppIcon name="trash" size={16} />
+                <span className="order-delete-label">Xóa đơn nhầm</span>
               </button>
             )}
 

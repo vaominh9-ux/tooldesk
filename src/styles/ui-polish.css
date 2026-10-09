@@ -117,6 +117,9 @@
 .data-notice strong { color:var(--ink); }
 .dialog-footer { flex-wrap:wrap; }
 .order-edit-label-mobile { display:none; }
+.order-delete-label { display:inline; }
+.order-delete-button { border-color:#fed7d7 !important; color:#c53030 !important; }
+.order-delete-button:hover { background:#fff5f5 !important; border-color:#feb2b2 !important; }
 .dialog-content :is(p,small,strong,span) { overflow-wrap:anywhere; }
 .dialog-content :is(input, select, textarea) { max-width:100%; }
 .dialog-content .date-flow { flex-wrap:wrap; }
@@ -238,6 +241,8 @@
   .order-detail-footer>.button.ghost { white-space:nowrap; }
   .order-detail-footer .order-edit-label { display:none; }
   .order-detail-footer .order-edit-label-mobile { display:inline; }
+  .order-detail-footer .order-delete-label { display:none; }
+  .order-detail-footer .order-delete-button { min-width:44px; min-height:44px; padding:0; justify-content:center; }
   .order-detail-footer>.order-service-action { flex:0 0 auto; white-space:nowrap; }
 }
 
