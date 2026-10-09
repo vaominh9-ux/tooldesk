@@ -120,6 +120,7 @@
 .order-delete-label { display:inline; }
 .order-delete-button { border-color:#fed7d7 !important; color:#c53030 !important; }
 .order-delete-button:hover { background:#fff5f5 !important; border-color:#feb2b2 !important; }
+.dashboard-work .work-table .product-logo { display:none !important; }
 .dialog-content :is(p,small,strong,span) { overflow-wrap:anywhere; }
 .dialog-content :is(input, select, textarea) { max-width:100%; }
 .dialog-content .date-flow { flex-wrap:wrap; }
@@ -249,11 +250,7 @@
     font-size: 13px !important;
   }
   .dashboard-work .work-table .product-logo {
-    width: 22px !important;
-    height: 22px !important;
-    min-width: 22px !important;
-    font-size: 13px !important;
-    border-radius: 5px !important;
+    display: none !important;
   }
   .dashboard-work .work-table .button.small.renew-button {
     min-height: 34px !important;
