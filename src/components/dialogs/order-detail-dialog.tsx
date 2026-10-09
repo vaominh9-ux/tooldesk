@@ -18,7 +18,7 @@ export function OrderDetailDialog({
   orderId: string;
   onClose: () => void;
 }) {
-  const { data, today, openDialog, updateOrder, addToast } = useTooldesk();
+  const { data, today, openDialog, updateOrder, deleteOrder, addToast } = useTooldesk();
   const backdropDismiss = useBackdropDismiss(onClose);
   const order = data.orders.find(o => o.id === orderId);
 
@@ -37,6 +37,8 @@ export function OrderDetailDialog({
   const [isEditingNote, setIsEditingNote] = useState(false);
   const [orderNoteVal, setOrderNoteVal] = useState(order?.note || '');
   const [isSavingNote, setIsSavingNote] = useState(false);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (order) {
@@ -653,6 +655,65 @@ export function OrderDetailDialog({
                 </div>
               )}
             </div>
+
+            {/* Confirmation box if user clicked delete */}
+            {isConfirmingDelete && (
+              <div
+                style={{
+                  marginTop: '16px',
+                  padding: '14px',
+                  background: '#fff5f5',
+                  border: '1px solid #fed7d7',
+                  borderRadius: '9px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px'
+                }}
+              >
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                  <span style={{ color: '#e53e3e', marginTop: '2px', flexShrink: 0 }}>
+                    <AppIcon name="warning" size={18} />
+                  </span>
+                  <div>
+                    <strong style={{ fontSize: '13px', color: '#9b2c2c', display: 'block' }}>
+                      Xác nhận xóa đơn hàng ghi nhầm?
+                    </strong>
+                    <p style={{ margin: '4px 0 0', fontSize: '12.5px', color: '#742a2a', lineHeight: 1.5 }}>
+                      Đơn hàng <strong>{formatOrderCode(order.id)}</strong> sẽ bị xóa vĩnh viễn khỏi hệ thống. Kỳ dịch vụ tool AI liên kết của khách hàng sẽ tự động được dọn dẹp hoặc khôi phục về kỳ trước.
+                    </p>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                  <button
+                    type="button"
+                    className="button small"
+                    onClick={() => setIsConfirmingDelete(false)}
+                    disabled={isDeleting}
+                  >
+                    Hủy bỏ
+                  </button>
+                  <button
+                    type="button"
+                    className="button small danger"
+                    disabled={isDeleting}
+                    onClick={async () => {
+                      setIsDeleting(true);
+                      try {
+                        await deleteOrder(order.id);
+                        addToast('Đã xóa đơn hàng ghi nhầm', formatOrderCode(order.id), 'success');
+                        onClose();
+                      } catch (err) {
+                        addToast('Lỗi xóa đơn', err instanceof Error ? err.message : 'Không thể xóa đơn.', 'error');
+                      } finally {
+                        setIsDeleting(false);
+                      }
+                    }}
+                  >
+                    {isDeleting ? 'Đang xóa...' : 'Xác nhận xóa đơn'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Footer */}
@@ -660,6 +721,19 @@ export function OrderDetailDialog({
             <button type="button" className="button" onClick={onClose}>
               Đóng
             </button>
+
+            {!editPolicy.locked && (
+              <button
+                type="button"
+                className="button ghost"
+                style={{ color: '#c53030', borderColor: '#feb2b2', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                aria-label="Xóa đơn hàng ghi nhầm"
+                onClick={() => setIsConfirmingDelete(true)}
+              >
+                <AppIcon name="trash" size={15} />
+                <span>Xóa đơn nhầm</span>
+              </button>
+            )}
 
             <button
               type="button"

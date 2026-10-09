@@ -16,6 +16,7 @@ const customerInput = customerFields.refine(value => value.email || value.phone,
 export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('create_order'), input: z.object({ customerId: id.optional(), newCustomer: customerInput.optional(), productId: id, planId: id, startsAt: daySchema, date: daySchema.optional(), paidAt: daySchema.optional(), price: moneySchema, cost: moneySchema, payment: z.enum(['paid', 'unpaid']), note: z.string().trim().max(5000).default('') }).strict() }).strict(),
   z.object({ type: z.literal('update_order'), input: z.object({ orderId: id, date: daySchema.optional(), paidAt: daySchema.optional(), price: moneySchema.optional(), cost: moneySchema.optional(), startsAt: daySchema.optional(), expiresAt: daySchema.optional(), payment: z.enum(['paid', 'unpaid']).optional(), note: z.string().trim().max(5000).optional(), planId: id.optional() }).strict() }).strict(),
+  z.object({ type: z.literal('delete_order'), input: z.object({ orderId: id }).strict() }).strict(),
   z.object({ type: z.literal('record_payment'), input: z.object({ orderId: id, paidAt: daySchema.optional() }).strict() }).strict(),
   z.object({ type: z.literal('renew_subscription'), input: z.object({ subscriptionId: id, planId: id, price: moneySchema, cost: moneySchema, payment: z.enum(['paid', 'unpaid']).default('unpaid') }).strict() }).strict(),
   z.object({ type: z.literal('stop_subscription_tracking'), input: z.object({ subscriptionId: id, expectedExpiresAt: daySchema, reason: z.string().trim().min(3).max(500) }).strict() }).strict(),
@@ -134,6 +135,34 @@ export function executeCommand(original: AppData, command: Command, operation: O
           if (input.planId !== undefined) sub.planId = input.planId;
         }
       }
+      resultId = order.id;
+      break;
+    }
+    case 'delete_order': {
+      const orderIndex = data.orders.findIndex(o => o.id === command.input.orderId);
+      if (orderIndex === -1) throw new Error('Đơn hàng không tồn tại.');
+      const order = data.orders[orderIndex];
+      const hasRefunds = data.refunds.some(r => r.orderId === order.id);
+      if (hasRefunds) {
+        throw new Error('Đơn hàng đã có giao dịch hoàn tiền hoặc thu hồi vốn. Không thể xóa đơn này.');
+      }
+      if (order.subscriptionId) {
+        const sub = data.subscriptions.find(s => s.id === order.subscriptionId);
+        if (sub) {
+          if (order.kind === 'renewal' && order.previousSubscription) {
+            Object.assign(sub, order.previousSubscription);
+          } else {
+            const otherOrders = data.orders.filter(o => o.subscriptionId === order.subscriptionId && o.id !== order.id);
+            if (otherOrders.length === 0) {
+              data.subscriptions = data.subscriptions.filter(s => s.id !== sub.id);
+            } else {
+              const latestRemaining = otherOrders.sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id, undefined, { numeric: true }))[0];
+              if (latestRemaining) sub.lastOrderId = latestRemaining.id;
+            }
+          }
+        }
+      }
+      data.orders.splice(orderIndex, 1);
       resultId = order.id;
       break;
     }
@@ -331,7 +360,7 @@ export function executeCommand(original: AppData, command: Command, operation: O
 
 function commandActivity(command: Command, resultId: string | undefined, actor: string): Pick<AppData['activity'][number], 'type' | 'title' | 'description'> {
   const labels: Record<Command['type'], string> = {
-    create_order: 'Tạo đơn hàng', update_order: 'Sửa đơn hàng', record_payment: 'Ghi nhận thanh toán',
+    create_order: 'Tạo đơn hàng', update_order: 'Sửa đơn hàng', delete_order: 'Xóa đơn hàng', record_payment: 'Ghi nhận thanh toán',
     renew_subscription: 'Gia hạn gói dịch vụ', stop_subscription_tracking: 'Dừng theo dõi gói · Không gia hạn', record_refund: command.type === 'record_refund' && command.input.amount === 0 ? 'Ghi nhận thu hồi giá vốn' : 'Ghi nhận hoàn tiền',
     add_customer: 'Thêm khách hàng', update_customer: 'Cập nhật khách hàng', mark_contacted: 'Ghi nhận liên hệ',
     update_subscription_note: 'Cập nhật ghi chú gói', update_settings: 'Cập nhật cài đặt',

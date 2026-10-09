@@ -293,5 +293,81 @@ describe('Domain: Short ID generation & display formatting', () => {
       }, op);
     }).toThrow('Không thể xóa sản phẩm này vì đã có đơn hàng hoặc gói dịch vụ liên kết');
   });
+
+  it('safely handles delete_order for new order, renewal rollback, and blocks if refunds exist', () => {
+    const data = createInitialData();
+    let count = 0;
+    const op = { today: '2026-10-07', now: new Date().toISOString(), actor: 'Tester', newId: (p: string) => `${p}-${++count}` };
+
+    // 1. Create a new order by mistake
+    const created = executeCommand(data, {
+      type: 'create_order',
+      input: {
+        customerId: data.customers[0].id,
+        productId: data.products[0].id,
+        planId: data.products[0].plans[0].id,
+        startsAt: '2026-10-07',
+        price: 300000,
+        cost: 150000,
+        payment: 'paid',
+        note: 'Đơn tạo nhầm'
+      }
+    }, op);
+
+    const orderId = created.resultId!;
+    const orderCreated = created.data.orders.find(o => o.id === orderId)!;
+    const subId = orderCreated.subscriptionId!;
+    expect(created.data.subscriptions.some(s => s.id === subId)).toBe(true);
+
+    // Deleting this mistaken order should remove both order and its isolated subscription
+    const deleted = executeCommand(created.data, {
+      type: 'delete_order',
+      input: { orderId }
+    }, op);
+
+    expect(deleted.data.orders.some(o => o.id === orderId)).toBe(false);
+    expect(deleted.data.subscriptions.some(s => s.id === subId)).toBe(false);
+
+    // 2. Renewal order rollback
+    const sub = data.subscriptions[0];
+    const originalSubExpires = sub.expiresAt;
+    const originalLastOrder = sub.lastOrderId;
+
+    const renewed = executeCommand(data, {
+      type: 'renew_subscription',
+      input: {
+        subscriptionId: sub.id,
+        planId: sub.planId,
+        price: 200000,
+        cost: 100000,
+        payment: 'paid'
+      }
+    }, op);
+
+    const renewalOrderId = renewed.resultId!;
+    const renewedSub = renewed.data.subscriptions.find(s => s.id === sub.id)!;
+    expect(renewedSub.expiresAt).not.toBe(originalSubExpires);
+
+    // Deleting the renewal order should roll back the subscription
+    const rolledBack = executeCommand(renewed.data, {
+      type: 'delete_order',
+      input: { orderId: renewalOrderId }
+    }, op);
+
+    const restoredSub = rolledBack.data.subscriptions.find(s => s.id === sub.id)!;
+    expect(restoredSub.expiresAt).toBe(originalSubExpires);
+    expect(restoredSub.lastOrderId).toBe(originalLastOrder);
+
+    // 3. Block deleting order if refund exists
+    const orderWithRefund = data.refunds[0]?.orderId;
+    if (orderWithRefund) {
+      expect(() => {
+        executeCommand(data, {
+          type: 'delete_order',
+          input: { orderId: orderWithRefund }
+        }, op);
+      }).toThrow('Đơn hàng đã có giao dịch hoàn tiền hoặc thu hồi vốn');
+    }
+  });
 });
 

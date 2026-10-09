@@ -152,6 +152,16 @@ export async function saveChanges(db: Db, before: AppData, after: AppData): Prom
   for (const id of beforeProductIds) {
     if (!afterProductIds.has(id)) await db.query('DELETE FROM products WHERE id = $1', [id]);
   }
+  const beforeOrderIds = new Set(before.orders.map(o => o.id));
+  const afterOrderIds = new Set(after.orders.map(o => o.id));
+  for (const id of beforeOrderIds) {
+    if (!afterOrderIds.has(id)) await db.query('DELETE FROM orders WHERE id = $1', [id]);
+  }
+  const beforeSubIds = new Set(before.subscriptions.map(s => s.id));
+  const afterSubIds = new Set(after.subscriptions.map(s => s.id));
+  for (const id of beforeSubIds) {
+    if (!afterSubIds.has(id)) await db.query('DELETE FROM subscriptions WHERE id = $1', [id]);
+  }
   for (const p of changed(before.products, after.products)) {
     await persist('products', { id: p.id, name: p.name, category: p.category, color: p.color, symbol: p.symbol, description: p.description });
     for (const plan of p.plans) await persist('product_plans', { id: plan.id, product_id: p.id, name: plan.name, duration: plan.duration, unit: plan.unit, price: plan.price, cost: plan.cost });

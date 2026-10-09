@@ -39,6 +39,7 @@ interface TooldeskContextType {
   closeDialog: () => void;
   createOrder: (input: CreateOrderInput) => Promise<Order>;
   updateOrder: (input: UpdateOrderInput) => Promise<void>;
+  deleteOrder: (orderId: string) => Promise<void>;
   renewSubscription: (input: RenewalInput) => Promise<Order>;
   stopSubscriptionTracking: (subscriptionId: string, expectedExpiresAt: string, reason: string) => Promise<void>;
   recordPayment: (orderId: string, paidAt?: string) => Promise<void>;
@@ -257,6 +258,7 @@ export function TooldeskProvider({ children, dataSource = 'mock', initialToday }
     openDialog: (type, payload) => { if (!busy.current) setDialog({ type, payload }); }, closeDialog,
     createOrder: async input => { const result = await run({ type: 'create_order', input }, 'Đã tạo đơn'); const order = result.data.orders.find(item => item.id === result.resultId); if (!order) throw new Error('Thiếu đơn trong phản hồi.'); return order; },
     updateOrder: async input => { await run({ type: 'update_order', input }, 'Đã cập nhật đơn hàng', false); },
+    deleteOrder: async orderId => { await run({ type: 'delete_order', input: { orderId } }, 'Đã xóa đơn hàng', true); },
     renewSubscription: async ({ startsAt: _startsAt, ...input }) => { const result = await run({ type: 'renew_subscription', input }, 'Đã gia hạn'); const order = result.data.orders.find(item => item.id === result.resultId); if (!order) throw new Error('Thiếu đơn gia hạn.'); return order; },
     stopSubscriptionTracking: async (subscriptionId, expectedExpiresAt, reason) => { await run({ type: 'stop_subscription_tracking', input: { subscriptionId, expectedExpiresAt, reason } }, 'Đã dừng theo dõi gói', false); },
     recordPayment: async (orderId, paidAt) => { await run({ type: 'record_payment', input: { orderId, paidAt } }, 'Đã ghi nhận thanh toán'); },
