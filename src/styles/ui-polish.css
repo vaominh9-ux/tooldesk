@@ -176,10 +176,96 @@
 @media (max-width:1023px) {
   main .text-link, main .text-button, .segmented button { min-height:44px; }
   main .text-link { display:inline-flex; align-items:center; }
-  .dashboard-work .work-table .person-cell { position:relative; min-height:var(--control-mobile); }
-  main .dashboard-work .work-table .person-cell .text-link { display:block; min-height:0; }
+  .dashboard-work .work-table .person-cell { position:relative; min-height:0; }
+  main .dashboard-work .work-table .person-cell .text-link { display:block; min-height:0; font-size:14px; }
   .dashboard-work .work-table .person-cell .text-link::after { content:""; position:absolute; inset:0; }
-  .dashboard-work .work-table .person-cell small { margin-top:2px; }
+  .dashboard-work .work-table .person-cell small { margin-top:1px; font-size:11.5px; color:var(--muted); }
+  .dashboard-work .work-table .person-cell .avatar { width:32px; height:32px; min-width:32px; font-size:12px; }
+
+  /* 2-Row Streamlined Layout for Dashboard Work Items on Mobile */
+  .dashboard-work .work-table tr {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto !important;
+    gap: 8px 12px !important;
+    padding: 13px 16px !important;
+    align-items: center !important;
+    transition: background-color 0.15s ease;
+  }
+  .dashboard-work .work-table tr:hover {
+    background-color: var(--bg, #f8fafc);
+  }
+  .dashboard-work .work-table td:nth-child(1) {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    min-width: 0 !important;
+  }
+  .dashboard-work .work-table td:nth-child(4) {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    align-self: center !important;
+    justify-self: end !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
+  .dashboard-work .work-table td:nth-child(2) {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    min-width: 0 !important;
+  }
+  .dashboard-work .work-table td:nth-child(3) {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    align-self: center !important;
+    justify-self: end !important;
+    text-align: right !important;
+  }
+  .dashboard-work .work-table .remaining {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    justify-content: flex-end !important;
+    white-space: nowrap !important;
+    font-size: 12.5px !important;
+    font-weight: 550 !important;
+  }
+  .dashboard-work .work-table .remaining small {
+    font-size: 11.5px !important;
+    color: var(--muted, #64748b) !important;
+    margin: 0 !important;
+    font-weight: 400 !important;
+    display: inline !important;
+  }
+  .dashboard-work .work-table .remaining small::before {
+    content: "·";
+    margin-right: 6px;
+    color: var(--line-dark, #cbd5e1);
+  }
+  .dashboard-work .work-table .product-cell {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-size: 13px !important;
+  }
+  .dashboard-work .work-table .product-logo {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    font-size: 13px !important;
+    border-radius: 5px !important;
+  }
+  .dashboard-work .work-table .button.small.renew-button {
+    min-height: 34px !important;
+    padding: 0 12px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    border-radius: 7px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    white-space: nowrap !important;
+  }
   main .record-card .order-number { min-width:44px; min-height:44px; }
   main .add-plan-action-btn { min-height:44px !important; }
   .dialog-content .text-button { min-width:44px; min-height:44px; }
